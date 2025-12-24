@@ -428,12 +428,15 @@ reportNparLD <- function(model, dv = "Testdependentvariable", write_to_clipboard
 #'
 #'   # Format the report output, showing only significant items, removing the
 #'   # standard note, and wrapping bullet items in an itemize environment.
-#'   latexify_report(
-#'     report::report(model),
-#'     only_sig = TRUE,
-#'     remove_std = TRUE,
-#'     itemize = TRUE
-#'   )
+#'   report_text <- try(report::report(model), silent = TRUE)
+#'   if (!inherits(report_text, "try-error")) {
+#'     latexify_report(
+#'       report_text,
+#'       only_sig = TRUE,
+#'       remove_std = TRUE,
+#'       itemize = TRUE
+#'     )
+#'   }
 #' }
 #' }
 latexify_report <- function(x,

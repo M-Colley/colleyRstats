@@ -404,13 +404,24 @@ checkAssumptionsForAnova <- function(data, y, factors) {
   not_empty(y)
   not_empty(factors)
 
+  extract_p_value <- function(test_result) {
+    if ("p" %in% names(test_result)) {
+      return(test_result$p)
+    }
+    if ("p.value" %in% names(test_result)) {
+      return(test_result$p.value)
+    }
+    NA_real_
+  }
+
   # Dynamically construct the formula based on the number of factors
   formula_string <- paste(y, "~", paste(factors, collapse = " * "))
   model <- lm(as.formula(formula_string), data = data)
 
   # Shapiro-Wilk test of normality on model residuals
   model_results <- rstatix::shapiro_test(stats::residuals(model))
-  if (model_results$p.value < 0.05) {
+  model_p <- extract_p_value(model_results)
+  if (!is.na(model_p) && model_p < 0.05) {
     return("You must take the non-parametric ANOVA as model is non-normal.")
   }
 
@@ -420,15 +431,17 @@ checkAssumptionsForAnova <- function(data, y, factors) {
     rstatix::shapiro_test(!!rlang::sym(y))
 
   # Check if the normality assumption holds (p > 0.05 for all groups)
-  if (!(min(test$p) > 0.05)) {
+  test_p <- extract_p_value(test)
+  if (all(is.na(test_p)) || min(test_p, na.rm = TRUE) <= 0.05) {
     return("You must take the non-parametric ANOVA as normality assumption by groups is violated (one or more p < 0.05).")
   }
 
   # Homogeneity of variance assumption using Levene's Test
   levene_formula <- as.formula(paste(y, "~", paste(factors, collapse = " * ")))
   levene_test_result <- rstatix::levene_test(data, levene_formula)
+  levene_p <- extract_p_value(levene_test_result)
 
-  if (levene_test_result$p < 0.05) {
+  if (!is.na(levene_p) && levene_p < 0.05) {
     return("You must take the non-parametric ANOVA as Levene's test is significant (p < 0.05).")
   }
 

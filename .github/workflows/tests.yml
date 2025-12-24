@@ -18,7 +18,7 @@ jobs:
           install.packages(c(
             "testthat", "tidyverse", "rstatix", "ggstatsplot", "ggsignif",
             "see", "ggpmisc", "writexl", "readxl", "emoa", "effectsize",
-            "easystats", "ggplot2", "FSA"
+            "easystats", "ggplot2", "FSA", "dplyr", "rlang", "rstatix", "tidyr"
           ))
       - name: Run tests
         run: |

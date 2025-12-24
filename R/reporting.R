@@ -599,13 +599,16 @@ reportggstatsplot <- function(p, iv = "independent", dv = "Testdependentvariable
   # Create String
   if (stats$method %in% c("Kruskal-Wallis rank sum test", "Friedman rank sum test")) {
     resultString <- paste0("(\\chisq(", stats$df.error, ")=", statistic, ", ", pValue, ", r=", effectSize, ")")
-  } else if (stats$method %in% c("Paired t-test")) {
+  } else if (stats$method %in% c("Paired t-test", "Welch Two Sample t-test", "Student's t-test")) {
     resultString <- paste0("(t(", stats$df.error, ")=", statistic, ", ", pValue, ", r=", effectSize, ")")
-  } else if (stats$method %in% c("Wilcoxon signed rank test")) {
+  } else if (stats$method %in% c("Wilcoxon signed rank test", "Mann-Whitney U test")) {
     resultString <- paste0("(V=", statistic, ", ", pValue, ", r=", effectSize, ")")
-  } else {
-    # example: \F{7}{24.62}{1.01}, \p{0.45}
+  } else if (!is.null(stats$df) && !is.na(stats$df)) {
+    # ANOVA and similar tests with both df and df.error
     resultString <- paste0("(\\F{", stats$df, "}{", stats$df.error, "}{", statistic, "}, ", pValue, ", r=", effectSize, ")")
+  } else {
+    # Fallback for other methods
+    resultString <- paste0("(statistic=", statistic, ", ", pValue, ", effect size=", effectSize, ")")
   }
 
 

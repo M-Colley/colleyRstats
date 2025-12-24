@@ -62,4 +62,4 @@ Suggests:
 Config/testthat/edition: 3
 Config/Needs/check: anthonynorth/roxyglobals
 Config/roxyglobals/unique: TRUE
-Config/testthat/parallel: true
+Config/testthat/parallel: false

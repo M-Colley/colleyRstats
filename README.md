@@ -1,16 +1,24 @@
-# colleyRstats: Functions to Streamline Statistical Analysis and Reporting
+# `{colleyRstats}`: Functions to Streamline Statistical Analysis and Reporting
 
 > Created by [Mark Colley](https://m-colley.github.io/)
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18046754.svg)](https://doi.org/10.5281/zenodo.18046754)
 
-`colleyRstats` is a collection of custom R functions that streamline statistical analysis and result reporting. Built upon popular R packages such as [ggstatsplot](https://github.com/IndrajeetPatil/ggstatsplot) and [ARTool](https://github.com/mjskay/ARTool), this collection offers a wide array of tools for simplifying reproducible analyses, generating high-quality visualizations, and producing APA-compliant outputs.
+
+
+| Status | Usage | Miscellaneous |
+|----|----|----|
+| [![R build status](https://github.com/M-Colley/colleyRstats/workflows/R-CMD-check/badge.svg)](https://github.com/M-Colley/colleyRstats) | [![Total downloads](https://cranlogs.r-pkg.org/badges/grand-total/colleyRstats?color=blue)](https://CRAN.R-project.org/package=colleyRstats) | [![codecov](https://codecov.io/gh/M-Colley/colleyRstats/branch/main/graph/badge.svg?token=ddrxwt0bj8)](https://app.codecov.io/gh/M-Colley/colleyRstats) |
+| [![lifecycle](https://img.shields.io/badge/lifecycle-experimental-red.svg)](https://lifecycle.r-lib.org/articles/stages.html) | [![Daily downloads](https://cranlogs.r-pkg.org/badges/last-day/colleyRstats?color=blue)](https://CRAN.R-project.org/package=colleyRstats) | [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18046754.svg)](https://doi.org/10.5281/zenodo.18046754) |
+
+
+
+`colleyRstats` is a collection of custom R functions that streamline statistical analysis and result reporting. Built upon popular R packages such as [colleyRstats](https://github.com/M-Colley/colleyRstats) and [ARTool](https://github.com/mjskay/ARTool), this collection offers a wide array of tools for simplifying reproducible analyses, generating high-quality visualizations, and producing APA-compliant outputs.
 
 The primary goal of this package is to significantly reduce repetitive coding efforts, allowing you to focus on interpreting results. Whether you're dealing with ANOVA assumptions, reporting effect sizes, or creating publication-ready visualizations, `colleyRstats` makes these tasks easier.
 
 ## Key Features
 - **Automated Assumption Checking**: For ANOVA models, automatically verify normality and homogeneity of variance.
-- **Enhanced ggstatsplot Functions**: Easily switch between parametric and non-parametric versions of tests based on the data's characteristics.
+- **Enhanced colleyRstats Functions**: Easily switch between parametric and non-parametric versions of tests based on the data's characteristics.
 - **APA-Compliant Reporting**: Copy-paste-ready results in LaTeX format, suitable for academic publications.
 - **Custom Visualizations**: Generate effect plots and multi-objective optimization plots with minimal effort.
 - **Pareto Analysis and Post-Hoc Tests**: Automate these analyses and produce formatted outputs.
@@ -266,7 +274,7 @@ The following presents some simple ways in which you can contribute (in increasi
 order of commitment):
 
 - Read and correct any inconsistencies in the
-  [documentation](https://indrajeetpatil.github.io/ggstatsplot/)
+  [documentation](https://M-Colley.github.io/colleyRstats/)
 - Raise issues about bugs or wanted features
 - Review code
 - Add new functionality (in the form of new reporting or plotting functions)

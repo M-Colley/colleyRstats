@@ -251,6 +251,10 @@ generateMoboPlot2 <- function(data, x = "Iteration", y, phaseCol = "Phase", fill
   not_empty(fillColourGroup)
   stopifnot(all(c(x, y, phaseCol) %in% names(data)))
 
+  if (!base::require("ggplot2", quietly = TRUE)) {
+    stop("Package 'ggplot2' is required for generateMoboPlot2().")
+  }
+
 
   # as default, just add the y variable in Title caps
   if (missing(ytext)) {
@@ -355,6 +359,10 @@ generateMoboPlot <- function(data, x, y, fillColourGroup = "ConditionID", ytext,
   not_empty(x)
   not_empty(y)
   not_empty(fillColourGroup)
+
+  if (!base::require("ggplot2", quietly = TRUE)) {
+    stop("Package 'ggplot2' is required for generateMoboPlot().")
+  }
 
   # as default, just add the y variable in Title caps
   if (missing(ytext)) {

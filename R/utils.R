@@ -99,7 +99,7 @@ n_fun <- function(x) {
 #'     stat_sum_df(mean_fun)
 #' }
 stat_sum_df <- function(fun, geom = "crossbar", ...) {
-  stat_summary(fun.data = fun, colour = "red", geom = geom, width = 0.2, ...)
+  ggplot2::stat_summary(fun.data = fun, colour = "red", geom = geom, width = 0.2, ...)
 }
 
 #' This function normalizes the values in a vector to the range \[new_min, new_max\]
@@ -409,15 +409,15 @@ checkAssumptionsForAnova <- function(data, y, factors) {
   model <- lm(as.formula(formula_string), data = data)
 
   # Shapiro-Wilk test of normality on model residuals
-  model_results <- shapiro_test(residuals(model))
+  model_results <- rstatix::shapiro_test(stats::residuals(model))
   if (model_results$p.value < 0.05) {
     return("You must take the non-parametric ANOVA as model is non-normal.")
   }
 
   # Check normality for each group
   test <- data |>
-    group_by(across(dplyr::all_of(factors))) |>
-    shapiro_test(!!sym(y))
+    dplyr::group_by(dplyr::across(dplyr::all_of(factors))) |>
+    rstatix::shapiro_test(!!rlang::sym(y))
 
   # Check if the normality assumption holds (p > 0.05 for all groups)
   if (!(min(test$p) > 0.05)) {
@@ -426,7 +426,7 @@ checkAssumptionsForAnova <- function(data, y, factors) {
 
   # Homogeneity of variance assumption using Levene's Test
   levene_formula <- as.formula(paste(y, "~", paste(factors, collapse = " * ")))
-  levene_test_result <- levene_test(data, levene_formula)
+  levene_test_result <- rstatix::levene_test(data, levene_formula)
 
   if (levene_test_result$p < 0.05) {
     return("You must take the non-parametric ANOVA as Levene's test is significant (p < 0.05).")
@@ -558,23 +558,23 @@ reshape_data <- function(input_filepath, sheetName = "Results", marker = "videoi
   current_columns <- c()
 
   # Extract the custom "ID" column
-  id_column <- df |> select(dplyr::all_of(id_col))
+  id_column <- df |> dplyr::select(dplyr::all_of(id_col))
 
   # Loop through each column to identify given markers and reshape data accordingly
   for (col in names(df)) {
     if (startsWith(col, marker)) {
       if (length(current_columns) > 0) {
         # print(length(current_columns))
-        sliced_df <- df |> select(dplyr::all_of(current_columns))
+        sliced_df <- df |> dplyr::select(dplyr::all_of(current_columns))
 
         if (nrow(long_df) > 0) {
           # Add the ID column to the front of sliced_df
-          sliced_df <- bind_cols(id_column, sliced_df)
+          sliced_df <- dplyr::bind_cols(id_column, sliced_df)
           # Remove column names for alignment by index
           colnames(sliced_df) <- colnames(long_df)
         }
 
-        long_df <- bind_rows(long_df, sliced_df, .id = NULL) # Added .id = NULL to handle data types
+        long_df <- dplyr::bind_rows(long_df, sliced_df, .id = NULL) # Added .id = NULL to handle data types
       }
       current_columns <- c()
     } else {
@@ -583,10 +583,10 @@ reshape_data <- function(input_filepath, sheetName = "Results", marker = "videoi
   }
 
   if (length(current_columns) > 0) {
-    sliced_df <- df |> select(dplyr::all_of(current_columns))
-    sliced_df <- bind_cols(id_column, sliced_df)
+    sliced_df <- df |> dplyr::select(dplyr::all_of(current_columns))
+    sliced_df <- dplyr::bind_cols(id_column, sliced_df)
     colnames(sliced_df) <- colnames(long_df)
-    long_df <- bind_rows(long_df, sliced_df)
+    long_df <- dplyr::bind_rows(long_df, sliced_df)
   }
 
   # Check if file exists and modify output_filepath to avoid overwriting
@@ -637,7 +637,7 @@ add_pareto_emoa_column <- function(data, objectives) {
   not_empty(objectives)
 
   # Select only the objective columns
-  objective_data <- data |> select(dplyr::all_of(objectives))
+  objective_data <- data |> dplyr::select(dplyr::all_of(objectives))
 
   # If there's only one row, mark it as PARETO_EMOA directly
   if (nrow(objective_data) == 1) {

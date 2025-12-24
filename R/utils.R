@@ -404,6 +404,11 @@ checkAssumptionsForAnova <- function(data, y, factors) {
   not_empty(y)
   not_empty(factors)
 
+  emit_guidance <- function(text) {
+    message(text)
+    invisible(text)
+  }
+
   extract_p_value <- function(test_result) {
     if ("p" %in% names(test_result)) {
       return(test_result$p)
@@ -422,7 +427,7 @@ checkAssumptionsForAnova <- function(data, y, factors) {
   model_results <- rstatix::shapiro_test(stats::residuals(model))
   model_p <- extract_p_value(model_results)
   if (!is.na(model_p) && model_p < 0.05) {
-    return("You must take the non-parametric ANOVA as model is non-normal.")
+    return(emit_guidance("You must take the non-parametric ANOVA as model is non-normal."))
   }
 
   # Check normality for each group
@@ -433,7 +438,7 @@ checkAssumptionsForAnova <- function(data, y, factors) {
   # Check if the normality assumption holds (p > 0.05 for all groups)
   test_p <- extract_p_value(test)
   if (all(is.na(test_p)) || min(test_p, na.rm = TRUE) <= 0.05) {
-    return("You must take the non-parametric ANOVA as normality assumption by groups is violated (one or more p < 0.05).")
+    return(emit_guidance("You must take the non-parametric ANOVA as normality assumption by groups is violated (one or more p < 0.05)."))
   }
 
   # Homogeneity of variance assumption using Levene's Test
@@ -442,12 +447,10 @@ checkAssumptionsForAnova <- function(data, y, factors) {
   levene_p <- extract_p_value(levene_test_result)
 
   if (!is.na(levene_p) && levene_p < 0.05) {
-    return("You must take the non-parametric ANOVA as Levene's test is significant (p < 0.05).")
+    return(emit_guidance("You must take the non-parametric ANOVA as Levene's test is significant (p < 0.05)."))
   }
 
-  message("You may take parametric ANOVA (function anova_test). See https://www.datanovia.com/en/lessons/anova-in-r/#check-assumptions-1 for more information.")
-
-  invisible(NULL)
+  emit_guidance("You may take parametric ANOVA (function anova_test). See https://www.datanovia.com/en/lessons/anova-in-r/#check-assumptions-1 for more information.")
 }
 
 

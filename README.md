@@ -237,6 +237,7 @@ model <- npav_env$np.anova(
 )
 
 reportNPAV(model, dv = "mental workload")
+```
 
 If download.file() is blocked in your environment, download anova.lib manually from the NPAV page and point npav_file to the local path
 

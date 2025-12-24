@@ -2,7 +2,7 @@
 
 > Created by [Mark Colley](https://m-colley.github.io/)
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16875755.svg)](https://doi.org/10.5281/zenodo.16875755)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18046754.svg)](https://doi.org/10.5281/zenodo.18046754)
 
 `colleyRstats` is a collection of custom R functions that streamline statistical analysis and result reporting. Built upon popular R packages such as [ggstatsplot](https://github.com/IndrajeetPatil/ggstatsplot) and [ARTool](https://github.com/mjskay/ARTool), this collection offers a wide array of tools for simplifying reproducible analyses, generating high-quality visualizations, and producing APA-compliant outputs.
 
@@ -244,14 +244,14 @@ For questions or remarks, please contact [Mark Colley](https://m-colley.github.i
 ## Citations
 
 ```bibtex
-@misc{colley2024rcode,
+@misc{colley2025rstats,
   author       = {Mark Colley},
   title        = {colleyRstats: Functions to Streamline Statistical Analysis and Reporting},
-  year         = {2024},
+  year         = {2025},
   howpublished = {\url{https://github.com/M-Colley/colleyRstats}},
   note         = {A collection of custom R functions for streamlining statistical analysis, visualizations, and APA-compliant reporting.},
-  doi          = {10.5281/zenodo.16875755},
-  url          = {https://doi.org/10.5281/zenodo.16875755},
+  doi          = {10.5281/zenodo.18046754},
+  url          = {https://doi.org/10.5281/zenodo.18046754},
 }
 ```
 

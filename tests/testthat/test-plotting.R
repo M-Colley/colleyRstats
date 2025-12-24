@@ -20,6 +20,25 @@ test_that("generateEffectPlot returns a ggplot object", {
   expect_s3_class(p, "ggplot")
 })
 
+test_that("generateEffectPlot errors on unknown effect type", {
+  df <- data.frame(
+    strat = rep(c("A", "B"), each = 10),
+    emotion = rep(c("Happy", "Sad"), 10),
+    score = rnorm(20)
+  )
+
+  expect_error(
+    generateEffectPlot(
+      data = df,
+      x = "strat",
+      y = "score",
+      fillColourGroup = "emotion",
+      shownEffect = "unknown"
+    ),
+    "wrong effect defined"
+  )
+})
+
 test_that("generateMoboPlot returns a ggplot object", {
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("ggpmisc")

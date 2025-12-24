@@ -121,3 +121,12 @@ test_that("reportDunnTest and reportDunnTestTable handle significant findings", 
     NA
   )
 })
+
+test_that("reportDunnTestTable can compute the Dunn test internally", {
+  skip_if_not_installed("FSA")
+
+  expect_error(
+    reportDunnTestTable(d = NULL, data = iris, iv = "Species", dv = "Sepal.Length"),
+    NA
+  )
+})

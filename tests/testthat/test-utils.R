@@ -19,6 +19,15 @@ test_that("replace_values swaps items correctly", {
   expect_equal(result$b, 1:3) # Ensure other columns are untouched
 })
 
+test_that("replace_values errors on mismatched replacement lengths", {
+  df <- data.frame(a = c("bad", "good", "bad"), b = 1:3)
+
+  expect_error(
+    replace_values(df, to_replace = c("bad", "good"), replace_with = "worse"),
+    "Length of 'to_replace' and 'replace_with' must be the same."
+  )
+})
+
 
 
 test_that("check_normality_by_group identifies distributions", {
@@ -202,4 +211,18 @@ test_that("remove_outliers_REI calculates REI and flags", {
 
   expect_true(all(c("REI", "Percentile", "Suspicious") %in% names(result)))
   expect_equal(nrow(result), nrow(df))
+})
+
+test_that("remove_outliers_REI validates inputs", {
+  df <- data.frame(var1 = c(1, 2, 3))
+
+  expect_error(
+    remove_outliers_REI(df, header = TRUE, variables = ""),
+    "Please input variables to consider!"
+  )
+
+  expect_error(
+    remove_outliers_REI(df, header = FALSE, variables = "", range = c(1, 5)),
+    "Not enough columns found with the given phrase."
+  )
 })

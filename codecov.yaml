@@ -1,4 +1,8 @@
 coverage:
+  ignore:
+    - "R/globals.R"
+    - "R/imports.R"
+    - "R/setup.R"
   status:
     project:
       default:

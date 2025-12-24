@@ -4,3 +4,4 @@
 ^\.github$
 ^figures$
 ^colleyRstats\.Rproj$
+^codecov\.yaml$

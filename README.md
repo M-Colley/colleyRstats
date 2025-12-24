@@ -152,7 +152,7 @@ reportART(anova(model), "Dependent Variable")
 ### `add_pareto_emoa_column`
 This function adds a Pareto front classification column to a dataset, useful in multi-objective optimization scenarios.
 
-Attention: must be done per User - Conditon etc group.
+Attention: must be done per User - Condition etc group.
 
 **Example:**
 
@@ -278,7 +278,6 @@ order of commitment):
 - Raise issues about bugs or wanted features
 - Review code
 - Add new functionality (in the form of new reporting or plotting functions)
-
 
 
 

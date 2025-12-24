@@ -3,7 +3,7 @@
 \name{ggwithinstatsWithPriorNormalityCheckAsterisk}
 \alias{ggwithinstatsWithPriorNormalityCheckAsterisk}
 \title{Check the data's distribution. If non-normal, take the non-parametric variant of \emph{ggwithinstats}.
-x and y have to be in parentheses, e.g., "ConditionID". Add Astersiks instead of p-values.}
+x and y have to be in parentheses, e.g., "ConditionID". Add Asterisks instead of p-values.}
 \usage{
 ggwithinstatsWithPriorNormalityCheckAsterisk(
   data,
@@ -33,7 +33,7 @@ with additional significance annotations, which can be printed or modified.
 }
 \description{
 Check the data's distribution. If non-normal, take the non-parametric variant of \emph{ggwithinstats}.
-x and y have to be in parentheses, e.g., "ConditionID". Add Astersiks instead of p-values.
+x and y have to be in parentheses, e.g., "ConditionID". Add Asterisks instead of p-values.
 }
 \examples{
 \donttest{

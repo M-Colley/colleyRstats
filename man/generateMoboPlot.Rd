@@ -33,7 +33,7 @@ generateMoboPlot(
 
 \item{labelPosFormulaY}{A string specifying the vertical position of the polynomial equation label in the plot. Acceptable values are \code{"top"}, \code{"center"}, or \code{"bottom"}. Default is \code{"top"}.}
 
-\item{verticalLinePosY}{A numeric value of the y-coordinate where the "sampling" and "optimizatin" line should be drawn.}
+\item{verticalLinePosY}{A numeric value of the y-coordinate where the "sampling" and "optimization" line should be drawn.}
 }
 \value{
 A \code{ggplot} object representing the multi-objective optimization plot, ready to be rendered.

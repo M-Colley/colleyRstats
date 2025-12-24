@@ -23,6 +23,10 @@ jobs:
           #r-version: "devel"
           use-public-rspm: true
 
+      - name: Force source installs on macOS
+        if: runner.os == 'macOS'
+        run: echo "R_PKGTYPE=source" >> "$GITHUB_ENV"
+
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: |

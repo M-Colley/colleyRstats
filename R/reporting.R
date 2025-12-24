@@ -544,10 +544,10 @@ reportMeanAndSD <- function(data, iv = "testiv", dv = "testdv") {
   not_empty(dv)
 
   test <- data |>
-    drop_na(!!sym(iv)) |>
-    drop_na(!!sym(dv)) |>
-    group_by(!!sym(iv)) |>
-    dplyr::summarise(across(!!sym(dv), list(mean = mean, sd = sd)))
+    tidyr::drop_na(!!rlang::sym(iv)) |>
+    tidyr::drop_na(!!rlang::sym(dv)) |>
+    dplyr::group_by(!!rlang::sym(iv)) |>
+    dplyr::summarise(dplyr::across(!!rlang::sym(dv), list(mean = mean, sd = sd)))
 
   for (i in 1:nrow(test)) {
     row <- test[i, ]
@@ -701,12 +701,12 @@ reportggstatsplotPostHoc <- function(data, p, iv = "testiv", dv = "testdv", labe
       secondLabel <- ifelse(is.null(label_mappings), secondCondition, label_mappings[[secondCondition]])
 
       valueOne <- data |>
-        filter(!!sym(iv) == firstCondition) |>
-        dplyr::summarise(across(!!sym(dv), list(mean = mean, sd = sd)))
+        dplyr::filter(!!rlang::sym(iv) == firstCondition) |>
+        dplyr::summarise(dplyr::across(!!rlang::sym(dv), list(mean = mean, sd = sd)))
 
       valueTwo <- data |>
-        filter(!!sym(iv) == secondCondition) |>
-        dplyr::summarise(across(!!sym(dv), list(mean = mean, sd = sd)))
+        dplyr::filter(!!rlang::sym(iv) == secondCondition) |>
+        dplyr::summarise(dplyr::across(!!rlang::sym(dv), list(mean = mean, sd = sd)))
 
       # Format statistics
       firstStatsStr <- paste0(" (\\m{", sprintf("%.2f", as.numeric(round(valueOne[1, 1], 2))), "}, \\sd{", sprintf("%.2f", as.numeric(round(valueOne[1, 2], 2))), "})")
@@ -791,7 +791,7 @@ reportDunnTest <- function(d, data, iv = "testiv", dv = "testdv") {
 
       # --- Calculate Effect Size ---
       data_subset <- data |>
-        dplyr::filter(!!sym(iv) %in% c(condA, condB))
+        dplyr::filter(!!rlang::sym(iv) %in% c(condA, condB))
 
       esStr <- ""
       tryCatch(
@@ -804,12 +804,12 @@ reportDunnTest <- function(d, data, iv = "testiv", dv = "testdv") {
 
       # --- Calculate Means/SDs ---
       statsA <- data |>
-        dplyr::filter(!!sym(iv) == condA) |>
-        summarise(m = mean(!!sym(dv), na.rm = TRUE), sd = sd(!!sym(dv), na.rm = TRUE))
+        dplyr::filter(!!rlang::sym(iv) == condA) |>
+        dplyr::summarise(m = mean(!!rlang::sym(dv), na.rm = TRUE), sd = sd(!!rlang::sym(dv), na.rm = TRUE))
 
       statsB <- data |>
-        dplyr::filter(!!sym(iv) == condB) |>
-        summarise(m = mean(!!sym(dv), na.rm = TRUE), sd = sd(!!sym(dv), na.rm = TRUE))
+        dplyr::filter(!!rlang::sym(iv) == condB) |>
+        dplyr::summarise(m = mean(!!rlang::sym(dv), na.rm = TRUE), sd = sd(!!rlang::sym(dv), na.rm = TRUE))
 
       strStatsA <- paste0("(\\m{", sprintf("%.2f", statsA$m), "}, \\sd{", sprintf("%.2f", statsA$sd), "})")
       strStatsB <- paste0("(\\m{", sprintf("%.2f", statsB$m), "}, \\sd{", sprintf("%.2f", statsB$sd), "})")
@@ -958,7 +958,7 @@ reportDunnTestTable <- function(d = NULL, data, iv = "testiv", dv = "testdv", or
     secondCondition <- trimws(strsplit(comparison, " - ", fixed = TRUE)[[1]][2])
 
     data_subset <- data |>
-      filter(!!sym(iv) %in% c(firstCondition, secondCondition))
+      dplyr::filter(!!rlang::sym(iv) %in% c(firstCondition, secondCondition))
 
     tryCatch(
       {

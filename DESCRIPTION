@@ -13,7 +13,7 @@ Language: en-US
 Depends: 
     R (>= 4.5.0)
 Imports: 
-    ARTool,
+    ARTool (>= 0.11.2),
     car,
     clipr,
     conflicted,

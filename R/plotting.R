@@ -67,8 +67,8 @@ generateEffectPlot <- function(data,
       group = !!rlang::sym(fillColourGroup)
     ) +
     see::scale_colour_see() +
-    ylab(ytext) +
-    xlab(xtext) +
+    ggplot2::labs(y = ytext) +
+    ggplot2::labs(x = xtext) +
     theme(
       legend.position.inside = legendPos,
       legend.title = element_text(face = "bold", color = "black", size = 14)
@@ -99,7 +99,7 @@ generateEffectPlot <- function(data,
 
   # Legend heading
   if (!is.null(legendHeading) && nzchar(legendHeading)) {
-    p <- p + labs(
+    p <- p + ggplot2::labs(
       color = legendHeading,
       fill  = legendHeading
     )
@@ -268,8 +268,8 @@ generateMoboPlot2 <- function(data, x = "Iteration", y, phaseCol = "Phase", fill
 
   p <- data |>
     ggplot2::ggplot(ggplot2::aes(x = !!x_sym, y = !!y_sym)) +
-    ggplot2::ylab(ytext) +
-    ggplot2::xlab("Iteration") +
+    ggplot2::labs(y = ytext) +
+    ggplot2::labs(x = "Iteration") +
     ggplot2::theme(legend.position.inside = legendPos) +
     ggplot2::stat_summary(fun = base::mean, geom = "point", size = 4.0, alpha = 0.9) +
     ggplot2::stat_summary(fun = base::mean, geom = "line", linewidth = 1, alpha = 0.3) +
@@ -368,9 +368,9 @@ generateMoboPlot <- function(data, x, y, fillColourGroup = "ConditionID", ytext,
     aes(x = !!sym(x), y = !!sym(y), fill = !!sym(fillColourGroup), colour = !!sym(fillColourGroup), group = !!sym(fillColourGroup)) +
     scale_fill_see() +
     scale_color_see() +
-    ylab(ytext) +
+    ggplot2::labs(y = ytext) +
     theme(legend.position.inside = legendPos) +
-    xlab("Iteration") +
+    ggplot2::labs(x = "Iteration") +
     stat_summary(fun = mean, geom = "point", size = 4.0, alpha = 0.9) +
     stat_summary(fun = mean, geom = "line", linewidth = 1, alpha = 0.3) +
     stat_summary(fun.data = "mean_cl_boot", geom = "errorbar", width = .5, position = position_dodge(width = 0.1), alpha = 0.5) +

@@ -54,6 +54,20 @@ test_that("check_normality_by_group identifies distributions", {
   expect_false(check_normality_by_group(df_skew, "group", "value"))
 })
 
+test_that("check_normality_by_group warns and returns FALSE for large groups", {
+  set.seed(456)
+  df_large <- data.frame(
+    group = c(rep("A", 5001), rep("B", 10)),
+    value = c(rnorm(5001), rnorm(10))
+  )
+
+  expect_warning(
+    result <- check_normality_by_group(df_large, "group", "value"),
+    "n > 5000"
+  )
+  expect_false(result)
+})
+
 test_that("not_empty throws error on NULL or NA", {
   expect_error(not_empty(NULL))
   expect_error(not_empty(NA))

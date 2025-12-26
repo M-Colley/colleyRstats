@@ -125,7 +125,8 @@ normalize <- function(x_vector, old_min, old_max, new_min, new_max) {
 #' @param x the x column
 #' @param y the y column
 #'
-#' @return TRUE if all groups are normal, FALSE otherwise
+#' @return TRUE if all groups are normal, FALSE otherwise. For groups with
+#'   n > 5000, Shapiro-Wilk is skipped and the function returns FALSE with a warning.
 check_normality_by_group <- function(data, x, y) {
   # Input validation
   if (missing(data) || missing(x) || missing(y)) stop("Missing arguments")
@@ -139,16 +140,29 @@ check_normality_by_group <- function(data, x, y) {
     data[[y]] <- val
   }
 
+  group_sizes <- data |>
+    dplyr::group_by(!!dplyr::sym(x)) |>
+    dplyr::summarise(n = dplyr::n(), .groups = "drop")
+
   results <- data |>
     dplyr::group_by(!!dplyr::sym(x)) |>
     dplyr::summarise(
       p_value = if (dplyr::n() >= 3 && stats::var(!!dplyr::sym(y), na.rm = TRUE) > 0) {
-        stats::shapiro.test(!!dplyr::sym(y))$p.value
+        if (dplyr::n() > 5000) {
+          NA_real_
+        } else {
+          stats::shapiro.test(!!dplyr::sym(y))$p.value
+        }
       } else {
         NA_real_ # Cannot test
       },
       .groups = "drop"
     )
+
+  if (any(group_sizes$n > 5000)) {
+    warning("Shapiro-Wilk test not run for groups with n > 5000; returning FALSE.", call. = FALSE)
+    return(FALSE)
+  }
 
   # If any group is significant (p < 0.05), data is NOT normal
   all_normal <- !any(results$p_value < 0.05, na.rm = TRUE)

@@ -83,6 +83,8 @@ Generates APA-compliant LaTeX output for within-subject designs analyzed using n
 \newcommand{\pminor}{\textit{p$<$}}
 ```
 
+**Deprecated:** `reportNPAV()` will be removed in colleyRstats 0.1.0 (2025-12-31). Use `reportART()` with ARTool instead.
+
 **Example:**
 
 ```r
@@ -204,7 +206,7 @@ new_df <- replace_values(main_df, to_replace = c("bad_val1", "bad_val2"), replac
 
 ## Using NPAV (Lüpsen) with this package
 
-`reportNPAV()` formats results from Lüpsen’s nonparametric ANOVA (`np.anova`) output. NPAV is not shipped with this package, and it is loaded manually by the user from Lüpsen’s site: `https://www.uni-koeln.de/~luepsen/R/`.
+`reportNPAV()` formats results from Lüpsen’s nonparametric ANOVA (`np.anova`) output. **Deprecated:** `reportNPAV()` will be removed in colleyRstats 0.1.0 (2025-12-31). Use `reportART()` with ARTool instead. NPAV is not shipped with this package, and it is loaded manually by the user from Lüpsen’s site: `https://www.uni-koeln.de/~luepsen/R/`.
 
 This step requires internet access, so it is documented here (not in `@examples`, which should run offline during package checks).
 
@@ -279,7 +281,6 @@ order of commitment):
 - Raise issues about bugs or wanted features
 - Review code
 - Add new functionality (in the form of new reporting or plotting functions)
-
 
 
 

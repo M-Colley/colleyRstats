@@ -147,21 +147,24 @@ check_normality_by_group <- function(data, x, y) {
   results <- data |>
     dplyr::group_by(!!dplyr::sym(x)) |>
     dplyr::summarise(
-      p_value = if (dplyr::n() >= 3 && stats::var(!!dplyr::sym(y), na.rm = TRUE) > 0) {
-        if (dplyr::n() > 5000) {
-          NA_real_
+      p_value = {
+        values <- stats::na.omit(!!dplyr::sym(y))
+        if (length(values) >= 3 && stats::var(values, na.rm = TRUE) > 0) {
+          if (length(values) > 5000) {
+            sampled <- sample(values, size = 5000)
+            stats::shapiro.test(sampled)$p.value
+          } else {
+            stats::shapiro.test(values)$p.value
+          }
         } else {
-          stats::shapiro.test(!!dplyr::sym(y))$p.value
+          NA_real_ # Cannot test
         }
-      } else {
-        NA_real_ # Cannot test
       },
       .groups = "drop"
     )
 
   if (any(group_sizes$n > 5000)) {
-    warning("Shapiro-Wilk test not run for groups with n > 5000; returning FALSE.", call. = FALSE)
-    return(FALSE)
+    warning("Groups with n > 5000 were tested using a random sample of 5000 observations.", call. = FALSE)
   }
 
   # If any group is significant (p < 0.05), data is NOT normal
@@ -268,7 +271,7 @@ rFromWilcox <- function(wilcoxModel, N) {
 rFromWilcoxAdjusted <- function(wilcoxModel, N, adjustFactor) {
   not_empty(wilcoxModel)
   not_empty(N)
-  not_empty(N)
+  not_empty(adjustFactor)
 
   z <- stats::qnorm(wilcoxModel$p.value * adjustFactor / 2)
   r <- z / sqrt(N)
@@ -418,6 +421,10 @@ checkAssumptionsForAnova <- function(data, y, factors) {
   not_empty(y)
   not_empty(factors)
 
+  if (!requireNamespace("rstatix", quietly = TRUE)) {
+    stop("Package 'rstatix' is required for checkAssumptionsForAnova(). Please install it.")
+  }
+
   emit_guidance <- function(text) {
     message(text)
     invisible(text)
@@ -505,15 +512,52 @@ replace_values <- function(data, to_replace, replace_with) {
 
   # Apply replacements column-wise
   data[] <- lapply(data, function(column) {
-    # Convert factors to characters
-    if (is.factor(column)) column <- as.character(column)
+    # Convert factors to characters and restore factor levels after replacement
+    if (is.factor(column)) {
+      column_chr <- as.character(column)
+      replaced <- ifelse(!is.na(column_chr) & column_chr %in% names(replace_map),
+        replace_map[column_chr],
+        column_chr
+      )
+      new_levels <- unique(c(levels(column), replace_with))
+      return(factor(replaced, levels = new_levels))
+    }
 
-    # Replace values using replace_map
-    column <- ifelse(!is.na(column) & column %in% names(replace_map),
-      replace_map[column],
-      column
+    # Replace values for character columns
+    if (is.character(column)) {
+      return(ifelse(!is.na(column) & column %in% names(replace_map),
+        replace_map[column],
+        column
+      ))
+    }
+
+    # Replace values for logical/numeric columns only if replacements are compatible
+    column_chr <- as.character(column)
+    replaced_chr <- ifelse(!is.na(column_chr) & column_chr %in% names(replace_map),
+      replace_map[column_chr],
+      column_chr
     )
-    return(column)
+
+    if (is.logical(column)) {
+      coerced <- as.logical(replaced_chr)
+      if (any(is.na(coerced) & !is.na(replaced_chr))) {
+        stop("Replacement values are incompatible with logical columns.")
+      }
+      return(coerced)
+    }
+
+    if (is.numeric(column) || is.integer(column)) {
+      coerced <- suppressWarnings(as.numeric(replaced_chr))
+      if (any(is.na(coerced) & !is.na(replaced_chr))) {
+        stop("Replacement values are incompatible with numeric columns.")
+      }
+      if (is.integer(column)) {
+        return(as.integer(coerced))
+      }
+      return(coerced)
+    }
+
+    column
   })
 
   return(data)
@@ -528,8 +572,6 @@ replace_values <- function(data, to_replace, replace_with) {
 #' and appends those sections under the first section, aligning by column index.
 #'
 #' Relevant if you receive data in wide-format but cannot use built-in functionality due to naming (e.g., in LimeSurvey)
-#'
-#' Attention, known bug: the ID column will first have only the IDs, this has to be fixed manually.
 #'
 #' @param input_filepath String, the file path of the input Excel file.
 #' @param sheetName String, the name of the sheet to read from the Excel file. Default is "Results".
@@ -581,30 +623,20 @@ reshape_data <- function(input_filepath, sheetName = "Results", marker = "videoi
   sheet_to_read <- if (sheetName %in% available_sheets) sheetName else available_sheets[[1]]
   df <- readxl::read_excel(input_filepath, sheet = sheet_to_read)
 
-  # Initialize an empty data frame to store the final long-form data
-  long_df <- data.frame()
-
   # Initialize an empty vector to store the current columns for each marker section
   current_columns <- c()
 
   # Extract the custom "ID" column
   id_column <- df |> dplyr::select(dplyr::all_of(id_col))
 
-  # Loop through each column to identify given markers and reshape data accordingly
-  for (col in names(df)) {
+  # Loop through each column (excluding ID) to identify given markers and reshape data accordingly
+  slices <- list()
+  data_columns <- setdiff(names(df), id_col)
+  for (col in data_columns) {
     if (startsWith(col, marker)) {
       if (length(current_columns) > 0) {
-        # print(length(current_columns))
         sliced_df <- df |> dplyr::select(dplyr::all_of(current_columns))
-
-        if (nrow(long_df) > 0) {
-          # Add the ID column to the front of sliced_df
-          sliced_df <- dplyr::bind_cols(id_column, sliced_df)
-          # Remove column names for alignment by index
-          colnames(sliced_df) <- colnames(long_df)
-        }
-
-        long_df <- dplyr::bind_rows(long_df, sliced_df, .id = NULL) # Added .id = NULL to handle data types
+        slices[[length(slices) + 1]] <- dplyr::bind_cols(id_column, sliced_df)
       }
       current_columns <- c()
     } else {
@@ -614,9 +646,18 @@ reshape_data <- function(input_filepath, sheetName = "Results", marker = "videoi
 
   if (length(current_columns) > 0) {
     sliced_df <- df |> dplyr::select(dplyr::all_of(current_columns))
-    sliced_df <- dplyr::bind_cols(id_column, sliced_df)
-    colnames(sliced_df) <- colnames(long_df)
-    long_df <- dplyr::bind_rows(long_df, sliced_df)
+    slices[[length(slices) + 1]] <- dplyr::bind_cols(id_column, sliced_df)
+  }
+
+  if (length(slices) == 0) {
+    long_df <- dplyr::bind_cols(id_column, df |> dplyr::select(-dplyr::all_of(id_col)))
+  } else {
+    base_names <- names(slices[[1]])
+    slices <- lapply(slices, function(slice) {
+      names(slice) <- base_names
+      slice
+    })
+    long_df <- dplyr::bind_rows(slices, .id = NULL)
   }
 
   # Check if file exists and modify output_filepath to avoid overwriting

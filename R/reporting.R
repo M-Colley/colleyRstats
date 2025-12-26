@@ -217,9 +217,6 @@ reportART <- function(model, dv = "Testdependentvariable", write_to_clipboard = 
           pValueNumeric <- model$`Pr(>F)`[i]
           pValue <- if (pValueNumeric < 0.001) paste0("\\pminor{0.001}") else paste0("\\p{", sprintf("%.3f", round(pValueNumeric, digits = 3)), "}")
 
-          # Write interaction or main effect depending on the presence of "X"
-          effect_type <- if (stringr::str_detect(model$descriptions[i], "X")) "interaction" else "main"
-          stringtowrite <- paste0("The ART found a significant ", effect_type, " effect of \\", trimws(model$descriptions[i]), " on ", dv, " (\\F{", numeratordf, "}{", denominatordf, "}{", sprintf("%.2f", Fvalue), "}, ", pValue, "). ")
           # Derive effect sizes via effectsize::F_to_eta2
           effect_size <- tryCatch(
             effectsize::F_to_eta2(
@@ -371,9 +368,9 @@ reportNparLD <- function(model, dv = "Testdependentvariable", write_to_clipboard
 
 
       if (stringr::str_detect(model$descriptions[i], "X")) {
-        stringtowrite <- paste0("The NPVA found a significant interaction effect of \\", trimws(model$descriptions[i]), " on ", dv, " (\\F{", Fvalue, "}, \\df{", numeratordf, "}, ", pValue, ")")
+        stringtowrite <- paste0("The NPAV found a significant interaction effect of \\", trimws(model$descriptions[i]), " on ", dv, " (\\F{", Fvalue, "}, \\df{", numeratordf, "}, ", pValue, ")")
       } else {
-        stringtowrite <- paste0("The NPVA found a significant main effect of \\", trimws(model$descriptions[i]), " on ", dv, " (\\F{", Fvalue, "}, \\df{", numeratordf, "}, ", pValue, ")")
+        stringtowrite <- paste0("The NPAV found a significant main effect of \\", trimws(model$descriptions[i]), " on ", dv, " (\\F{", Fvalue, "}, \\df{", numeratordf, "}, ", pValue, ")")
       }
 
       effect_size_text <- ""

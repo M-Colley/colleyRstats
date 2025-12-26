@@ -9,7 +9,7 @@ test_that("reportNPAV emits deprecation warning and reports results", {
 
   expect_warning(
     reportNPAV(model, dv = "mental workload"),
-    "ARTool"
+    "deprecated"
   )
 })
 

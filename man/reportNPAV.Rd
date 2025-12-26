@@ -25,6 +25,10 @@ To easily copy and paste the results to your manuscript, the following commands 
 \code{\\newcommand{\\p}{\\textit{p=}}}
 \code{\\newcommand{\\pminor}{\\textit{p$<$}}}
 }
+\details{
+Deprecated: \code{reportNPAV()} will be removed in colleyRstats 0.1.0 (2025-12-31).
+Use \code{reportART()} with ARTool instead.
+}
 \examples{
 model <- data.frame(
   Df = c(1, 1, 10),

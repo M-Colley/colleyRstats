@@ -3,6 +3,9 @@
 #' P-values are rounded for the third digit and partial eta squared values are provided when possible.
 #' Attention: the independent variables of the formula and the term specifying the participant must be factors (i.e., use as.factor()).
 #'
+#' Deprecated: `reportNPAV()` will be removed in colleyRstats 0.1.0 (2025-12-31).
+#' Use [reportART()] with ARTool instead.
+#'
 #' To easily copy and paste the results to your manuscript, the following commands must be defined in Latex:
 #' \code{\\newcommand{\\F}[3]{$F({#1},{#2})={#3}$}}
 #' \code{\\newcommand{\\p}{\\textit{p=}}}
@@ -26,7 +29,13 @@
 #' reportNPAV(model, dv = "mental workload")
 
 reportNPAV <- function(model, dv = "Testdependentvariable", write_to_clipboard = FALSE) {
-  .Deprecated("ARTool")
+  .Deprecated(
+    "reportART",
+    msg = paste(
+      "reportNPAV() is deprecated and will be removed in colleyRstats 0.1.0 (2025-12-31).",
+      "Use reportART() with ARTool instead."
+    )
+  )
   not_empty(model)
   not_empty(dv)
 

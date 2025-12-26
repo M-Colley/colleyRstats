@@ -161,9 +161,25 @@ colleyRstats_setup <- function(set_options = TRUE,
 
   # 4. Citation
   if (isTRUE(print_citation)) {
+    citation_text <- NULL
+    citation_file <- system.file("CITATION", package = "colleyRstats")
+    if (nzchar(citation_file)) {
+      citation_text <- utils::capture.output(utils::citation(file = citation_file))
+    } else if (file.exists(file.path("inst", "CITATION"))) {
+      citation_text <- utils::capture.output(
+        utils::citation(file = file.path("inst", "CITATION"))
+      )
+    } else if (file.exists("CITATION")) {
+      citation_text <- utils::capture.output(utils::citation(file = "CITATION"))
+    } else {
+      citation_text <- utils::capture.output(
+        utils::citation(package = utils::packageName())
+      )
+    }
+
     msg <- paste0(
       "\nIf you use these functions, please cite:\n\n",
-      paste(utils::capture.output(utils::citation("colleyRstats")), collapse = "\n")
+      paste(citation_text, collapse = "\n")
     )
     message(msg)
   }

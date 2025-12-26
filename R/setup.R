@@ -163,16 +163,7 @@ colleyRstats_setup <- function(set_options = TRUE,
   if (isTRUE(print_citation)) {
     msg <- paste0(
       "\nIf you use these functions, please cite:\n\n",
-      "Colley, M. (2024). rCode: Enhanced R Functions for Statistical Analysis and Reporting.\n",
-      "Retrieved from https://github.com/M-Colley/rCode\n\n",
-      "BibTeX:\n",
-      "@misc{colley2024rcode,\n",
-      "  author       = {Mark Colley},\n",
-      "  title        = {rCode: Enhanced R Functions for Statistical Analysis and Reporting},\n",
-      "  year         = {2024},\n",
-      "  howpublished = {\\url{https://github.com/M-Colley/rCode}},\n",
-      "  doi          = {10.5281/zenodo.16875755}\n",
-      "}\n"
+      paste(utils::capture.output(utils::citation(\"colleyRstats\")), collapse = \"\\n\")
     )
     message(msg)
   }

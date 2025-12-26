@@ -1,0 +1,14 @@
+citHeader("To cite colleyRstats in publications use:")
+
+bibentry(
+  bibtype = "Misc",
+  title = "colleyRstats: Functions to Streamline Statistical Analysis and Reporting",
+  author = person("Mark", "Colley"),
+  year = "2025",
+  url = "https://github.com/M-Colley/colleyRstats",
+  doi = "10.5281/zenodo.18046754",
+  note = paste(
+    "A collection of custom R functions for streamlining statistical analysis,",
+    "visualizations, and APA-compliant reporting."
+  )
+)

@@ -43,7 +43,7 @@ test_that("reportNparLD reports significant effects", {
 
   expect_message(
     reportNparLD(model, dv = "TLX1"),
-    "NPVA found a significant"
+    "NPAV found a significant"
   )
 })
 

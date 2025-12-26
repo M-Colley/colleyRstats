@@ -485,6 +485,7 @@ ggwithinstatsWithPriorNormalityCheck <- function(data, x, y, ylab, xlabels = NUL
   plot <- ggstatsplot::ggwithinstats(
     data = data, x = !!x, y = !!y, type = type, centrality.type = "p", ylab = ylab, xlab = "", pairwise.comparisons = showPairwiseComp, var.equal = group_all_data_equal,
     centrality.point.args = list(size = 5, alpha = 0.5, color = "darkblue"), package = "pals", palette = "glasbey",
+    plot.type = plotType,
     p.adjust.method = "holm",
     ggplot.component = list(
       ggplot2::theme(
@@ -541,12 +542,11 @@ ggwithinstatsWithPriorNormalityCheck <- function(data, x, y, ylab, xlabels = NUL
 #'   showPairwiseComp = TRUE
 #' )
 #' }
-ggbetweenstatsWithPriorNormalityCheck <- function(data, x, y, ylab, xlabels, showPairwiseComp = TRUE, plotType = "boxviolin") {
+ggbetweenstatsWithPriorNormalityCheck <- function(data, x, y, ylab, xlabels = NULL, showPairwiseComp = TRUE, plotType = "boxviolin") {
   not_empty(data)
   not_empty(x)
   not_empty(y)
   not_empty(ylab)
-  not_empty(xlabels)
 
   is_normal <- check_normality_by_group(data, x, y)
   type <- ifelse(is_normal, "p", "np")
@@ -555,7 +555,7 @@ ggbetweenstatsWithPriorNormalityCheck <- function(data, x, y, ylab, xlabels, sho
   group_all_data_equal <- check_homogeneity_by_group(data, x, y)
 
   # if one group_all_data_equal then we use the var.equal = TRUE, see here: https://github.com/IndrajeetPatil/ggstatsplot/issues/880
-  ggstatsplot::ggbetweenstats(
+  plot <- ggstatsplot::ggbetweenstats(
     data = data, x = !!x, y = !!y, type = type, centrality.type = "p", ylab = ylab, xlab = "", pairwise.comparisons = showPairwiseComp, var.equal = group_all_data_equal,
     centrality.point.args = list(size = 5, alpha = 0.5, color = "darkblue"), package = "pals", palette = "glasbey", plot.type = plotType,
     p.adjust.method = "holm",
@@ -566,7 +566,13 @@ ggbetweenstatsWithPriorNormalityCheck <- function(data, x, y, ylab, xlabels, sho
       )
     ),
     ggsignif.args = list(textsize = 4, tip_length = 0.01)
-  ) + ggplot2::scale_x_discrete(labels = xlabels)
+  )
+
+  if (!is.null(xlabels) && length(xlabels) > 0) {
+    plot <- plot + ggplot2::scale_x_discrete(labels = xlabels)
+  }
+
+  plot
 }
 
 

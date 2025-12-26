@@ -84,8 +84,6 @@ test_that("reportMeanAndSD emits formatted output", {
 })
 
 test_that("reportggstatsplot reports results", {
-  skip_if_not_installed("ggstatsplot")
-
   plt <- ggstatsplot::ggbetweenstats(mtcars, am, mpg)
   expect_message(
     reportggstatsplot(plt, iv = "am", dv = "mpg"),
@@ -94,8 +92,6 @@ test_that("reportggstatsplot reports results", {
 })
 
 test_that("reportggstatsplotPostHoc reports significant differences", {
-  skip_if_not_installed("ggstatsplot")
-
   plt <- ggstatsplot::ggbetweenstats(mtcars, am, mpg)
   expect_message(
     reportggstatsplotPostHoc(data = mtcars, p = plt, iv = "am", dv = "mpg"),
@@ -104,8 +100,6 @@ test_that("reportggstatsplotPostHoc reports significant differences", {
 })
 
 test_that("reportDunnTest and reportDunnTestTable handle significant findings", {
-  skip_if_not_installed("FSA")
-
   d <- FSA::dunnTest(Sepal.Length ~ Species,
     data = iris,
     method = "holm"
@@ -123,8 +117,6 @@ test_that("reportDunnTest and reportDunnTestTable handle significant findings", 
 })
 
 test_that("reportDunnTestTable can compute the Dunn test internally", {
-  skip_if_not_installed("FSA")
-
   expect_error(
     reportDunnTestTable(d = NULL, data = iris, iv = "Species", dv = "Sepal.Length"),
     NA

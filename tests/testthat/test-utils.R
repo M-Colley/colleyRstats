@@ -165,7 +165,6 @@ test_that("debug_contr_error summarizes factor levels", {
 })
 
 test_that("checkAssumptionsForAnova reports parametric guidance", {
-  skip_if_not_installed("rstatix")
   base_values <- qnorm(seq(0.1, 0.9, length.out = 10))
   main_df <- data.frame(
     tlx_mental = rep(base_values, times = 4),
@@ -180,9 +179,6 @@ test_that("checkAssumptionsForAnova reports parametric guidance", {
 })
 
 test_that("reshape_data writes a reshaped Excel file", {
-  skip_if_not_installed("readxl")
-  skip_if_not_installed("writexl")
-
   toy <- data.frame(
     ID = c(1, 2),
     videoinfo1 = c("marker", "marker"),

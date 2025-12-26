@@ -40,10 +40,6 @@ test_that("generateEffectPlot errors on unknown effect type", {
 })
 
 test_that("generateMoboPlot returns a ggplot object", {
-  skip_if_not_installed("ggplot2")
-  skip_if_not_installed("ggpmisc")
-  skip_if_not_installed("see")
-
   df <- data.frame(
     Iteration = 1:10,
     score = rnorm(10),
@@ -55,10 +51,6 @@ test_that("generateMoboPlot returns a ggplot object", {
 })
 
 test_that("generateMoboPlot2 returns a ggplot object", {
-  skip_if_not_installed("ggplot2")
-  skip_if_not_installed("ggpmisc")
-  skip_if_not_installed("see")
-
   df <- data.frame(
     Iteration = 1:10,
     score = rnorm(10),
@@ -77,9 +69,6 @@ test_that("generateMoboPlot2 returns a ggplot object", {
 })
 
 test_that("ggwithinstatsWithPriorNormalityCheck returns a ggplot object", {
-  skip_if_not_installed("ggstatsplot")
-  skip_if_not_installed("rstatix")
-
   main_df <- data.frame(
     Participant = factor(rep(1:10, each = 3)),
     CondID = factor(rep(c("A", "B", "C"), times = 10)),
@@ -96,9 +85,6 @@ test_that("ggwithinstatsWithPriorNormalityCheck returns a ggplot object", {
 })
 
 test_that("ggbetweenstatsWithPriorNormalityCheck returns a ggplot object", {
-  skip_if_not_installed("ggstatsplot")
-  skip_if_not_installed("rstatix")
-
   main_df <- data.frame(
     CondID = factor(rep(c("A", "B"), each = 15)),
     tlx_mental = rnorm(30)
@@ -115,9 +101,6 @@ test_that("ggbetweenstatsWithPriorNormalityCheck returns a ggplot object", {
 })
 
 test_that("ggbetweenstatsWithPriorNormalityCheckAsterisk returns a ggplot object", {
-  skip_if_not_installed("ggstatsplot")
-  skip_if_not_installed("rstatix")
-
   main_df <- data.frame(
     CondID = factor(rep(c("A", "B"), each = 15)),
     tlx_mental = rnorm(30)
@@ -134,9 +117,6 @@ test_that("ggbetweenstatsWithPriorNormalityCheckAsterisk returns a ggplot object
 })
 
 test_that("ggwithinstatsWithPriorNormalityCheckAsterisk returns a ggplot object", {
-  skip_if_not_installed("ggstatsplot")
-  skip_if_not_installed("rstatix")
-
   main_df <- data.frame(
     Participant = factor(rep(1:10, each = 3)),
     CondID = factor(rep(c("A", "B", "C"), times = 10)),

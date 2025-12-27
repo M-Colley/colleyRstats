@@ -20,14 +20,14 @@ reportNPAV(model, dv = "Testdependentvariable", write_to_clipboard = FALSE)
 A message describing the statistical results.
 }
 \description{
+Deprecated: \code{reportNPAV()} will be removed in colleyRstats 0.1.0.
+Use \code{\link[=reportART]{reportART()}} with ARTool instead.
+}
+\details{
 To easily copy and paste the results to your manuscript, the following commands must be defined in Latex:
 \code{\\newcommand{\\F}[3]{$F({#1},{#2})={#3}$}}
 \code{\\newcommand{\\p}{\\textit{p=}}}
 \code{\\newcommand{\\pminor}{\\textit{p$<$}}}
-}
-\details{
-Deprecated: \code{reportNPAV()} will be removed in colleyRstats 0.1.0 (2025-12-31).
-Use \code{reportART()} with ARTool instead.
 }
 \examples{
 model <- data.frame(

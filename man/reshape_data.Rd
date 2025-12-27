@@ -34,8 +34,6 @@ and appends those sections under the first section, aligning by column index.
 }
 \details{
 Relevant if you receive data in wide-format but cannot use built-in functionality due to naming (e.g., in LimeSurvey)
-
-Attention, known bug: the ID column will first have only the IDs, this has to be fixed manually.
 }
 \examples{
 \donttest{

@@ -4,7 +4,7 @@
 \alias{\%!in\%}
 \title{Negate \code{\%in\%} membership}
 \usage{
-\%!in\%(x, y)
+x \%!in\% y
 }
 \arguments{
 \item{x}{Vector of values to test.}
@@ -15,5 +15,5 @@
 Logical vector indicating non-membership.
 }
 \description{
-Negate \code{\%in\%} membership.
+Negate \code{\%in\%} membership
 }

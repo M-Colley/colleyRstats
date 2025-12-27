@@ -17,5 +17,5 @@ pathPrep(path = "clipboard", read_fn = NULL, write_fn = NULL)
 A normalized path string.
 }
 \description{
-Convert Windows paths to R-friendly format.
+Convert Windows paths to R-friendly format
 }

@@ -10,7 +10,7 @@ ggbetweenstatsWithPriorNormalityCheck(
   x,
   y,
   ylab,
-  xlabels,
+  xlabels = NULL,
   showPairwiseComp = TRUE,
   plotType = "boxviolin"
 )

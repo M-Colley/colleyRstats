@@ -330,7 +330,7 @@ generateMoboPlot2 <- function(data, x = "Iteration", y, phaseCol = "Phase", fill
 #' @param legendPos A numeric vector of length 2 specifying the position of the legend inside the plot. Default is `c(0.65, 0.85)`.
 #' @param numberSamplingSteps An integer specifying the number of initial sampling steps before the optimization phase begins. Default is 5.
 #' @param labelPosFormulaY A string specifying the vertical position of the polynomial equation label in the plot. Acceptable values are `"top"`, `"center"`, or `"bottom"`. Default is `"top"`.
-#' @param verticalLinePosY A numeric value of the y-coordinate where the "sampling" and "optimizatin" line should be drawn.
+#' @param verticalLinePosY A numeric value of the y-coordinate where the "sampling" and "optimization" line should be drawn.
 #'
 #' @return A `ggplot` object representing the multi-objective optimization plot, ready to be rendered.
 #' @export
@@ -679,7 +679,7 @@ ggbetweenstatsWithPriorNormalityCheckAsterisk <- function(data, x, y, ylab, xlab
 }
 
 #' Check the data's distribution. If non-normal, take the non-parametric variant of *ggwithinstats*.
-#' x and y have to be in parentheses, e.g., "ConditionID". Add Astersiks instead of p-values.
+#' x and y have to be in parentheses, e.g., "ConditionID". Add Asterisks instead of p-values.
 #'
 #' @param data the data frame
 #' @param x the independent variable, most likely "ConditionID"

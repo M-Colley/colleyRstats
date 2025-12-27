@@ -13,5 +13,5 @@ n_fun(x)
 A data frame with the median and label.
 }
 \description{
-Build a median/size label for plot annotations.
+Build a median/size label for plot annotations
 }

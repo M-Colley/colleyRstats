@@ -14,7 +14,8 @@ check_normality_by_group(data, x, y)
 \item{y}{the y column}
 }
 \value{
-TRUE if all groups are normal, FALSE otherwise
+TRUE if all groups are normal, FALSE otherwise. For groups with
+n > 5000, Shapiro-Wilk is skipped and the function returns FALSE with a warning.
 }
 \description{
 Check normality for groups

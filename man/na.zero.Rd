@@ -13,7 +13,7 @@ na.zero(x)
 A vector with NAs replaced by zeros.
 }
 \description{
-Replace NA values with zero.
+Replace NA values with zero
 }
 \examples{
 na.zero(c(NA, 1, NA, 2))

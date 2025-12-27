@@ -3,7 +3,7 @@ bibentry(
   author       = {Mark Colley},
   title        = {colleyRstats: Functions to Streamline Statistical Analysis and Reporting},
   year         = {2025},
-  howpublished = {\url{https://github.com/M-Colley/colleyRstats}},
+  howpublished = "https://github.com/M-Colley/colleyRstats",
   note         = {A collection of custom R functions for streamlining statistical analysis, visualizations, and APA-compliant reporting.},
   doi          = {10.5281/zenodo.18046754},
   url          = {https://doi.org/10.5281/zenodo.18046754}

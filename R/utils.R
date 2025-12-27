@@ -18,20 +18,34 @@ not_empty <- function(x, msg = "Input must not be empty.") {
   invisible(TRUE)
 }
 
-# not in
+#' Negate `%in%` membership
+#'
+#' @param x Vector of values to test.
+#' @param y Vector of values to match against.
+#' @return Logical vector indicating non-membership.
+#' @export
 "%!in%" <- function(x, y) !("%in%"(x, y))
 
-# replace NA with zero
-# e.g. df$test <- na.zero(df$test)
+#' Replace NA values with zero
+#'
+#' @param x A vector.
+#' @return A vector with NAs replaced by zeros.
+#' @export
+#' @examples
+#' na.zero(c(NA, 1, NA, 2))
 na.zero <- function(x) {
   x[is.na(x)] <- 0
   return(x)
 }
 
 
-#  Converting a Windows path to the format that works in R
-# No need for an argument. The path is printed to your console correctly and written to your clipboard for easy pasting to a script
-# From: https://stackoverflow.com/questions/8425409/file-path-issues-in-r-using-windows-hex-digits-in-character-string-error
+#' Convert Windows paths to R-friendly format
+#'
+#' @param path Path to convert or the string "clipboard" to read from the clipboard.
+#' @param read_fn Optional custom function to read from the clipboard.
+#' @param write_fn Optional custom function to write to the clipboard.
+#' @return A normalized path string.
+#' @export
 pathPrep <- function(path = "clipboard", read_fn = NULL, write_fn = NULL) {
   get_clip_reader <- function() {
     if (!is.null(read_fn)) {
@@ -73,7 +87,11 @@ pathPrep <- function(path = "clipboard", read_fn = NULL, write_fn = NULL) {
   return(x)
 }
 
-# for label of number of data points
+#' Build a median/size label for plot annotations
+#'
+#' @param x A numeric vector.
+#' @return A data frame with the median and label.
+#' @export
 n_fun <- function(x) {
   return(data.frame(y = median(x), label = paste0("n = ", length(x))))
 }
@@ -127,6 +145,7 @@ normalize <- function(x_vector, old_min, old_max, new_min, new_max) {
 #'
 #' @return TRUE if all groups are normal, FALSE otherwise. For groups with
 #'   n > 5000, Shapiro-Wilk is skipped and the function returns FALSE with a warning.
+#' @export
 check_normality_by_group <- function(data, x, y) {
   # Input validation
   if (missing(data) || missing(x) || missing(y)) stop("Missing arguments")
@@ -181,6 +200,7 @@ check_normality_by_group <- function(data, x, y) {
 #' @param y the dependent variable (column name as string)
 #'
 #' @return TRUE if Levene's test is non-significant (p >= .05), FALSE otherwise
+#' @export
 check_homogeneity_by_group <- function(data, x, y) {
   not_empty(data)
   not_empty(x)

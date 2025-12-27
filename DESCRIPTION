@@ -52,6 +52,7 @@ Suggests:
 	Hmisc,
     moocore (>= 0.1.10),
     nparLD,
+    pkgload,
     psych,
     reporttools,
     rstantools,

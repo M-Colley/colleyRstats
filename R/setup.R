@@ -164,13 +164,17 @@ colleyRstats_setup <- function(set_options = TRUE,
     citation_text <- NULL
     citation_file <- system.file("CITATION", package = "colleyRstats")
     if (nzchar(citation_file)) {
-      citation_text <- utils::capture.output(utils::citation(file = citation_file))
+      citation_text <- utils::capture.output(
+        utils::citation(package = "colleyRstats")
+      )
     } else if (file.exists(file.path("inst", "CITATION"))) {
       citation_text <- utils::capture.output(
-        utils::citation(file = file.path("inst", "CITATION"))
+        utils::readCitationFile(file.path("inst", "CITATION"))
       )
     } else if (file.exists("CITATION")) {
-      citation_text <- utils::capture.output(utils::citation(file = "CITATION"))
+      citation_text <- utils::capture.output(
+        utils::readCitationFile("CITATION")
+      )
     } else {
       citation_text <- utils::capture.output(
         utils::citation(package = utils::packageName())

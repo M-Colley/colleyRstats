@@ -1,14 +1,10 @@
-citHeader("To cite colleyRstats in publications use:")
-
 bibentry(
-  bibtype = "Misc",
-  title = "colleyRstats: Functions to Streamline Statistical Analysis and Reporting",
-  author = person("Mark", "Colley"),
-  year = "2025",
-  url = "https://github.com/M-Colley/colleyRstats",
-  doi = "10.5281/zenodo.18046754",
-  note = paste(
-    "A collection of custom R functions for streamlining statistical analysis,",
-    "visualizations, and APA-compliant reporting."
-  )
+  bibtype = "MISC",
+  author       = {Mark Colley},
+  title        = {colleyRstats: Functions to Streamline Statistical Analysis and Reporting},
+  year         = {2025},
+  howpublished = "https://github.com/M-Colley/colleyRstats",
+  note         = {A collection of custom R functions for streamlining statistical analysis, visualizations, and APA-compliant reporting.},
+  doi          = {10.5281/zenodo.18046754},
+  url          = {https://doi.org/10.5281/zenodo.18046754}
 )

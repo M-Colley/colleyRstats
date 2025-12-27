@@ -21,7 +21,7 @@ A message describing the statistical results.
 }
 \description{
 Deprecated: \code{reportNPAV()} will be removed in colleyRstats 0.1.0.
-Use \code{\link[=reportART]{reportART()}} with ARTool instead.
+Use \code{reportART()} with ARTool instead.
 }
 \details{
 To easily copy and paste the results to your manuscript, the following commands must be defined in Latex:

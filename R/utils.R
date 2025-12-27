@@ -23,6 +23,9 @@ not_empty <- function(x, msg = "Input must not be empty.") {
 #' @param x Vector of values to test.
 #' @param y Vector of values to match against.
 #' @return Logical vector indicating non-membership.
+#' @name not_in
+#' @aliases %!in%
+#' @usage x %!in% y
 #' @export
 "%!in%" <- function(x, y) !("%in%"(x, y))
 

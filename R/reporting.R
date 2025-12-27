@@ -4,7 +4,7 @@
 #' Attention: the independent variables of the formula and the term specifying the participant must be factors (i.e., use as.factor()).
 #'
 #' Deprecated: `reportNPAV()` will be removed in colleyRstats 0.1.0.
-#' Use [reportART()] with ARTool instead.
+#' Use `reportART()` with ARTool instead.
 #'
 #' To easily copy and paste the results to your manuscript, the following commands must be defined in Latex:
 #' \code{\\newcommand{\\F}[3]{$F({#1},{#2})={#3}$}}

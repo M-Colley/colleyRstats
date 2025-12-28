@@ -5,7 +5,9 @@
 \alias{\%!in\%}
 \title{Negate \code{\%in\%} membership}
 \usage{
-x %!in% y
+not_in(x, y)
+
+x \%!in\% y
 }
 \arguments{
 \item{x}{Vector of values to test.}

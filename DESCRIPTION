@@ -29,7 +29,7 @@ Imports:
     ggtext,
     purrr,
     readxl,
-    report (>= 0.6.1),
+    report (>= 0.6.3),
     rlang,
     rstatix,
     see,

@@ -277,7 +277,7 @@ The following presents some simple ways in which you can contribute (in increasi
 order of commitment):
 
 - Read and correct any inconsistencies in the
-  [documentation](https://M-Colley.github.io/colleyRstats/)
+  [documentation](https://github.com/M-Colley/colleyRstats)
 - Raise issues about bugs or wanted features
 - Review code
 - Add new functionality (in the form of new reporting or plotting functions)

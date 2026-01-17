@@ -50,7 +50,7 @@ Suggests:
     emoa,
     flexdashboard,
 	Hmisc,
-    moocore (>= 0.1.10),
+    moocore (>= 0.2.0),
     nparLD,
     pkgload,
     psych,

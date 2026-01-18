@@ -47,7 +47,7 @@
 #'   })
 #' }
 #' }
-colleyRstats_setup <- function(set_options = TRUE,
+colleyRstats_setup <- function(set_options = FALSE,
                         set_theme = TRUE,
                         set_conflicts = TRUE,
                         print_citation = TRUE,
@@ -57,7 +57,7 @@ colleyRstats_setup <- function(set_options = TRUE,
   if (isTRUE(set_options) && isTRUE(verbose)) {
     message(
       "Argument 'set_options' is deprecated and has no effect; ",
-      "rCode no longer changes global options() for CRAN compliance.\n",
+      "colleyRstats no longer changes global options() for CRAN compliance.\n",
       "If you want these settings, call for example:\n",
       "  options(scipen = 999, digits = 10, digits.secs = 3)"
     )

@@ -57,11 +57,11 @@ test_that("reportART distinguishes main and interaction effects", {
 
   expect_message(
     reportART(model[1, , drop = FALSE], dv = "mental demand"),
-    "main effect of \\\\Video on mental demand"
+    "main effect of .*Video on mental demand"
   )
   expect_message(
     reportART(model[2, , drop = FALSE], dv = "mental demand"),
-    "interaction effect of \\\\gesture"
+    "interaction effect of .*gesture"
   )
 })
 

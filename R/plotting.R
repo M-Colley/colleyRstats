@@ -245,7 +245,7 @@ generateEffectPlot <- function(data,
 #'   Phase = rep(c("Sampling", "Optimization"), 10)
 #' )
 #' generateMoboPlot2(data = df, x = "x", y = "y")
-generateMoboPlot2 <- function(data, x = "Iteration", y, phaseCol = "Phase", fillColourGroup = "", ytext, legendPos = c(0.65, 0.85), labelPosFormulaY = "top", verticalLinePosY = 0.75, fillLabels = NULL) {
+generateMoboPlot2 <- function(data, x = "Iteration", y, phaseCol = "Phase", fillColourGroup = "ConditionID", ytext, legendPos = c(0.65, 0.85), labelPosFormulaY = "top", verticalLinePosY = 0.75, fillLabels = NULL) {
   not_empty(data)
   not_empty(x)
   not_empty(y)

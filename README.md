@@ -29,6 +29,12 @@ The primary goal of this package is to significantly reduce repetitive coding ef
 |:------------|:-----------------------------------------|
 | Release     | `install.packages("colleyRstats")`       |
 
+## Getting Started
+
+For a short end-to-end workflow covering setup, assumption checks, plotting, and reporting, see the vignette:
+
+- `vignette("getting-started", package = "colleyRstats")`
+
 ## Summary of Benefits 
 - **Code Reduction**: Automates common tasks in data analysis, such as assumption checks and reporting.
 - **Copy-Paste Ready Outputs**: Streamlines report generation with LaTeX-ready text outputs.
@@ -281,7 +287,6 @@ order of commitment):
 - Raise issues about bugs or wanted features
 - Review code
 - Add new functionality (in the form of new reporting or plotting functions)
-
 
 
 

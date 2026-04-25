@@ -1,0 +1,84 @@
+---
+title: "Getting started with colleyRstats"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with colleyRstats}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+`colleyRstats` helps streamline a typical analysis workflow: configure a session,
+check assumptions, create a plot, and generate manuscript-ready text.
+
+## Session setup
+
+```{r}
+colleyRstats::colleyRstats_setup(
+  set_options = FALSE,
+  set_theme = FALSE,
+  set_conflicts = FALSE,
+  print_citation = FALSE,
+  verbose = FALSE
+)
+```
+
+## Example data
+
+```{r}
+set.seed(123)
+
+main_df <- data.frame(
+  Participant = factor(rep(1:20, each = 2)),
+  ConditionID = factor(rep(c("Control", "Treatment"), times = 20)),
+  score = rnorm(40, mean = rep(c(50, 55), times = 20), sd = 8)
+)
+```
+
+## Check assumptions
+
+```{r}
+colleyRstats::check_normality_by_group(main_df, "ConditionID", "score")
+colleyRstats::check_homogeneity_by_group(main_df, "ConditionID", "score")
+```
+
+## Create a plot
+
+```{r}
+colleyRstats::generateEffectPlot(
+  data = transform(main_df, Group = ConditionID),
+  x = "ConditionID",
+  y = "score",
+  fillColourGroup = "Group",
+  ytext = "Score",
+  xtext = "Condition"
+)
+```
+
+## Produce a reporting sentence
+
+```{r}
+art_summary <- data.frame(
+  Effect = "ConditionID",
+  Df = 1,
+  `F value` = 5.42,
+  `Pr(>F)` = 0.027,
+  Df.res = 19,
+  check.names = FALSE
+)
+
+colleyRstats::reportART(art_summary, dv = "score")
+```
+
+## Next steps
+
+- Browse the reference for reporting helpers such as `reportMeanAndSD()` and
+  `reportDunnTest()`.
+- Use `generateMoboPlot()` or `generateMoboPlot2()` for optimization studies.
+- See the README for a broader catalog of available helpers.

@@ -4,7 +4,7 @@
 #' standards used in the colleyRstats workflow.
 #'
 #' @param set_options Logical. If \code{TRUE}, prints a notice that global
-#'   options are no longer changed automatically. Default is \code{TRUE}.
+#'   options are no longer changed automatically. Default is \code{FALSE}.
 #' @param set_theme Logical. If \code{TRUE}, sets the default \code{ggplot2} theme
 #'   to \code{see::theme_lucid} with custom modifications. Default is \code{TRUE}.
 #' @param set_conflicts Logical. If \code{TRUE}, sets \code{conflicted} preferences

@@ -9,7 +9,7 @@ generateMoboPlot2(
   x = "Iteration",
   y,
   phaseCol = "Phase",
-  fillColourGroup = "",
+  fillColourGroup = "ConditionID",
   ytext,
   legendPos = c(0.65, 0.85),
   labelPosFormulaY = "top",

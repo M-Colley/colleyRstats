@@ -29,6 +29,42 @@ test_that("reportART reports significant effects", {
   )
 })
 
+test_that("reportART reports no significant effects when appropriate", {
+  model <- data.frame(
+    Effect = "Video",
+    Df = 1,
+    `F value` = 0.2,
+    `Pr(>F)` = 0.8,
+    Df.res = 10,
+    check.names = FALSE
+  )
+
+  expect_message(
+    reportART(model, dv = "mental demand"),
+    "no significant effects on mental demand"
+  )
+})
+
+test_that("reportART distinguishes main and interaction effects", {
+  model <- data.frame(
+    Effect = c("Video", "gesture:eHMI"),
+    Df = c(1, 1),
+    `F value` = c(6.12, 5.01),
+    `Pr(>F)` = c(0.033, 0.045),
+    Df.res = c(10, 10),
+    check.names = FALSE
+  )
+
+  expect_message(
+    reportART(model[1, , drop = FALSE], dv = "mental demand"),
+    "main effect of \\\\Video on mental demand"
+  )
+  expect_message(
+    reportART(model[2, , drop = FALSE], dv = "mental demand"),
+    "interaction effect of \\\\gesture"
+  )
+})
+
 test_that("reportNparLD reports significant effects", {
   model <- list(
     ANOVA.test = data.frame(

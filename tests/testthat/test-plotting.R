@@ -68,6 +68,52 @@ test_that("generateMoboPlot2 returns a ggplot object", {
   expect_s3_class(p, "ggplot")
 })
 
+test_that("generateMoboPlot2 uses documented default grouping and labels", {
+  df <- data.frame(
+    Iteration = 1:10,
+    score = rnorm(10),
+    ConditionID = rep(c("value_only", "llm_only"), each = 5),
+    Phase = rep(c("sampling", "optimization"), each = 5)
+  )
+
+  p <- generateMoboPlot2(
+    data = df,
+    x = "Iteration",
+    y = "score",
+    fillLabels = c(value_only = "Value Only", llm_only = "LLM Only")
+  )
+
+  expect_s3_class(p, "ggplot")
+  expect_equal(p$labels$x, "Iteration")
+  expect_equal(p$labels$y, "Score")
+  expect_true(any(vapply(p$scales$scales, inherits, logical(1), what = "ScaleDiscrete")))
+})
+
+test_that("generateEffectPlot applies custom axis and legend labels", {
+  df <- data.frame(
+    strat = rep(c("A", "B"), each = 10),
+    emotion = rep(c("Happy", "Sad"), 10),
+    score = rnorm(20)
+  )
+
+  p <- generateEffectPlot(
+    data = df,
+    x = "strat",
+    y = "score",
+    fillColourGroup = "emotion",
+    ytext = "Custom Y",
+    xtext = "Custom X",
+    legendHeading = "Emotion",
+    effectLegend = TRUE,
+    effectDescription = "Overall mean"
+  )
+
+  expect_equal(p$labels$x, "Custom X")
+  expect_equal(p$labels$y, "Custom Y")
+  expect_equal(p$labels$colour, "Emotion")
+  expect_equal(p$labels$fill, "Emotion")
+})
+
 test_that("ggwithinstatsWithPriorNormalityCheck returns a ggplot object", {
   main_df <- data.frame(
     Participant = factor(rep(1:10, each = 3)),

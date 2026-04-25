@@ -53,9 +53,11 @@ Suggests:
 	Hmisc,
     moocore (>= 0.2.0),
     nparLD,
+    knitr,
     pkgload,
     psych (>= 2.6.3),
     reporttools,
+    rmarkdown,
     rstantools,
     scales,
     sjPlot,
@@ -67,3 +69,4 @@ Config/testthat/edition: 3
 Config/Needs/check: anthonynorth/roxyglobals
 Config/roxyglobals/unique: TRUE
 Config/testthat/parallel: false
+VignetteBuilder: knitr

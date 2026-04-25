@@ -455,6 +455,12 @@ latexify_report <- function(x,
     x <- paste(x, collapse = "\n")
   }
 
+  # Check for unparsed logical variables and warn the user
+  if (grepl("[?]", x, fixed = TRUE)) {
+    warning("The report text contains '[?]'. This usually happens when logical/boolean variables are used in the model. For `report::report()` to work optimally, ensure your variables are converted to factors (e.g., using `as.factor()`) before fitting the model.")
+  }
+
+
   # Perform substitutions:
   #   1. Replace "R2" with "$R^2$"
   #   2. Replace "%" with "\%"

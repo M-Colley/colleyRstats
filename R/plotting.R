@@ -228,6 +228,7 @@ generateEffectPlot <- function(data,
 #' @param legendPos A numeric vector of length 2 specifying the position of the legend inside the plot. Default is `c(0.65, 0.85)`.
 #' @param labelPosFormulaY A string specifying the vertical position of the polynomial equation label in the plot. Acceptable values are `"top"`, `"center"`, or `"bottom"`. Default is `"top"`.
 #' @param verticalLinePosY A numeric value of the y-coordinate where the "sampling" and "optimization" line should be drawn.
+#' @param fillLabels An optional named character vector mapping raw factor levels to display labels for the fill/colour legend (e.g. \code{c("value_only" = "Value Only", "llm_only" = "LLM Only")}). If \code{NULL} (default), the original factor levels are used as-is.
 #'
 #' @return A `ggplot` object representing the multi-objective optimization plot, ready to be rendered.
 #' @export
@@ -244,7 +245,7 @@ generateEffectPlot <- function(data,
 #'   Phase = rep(c("Sampling", "Optimization"), 10)
 #' )
 #' generateMoboPlot2(data = df, x = "x", y = "y")
-generateMoboPlot2 <- function(data, x = "Iteration", y, phaseCol = "Phase", fillColourGroup = "", ytext, legendPos = c(0.65, 0.85), labelPosFormulaY = "top", verticalLinePosY = 0.75) {
+generateMoboPlot2 <- function(data, x = "Iteration", y, phaseCol = "Phase", fillColourGroup = "", ytext, legendPos = c(0.65, 0.85), labelPosFormulaY = "top", verticalLinePosY = 0.75, fillLabels = NULL) {
   not_empty(data)
   not_empty(x)
   not_empty(y)
@@ -310,8 +311,8 @@ generateMoboPlot2 <- function(data, x = "Iteration", y, phaseCol = "Phase", fill
     f_sym <- rlang::sym(fillColourGroup)
     p <- p +
       ggplot2::aes(fill = !!f_sym, colour = !!f_sym, group = !!f_sym) +
-      see::scale_fill_see() +
-      see::scale_color_see()
+      see::scale_fill_see(labels  = if (!is.null(fillLabels)) fillLabels else waiver()) +
+      see::scale_color_see(labels  = if (!is.null(fillLabels)) fillLabels else waiver())
   } else {
     p <- p + ggplot2::aes(group = 1)
   }
@@ -624,7 +625,7 @@ ggbetweenstatsWithPriorNormalityCheckAsterisk <- function(data, x, y, ylab, xlab
   group_all_data_equal <- check_homogeneity_by_group(data, x, y)
 
   # Calculate pairwise comparisons
-  df <- ggstatsplot::pairwise_comparisons(data = data, x = !!x, y = !!y, type = type, p.adjust.method = "holm") |>
+  df <- statsExpressions::pairwise_comparisons(data = data, x = !!x, y = !!y, type = type, p.adjust.method = "holm") |>
     dplyr::mutate(groups = purrr::pmap(.l = list(group1, group2), .f = c)) |>
     dplyr::arrange(group1) |>
     dplyr::mutate(asterisk_label = ifelse(`p.value` < 0.05 & `p.value` > 0.01, "*",
@@ -726,7 +727,7 @@ ggwithinstatsWithPriorNormalityCheckAsterisk <- function(data, x, y, ylab, xlabe
   # homogeneity of variances: Levene
   group_all_data_equal <- check_homogeneity_by_group(data, x, y)
 
-  df <- ggstatsplot::pairwise_comparisons(data = data, x = !!x, y = !!y, type = type, p.adjust.method = "holm") |>
+  df <- statsExpressions::pairwise_comparisons(data = data, x = !!x, y = !!y, type = type, p.adjust.method = "holm") |>
     dplyr::mutate(groups = purrr::pmap(.l = list(group1, group2), .f = c)) |>
     dplyr::arrange(group1) |>
     dplyr::mutate(asterisk_label = ifelse(`p.value` < 0.05 & `p.value` > 0.01, "*",

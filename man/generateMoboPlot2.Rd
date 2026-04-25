@@ -13,7 +13,8 @@ generateMoboPlot2(
   ytext,
   legendPos = c(0.65, 0.85),
   labelPosFormulaY = "top",
-  verticalLinePosY = 0.75
+  verticalLinePosY = 0.75,
+  fillLabels = NULL
 )
 }
 \arguments{
@@ -34,6 +35,8 @@ generateMoboPlot2(
 \item{labelPosFormulaY}{A string specifying the vertical position of the polynomial equation label in the plot. Acceptable values are \code{"top"}, \code{"center"}, or \code{"bottom"}. Default is \code{"top"}.}
 
 \item{verticalLinePosY}{A numeric value of the y-coordinate where the "sampling" and "optimization" line should be drawn.}
+
+\item{fillLabels}{An optional named character vector mapping raw factor levels to display labels for the fill/colour legend (e.g. \code{c("value_only" = "Value Only", "llm_only" = "LLM Only")}). If \code{NULL} (default), the original factor levels are used as-is.}
 }
 \value{
 A \code{ggplot} object representing the multi-objective optimization plot, ready to be rendered.

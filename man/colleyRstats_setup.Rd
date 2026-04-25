@@ -5,7 +5,7 @@
 \title{Configure Global R Environment for colleyRstats}
 \usage{
 colleyRstats_setup(
-  set_options = TRUE,
+  set_options = FALSE,
   set_theme = TRUE,
   set_conflicts = TRUE,
   print_citation = TRUE,

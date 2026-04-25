@@ -5,3 +5,5 @@
 ^figures$
 ^colleyRstats\.Rproj$
 ^codecov\.yaml$
+^\.positai$
+^\.claude$

@@ -1,3 +1,9 @@
+# colleyRstats 0.0.4
+
+## MINOR CHANGES
+
+- exposed new parameters for `generateMoboPlot2()`.
+
 # colleyRstats 0.0.3
 
 ## MINOR CHANGES

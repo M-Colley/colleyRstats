@@ -227,6 +227,7 @@ generateEffectPlot <- function(data,
 #' @param ytext A custom label for the y-axis. If not provided, the y-axis label will be the title-cased version of `y`.
 #' @param legendPos A numeric vector of length 2 specifying the position of the legend inside the plot. Default is `c(0.65, 0.85)`.
 #' @param labelPosFormulaY A string specifying the vertical position of the polynomial equation label in the plot. Acceptable values are `"top"`, `"center"`, or `"bottom"`. Default is `"top"`.
+#' @param labelPosFormulaX A string specifying the position of the polynomial equation label in the plot. Acceptable values are `"left"`, `"center"`, or `"right"`. Default is `"left"`.
 #' @param horizontalLinePosY A numeric value of the y-coordinate where the "sampling" and "optimization" line should be drawn. Default is `0.75`
 #' @param horizontalLineDistToText A numeric value of the y-coordinate where the "sampling" and "optimization" text should be drawn below the line. Default is `0.3`
 #' @param fillLabels An optional named character vector mapping raw factor levels to display labels for the fill/colour legend (e.g. \code{c("value_only" = "Value Only", "llm_only" = "LLM Only")}). If \code{NULL} (default), the original factor levels are used as-is.
@@ -247,7 +248,7 @@ generateEffectPlot <- function(data,
 #'   Phase = rep(c("Sampling", "Optimization"), 10)
 #' )
 #' generateMoboPlot2(data = df, x = "x", y = "y")
-generateMoboPlot2 <- function(data, x = "Iteration", y, phaseCol = "Phase", fillColourGroup = "ConditionID", ytext, legendPos = c(0.65, 0.85), labelPosFormulaY = "top", horizontalLinePosY = 0.75, horizontalLineDistToText = 0.3, fillLabels = NULL, annotationTextSize = 5) {
+generateMoboPlot2 <- function(data, x = "Iteration", y, phaseCol = "Phase", fillColourGroup = "ConditionID", ytext, legendPos = c(0.65, 0.85), labelPosFormulaY = "top", labelPosFormulaX = "left", horizontalLinePosY = 0.75, horizontalLineDistToText = 0.3, fillLabels = NULL, annotationTextSize = 5) {
   not_empty(data)
   not_empty(x)
   not_empty(y)
@@ -304,7 +305,7 @@ generateMoboPlot2 <- function(data, x = "Iteration", y, phaseCol = "Phase", fill
       ),
       color = "black"
     ) +
-    ggpmisc::stat_poly_eq(ggpmisc::use_label(c("eq", "R2")), label.y = labelPosFormulaY, size = annotationTextSize) +
+    ggpmisc::stat_poly_eq(ggpmisc::use_label(c("eq", "R2")), label.y = labelPosFormulaY, label.x = labelPosFormulaX, size = annotationTextSize) +
     ggpmisc::stat_poly_line(fullrange = FALSE, alpha = 0.1, linetype = "dashed", linewidth = 0.5) +
     ggplot2::geom_vline(ggplot2::aes(xintercept = numberSamplingSteps + 0.5),
       linetype = "dashed", color = "black", alpha = 0.5

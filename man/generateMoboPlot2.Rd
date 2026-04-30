@@ -13,8 +13,11 @@ generateMoboPlot2(
   ytext,
   legendPos = c(0.65, 0.85),
   labelPosFormulaY = "top",
-  verticalLinePosY = 0.75,
-  fillLabels = NULL
+  labelPosFormulaX = "left",
+  horizontalLinePosY = 0.75,
+  horizontalLineDistToText = 0.3,
+  fillLabels = NULL,
+  annotationTextSize = 5
 )
 }
 \arguments{
@@ -34,9 +37,15 @@ generateMoboPlot2(
 
 \item{labelPosFormulaY}{A string specifying the vertical position of the polynomial equation label in the plot. Acceptable values are \code{"top"}, \code{"center"}, or \code{"bottom"}. Default is \code{"top"}.}
 
-\item{verticalLinePosY}{A numeric value of the y-coordinate where the "sampling" and "optimization" line should be drawn.}
+\item{labelPosFormulaX}{A string specifying the position of the polynomial equation label in the plot. Acceptable values are \code{"left"}, \code{"center"}, or \code{"right"}. Default is \code{"left"}.}
+
+\item{horizontalLinePosY}{A numeric value of the y-coordinate where the "sampling" and "optimization" line should be drawn. Default is \code{0.75}}
+
+\item{horizontalLineDistToText}{A numeric value of the y-coordinate where the "sampling" and "optimization" text should be drawn below the line. Default is \code{0.3}}
 
 \item{fillLabels}{An optional named character vector mapping raw factor levels to display labels for the fill/colour legend (e.g. \code{c("value_only" = "Value Only", "llm_only" = "LLM Only")}). If \code{NULL} (default), the original factor levels are used as-is.}
+
+\item{annotationTextSize}{numeric. The font size for embedded text annotations inside the plot (e.g., "Sampling", "Optimization" labels, and the regression equations). Default is \code{5.0}.}
 }
 \value{
 A \code{ggplot} object representing the multi-objective optimization plot, ready to be rendered.

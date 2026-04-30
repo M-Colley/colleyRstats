@@ -227,7 +227,8 @@ generateEffectPlot <- function(data,
 #' @param ytext A custom label for the y-axis. If not provided, the y-axis label will be the title-cased version of `y`.
 #' @param legendPos A numeric vector of length 2 specifying the position of the legend inside the plot. Default is `c(0.65, 0.85)`.
 #' @param labelPosFormulaY A string specifying the vertical position of the polynomial equation label in the plot. Acceptable values are `"top"`, `"center"`, or `"bottom"`. Default is `"top"`.
-#' @param verticalLinePosY A numeric value of the y-coordinate where the "sampling" and "optimization" line should be drawn.
+#' @param horizontalLinePosY A numeric value of the y-coordinate where the "sampling" and "optimization" line should be drawn. Default is `0.75`
+#' @param horizontalLineDistToText A numeric value of the y-coordinate where the "sampling" and "optimization" text should be drawn below the line. Default is `0.3`
 #' @param fillLabels An optional named character vector mapping raw factor levels to display labels for the fill/colour legend (e.g. \code{c("value_only" = "Value Only", "llm_only" = "LLM Only")}). If \code{NULL} (default), the original factor levels are used as-is.
 #' @param annotationTextSize numeric. The font size for embedded text annotations inside the plot (e.g., "Sampling", "Optimization" labels, and the regression equations). Default is `5.0`.
 #'
@@ -246,7 +247,7 @@ generateEffectPlot <- function(data,
 #'   Phase = rep(c("Sampling", "Optimization"), 10)
 #' )
 #' generateMoboPlot2(data = df, x = "x", y = "y")
-generateMoboPlot2 <- function(data, x = "Iteration", y, phaseCol = "Phase", fillColourGroup = "ConditionID", ytext, legendPos = c(0.65, 0.85), labelPosFormulaY = "top", verticalLinePosY = 0.75, fillLabels = NULL, annotationTextSize = 5) {
+generateMoboPlot2 <- function(data, x = "Iteration", y, phaseCol = "Phase", fillColourGroup = "ConditionID", ytext, legendPos = c(0.65, 0.85), labelPosFormulaY = "top", horizontalLinePosY = 0.75, horizontalLineDistToText = 0.3, fillLabels = NULL, annotationTextSize = 5) {
   not_empty(data)
   not_empty(x)
   not_empty(y)
@@ -283,23 +284,23 @@ generateMoboPlot2 <- function(data, x = "Iteration", y, phaseCol = "Phase", fill
       fun.data = "mean_cl_boot", geom = "errorbar",
       width = 0.5, position = ggplot2::position_dodge(width = 0.1), alpha = 0.5
     ) +
-    ggplot2::annotate("text", x = numberSamplingSteps / 2.0, y = verticalLinePosY - 0.2, label = "Sampling", size = annotationTextSize, fontface = "bold") +
+    ggplot2::annotate("text", x = numberSamplingSteps / 2.0, y = horizontalLinePosY - horizontalLineDistToText, label = "Sampling", size = annotationTextSize, fontface = "bold") +
     ggplot2::geom_segment(
       ggplot2::aes(
-        x = 0, y = verticalLinePosY,
-        xend = numberSamplingSteps + 0.2, yend = verticalLinePosY
+        x = 0, y = horizontalLinePosY,
+        xend = numberSamplingSteps + 0.2, yend = horizontalLinePosY
       ),
       linetype = "dashed", color = "black"
     ) +
     ggplot2::annotate("text",
       x = numberOptimizations / 2.0 + numberSamplingSteps,
-      y = verticalLinePosY - 0.2, label = "Optimization",
+      y = horizontalLinePosY - horizontalLineDistToText, label = "Optimization",
       size = annotationTextSize, fontface = "bold"
     ) +
     ggplot2::geom_segment(
       ggplot2::aes(
-        x = numberSamplingSteps + 0.8, y = verticalLinePosY,
-        xend = maxIteration, yend = verticalLinePosY
+        x = numberSamplingSteps + 0.8, y = horizontalLinePosY,
+        xend = maxIteration, yend = horizontalLinePosY
       ),
       color = "black"
     ) +

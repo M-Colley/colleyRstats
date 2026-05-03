@@ -1,3 +1,10 @@
+# colleyRstats 0.0.5
+
+## MINOR CHANGES
+
+- new function `add_pareto_moocore_column()`. Should be less buggy than the one from `emoa`
+
+
 # colleyRstats 0.0.4
 
 ## MINOR CHANGES

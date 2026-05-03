@@ -698,9 +698,9 @@ reshape_data <- function(input_filepath, sheetName = "Results", marker = "videoi
 }
 
 
-#' Add Pareto EMOA Column to a Data Frame
+#' Add `PARETO_EMOA` Column to a Data Frame
 #'
-#' This function calculates the Pareto front for a given set of objectives in a data frame and adds a new column, `PARETO_EMOA`, which indicates whether each row in the data frame belongs to the Pareto front.
+#' This function calculates the Pareto front using emoa for a given set of objectives in a data frame and adds a new column, `PARETO_EMOA`, which indicates whether each row in the data frame belongs to the Pareto front.
 #'
 #' @param data A data frame containing the data, including the objective columns.
 #' @param objectives A character vector specifying the names of the objective columns in `data`. These columns should be numeric and will be used to calculate the Pareto front.
@@ -763,6 +763,59 @@ add_pareto_emoa_column <- function(data, objectives) {
   # Return the updated data frame
   return(data)
 }
+
+
+#' Add `PARETO_MOOCORE` Column to a Data Frame
+#'
+#' This function calculates the Pareto front using moocore for a given set of objectives in a data frame and adds a new column, `PARETO_MOOCORE`, which indicates whether each row in the data frame belongs to the Pareto front.
+#'
+#' @param data A data frame containing the data, including the objective columns.
+#' @param objectives A character vector specifying the names of the objective columns in `data`. These columns should be numeric and will be used to calculate the Pareto front.
+#'
+#' @return A data frame with the same columns as `data`, along with an additional column, `PARETO_MOOCORE`, which is `TRUE` for rows that are on the Pareto front and `FALSE` otherwise.
+#' @export
+#'
+#' @examples
+#' # Define objective columns
+#' objectives <- c("trust", "predictability", "perceivedSafety", "Comfort")
+#'
+#' # Example data frame
+#' main_df <- data.frame(
+#'   trust = runif(10),
+#'   predictability = runif(10),
+#'   perceivedSafety = runif(10),
+#'   Comfort = runif(10)
+#' )
+#'
+#' # Add the Pareto front column
+#' main_df <- add_pareto_moocore_column(data = main_df, objectives)
+#' head(main_df)
+add_pareto_moocore_column <- function(data, objectives) {
+  if (!requireNamespace("moocore", quietly = TRUE)) {
+    stop("Package 'moocore' is required for add_pareto_moocore_column(). Please install it.")
+  }
+
+  # Input checks
+  not_empty(data)
+  not_empty(objectives)
+
+  # Select only the objective columns
+  objective_data <- data |> dplyr::select(dplyr::all_of(objectives))
+
+  # If there's only one row, mark it as PARETO_EMOA directly
+  if (nrow(objective_data) == 1) {
+    data$PARETO_MOOCORE <- TRUE
+    return(data)
+  }
+
+  # moocore::is_nondominated evaluates points directly based on a row x col matrix.
+  # It automatically returns a logical vector matching the row indices.
+  data$PARETO_MOOCORE <- moocore::is_nondominated(as.matrix(objective_data))
+
+  # Return the updated data frame
+  return(data)
+}
+
 
 
 #' Remove outliers and calculate REI

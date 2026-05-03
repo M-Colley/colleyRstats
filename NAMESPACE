@@ -2,6 +2,7 @@
 
 export("%!in%")
 export(add_pareto_emoa_column)
+export(add_pareto_moocore_column)
 export(checkAssumptionsForAnova)
 export(check_homogeneity_by_group)
 export(check_normality_by_group)

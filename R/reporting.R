@@ -58,15 +58,17 @@ reportNPAV <- function(model, dv = "Testdependentvariable", write_to_clipboard =
       model$descriptions <- gsub(":", " X", model$descriptions)
 
 
-      for (i in 1:length(model$`Pr(>F)`)) {
+      for (i in seq_along(model$`Pr(>F)`)) {
         # Residuals have NA therefore, we need this double-check
         if (!is.na(model$`Pr(>F)`[i]) && model$`Pr(>F)`[i] < 0.05) {
           Fvalue <- round(model$`F value`[i], digits = 2) # round(model$`F value`[i], digits = 2)
           numeratordf <- model$Df[i]
 
-          # denominator is next with an NA
-          # potential for out-of-bounds
-          for (k in i:length(model$`Pr(>F)`)) {
+          # denominator is the next row whose p-value is NA (the residual row).
+          # Reset per iteration so we never reuse a previous effect's value or
+          # hit an undefined object when no residual row follows this term.
+          denominatordf <- NA_real_
+          for (k in seq.int(i, length(model$`Pr(>F)`))) {
             if (is.na(model$`Pr(>F)`[k])) {
               denominatordf <- model$Df[k]
               break
@@ -208,7 +210,7 @@ reportART <- function(model, dv = "Testdependentvariable", write_to_clipboard = 
       model$descriptions <- model[, 1] # Make the names accessible
       model$descriptions <- gsub(":", " X", model$descriptions) # Replace colon with "X"
 
-      for (i in 1:length(model$`Pr(>F)`)) {
+      for (i in seq_along(model$`Pr(>F)`)) {
         if (!is.na(model$`Pr(>F)`[i]) && model$`Pr(>F)`[i] < 0.05) {
           # Extract and round values
           Fvalue <- round(model$`F value`[i], digits = 2)
@@ -343,7 +345,8 @@ reportNparLD <- function(model, dv = "Testdependentvariable", write_to_clipboard
   model <- as.data.frame(model$ANOVA.test)
 
   if (!any(model$`p-value` < 0.05, na.rm = TRUE)) {
-    message(paste0("The NPAV found no significant effects on ", dv, ". "))
+    message(paste0("The nparLD analysis found no significant effects on ", dv, ". "))
+    return(invisible(NULL))
   }
 
   # there is a significant effect if any value is under 0.05
@@ -353,7 +356,7 @@ reportNparLD <- function(model, dv = "Testdependentvariable", write_to_clipboard
   model$descriptions <- gsub(":", " X", model$descriptions)
 
 
-  for (i in 1:length(model$`p-value`)) {
+  for (i in seq_along(model$`p-value`)) {
     # Residuals have NA therefore we need this double check
     if (!is.na(model$`p-value`[i]) && model$`p-value`[i] < 0.05) {
       Fvalue <- sprintf("%.2f", round(model$`Statistic`[i], digits = 2)) # round(model$`Statistic`[i], digits = 2)
@@ -564,7 +567,7 @@ reportMeanAndSD <- function(data, iv = "testiv", dv = "testdv") {
     dplyr::group_by(!!rlang::sym(iv)) |>
     dplyr::summarise(dplyr::across(!!rlang::sym(dv), list(mean = mean, sd = sd)))
 
-  for (i in 1:nrow(test)) {
+  for (i in seq_len(nrow(test))) {
     row <- test[i, ]
     # do stuff with row
     message(paste0("%", row[[1]], ": \\m{", sprintf("%.2f", round(row[[2]], digits = 2)), "}, \\sd{", sprintf("%.2f", round(row[[3]], digits = 2)), "}\n"))
@@ -704,7 +707,7 @@ reportggstatsplotPostHoc <- function(data, p, iv = "testiv", dv = "testdv", labe
     return()
   }
 
-  for (i in 1:length(stats$p.value)) {
+  for (i in seq_along(stats$p.value)) {
     if (!is.na(stats$p.value[i]) && stats$p.value[i] < 0.05) {
       # Format p-value
       pValue <- if (stats$p.value[i] < 0.001) "\\padjminor{0.001}" else paste0("\\padj{", sprintf("%.3f", round(stats$p.value[i], 3)), "}")
@@ -714,9 +717,10 @@ reportggstatsplotPostHoc <- function(data, p, iv = "testiv", dv = "testdv", labe
       secondCondition <- stats$group2[i]
 
 
-      # Apply label mappings if available
-      firstLabel <- ifelse(is.null(label_mappings), firstCondition, label_mappings[[firstCondition]])
-      secondLabel <- ifelse(is.null(label_mappings), secondCondition, label_mappings[[secondCondition]])
+      # Apply label mappings if available. Use if/else (not ifelse) so the
+      # unused branch is never evaluated and the result is a clean scalar.
+      firstLabel <- if (is.null(label_mappings)) firstCondition else label_mappings[[firstCondition]]
+      secondLabel <- if (is.null(label_mappings)) secondCondition else label_mappings[[secondCondition]]
 
       valueOne <- data |>
         dplyr::filter(!!rlang::sym(iv) == firstCondition) |>
@@ -791,7 +795,7 @@ reportDunnTest <- function(d, data, iv = "testiv", dv = "testdv") {
   # 1. Collect all significant findings into a data frame/list
   findings <- list()
 
-  for (i in 1:length(d$res$P.adj)) {
+  for (i in seq_along(d$res$P.adj)) {
     if (!is.na(d$res$P.adj[i]) && d$res$P.adj[i] < 0.05) {
       # --- P-Value Formatting ---
       pValueNumeric <- d$res$P.adj[i]
@@ -970,7 +974,7 @@ reportDunnTestTable <- function(d = NULL, data, iv = "testiv", dv = "testdv", or
 
   # Calculate effect sizes for all comparisons (only for significant ones)
   effectSizes <- numeric(nrow(table))
-  for (i in 1:nrow(table)) {
+  for (i in seq_len(nrow(table))) {
     comparison <- as.character(table[i, "Comparison"])
     firstCondition <- trimws(strsplit(comparison, " - ", fixed = TRUE)[[1]][1])
     secondCondition <- trimws(strsplit(comparison, " - ", fixed = TRUE)[[1]][2])
@@ -986,7 +990,9 @@ reportDunnTestTable <- function(d = NULL, data, iv = "testiv", dv = "testdv", or
         effectSizes[i] <- abs(es$r_rank_biserial)
       },
       error = function(e) {
-        effectSizes[i] <- NA
+        # Super-assign so the failure is recorded in the enclosing vector;
+        # a plain `<-` here would only mutate a discarded local copy.
+        effectSizes[i] <<- NA
       }
     )
   }

@@ -70,6 +70,7 @@ generateEffectPlot <- function(data,
     ggplot2::labs(y = ytext) +
     ggplot2::labs(x = xtext) +
     ggplot2::theme(
+      legend.position = "inside",
       legend.position.inside = legendPos,
       legend.title = ggplot2::element_text(face = "bold", color = "black", size = 14)
     ) +
@@ -265,8 +266,13 @@ generateMoboPlot2 <- function(data, x = "Iteration", y, phaseCol = "Phase", fill
     ytext <- stringr::str_to_title(y)
   }
 
-  numberSamplingSteps <- max(as.numeric(data[[x]][data[[phaseCol]] == "sampling"]), na.rm = TRUE)
-  numberOptimizations <- max(as.numeric(data[[x]][data[[phaseCol]] == "optimization"]), na.rm = TRUE) - numberSamplingSteps
+  # Convert the iteration axis robustly: a factor's storage codes are not its
+  # numeric labels, so route factors through character first.
+  x_numeric <- if (is.factor(data[[x]])) as.numeric(as.character(data[[x]])) else as.numeric(data[[x]])
+  # Match phase labels case-insensitively so "Sampling"/"sampling" both work.
+  phase <- tolower(as.character(data[[phaseCol]]))
+  numberSamplingSteps <- max(x_numeric[phase == "sampling"], na.rm = TRUE)
+  numberOptimizations <- max(x_numeric[phase == "optimization"], na.rm = TRUE) - numberSamplingSteps
 
   maxIteration <- numberSamplingSteps + numberOptimizations
 
@@ -278,7 +284,7 @@ generateMoboPlot2 <- function(data, x = "Iteration", y, phaseCol = "Phase", fill
     ggplot2::ggplot(ggplot2::aes(x = !!x_sym, y = !!y_sym)) +
     ggplot2::labs(y = ytext) +
     ggplot2::labs(x = "Iteration") +
-    ggplot2::theme(legend.position.inside = legendPos) +
+    ggplot2::theme(legend.position = "inside", legend.position.inside = legendPos) +
     ggplot2::stat_summary(fun = base::mean, geom = "point", size = 4.0, alpha = 0.9) +
     ggplot2::stat_summary(fun = base::mean, geom = "line", linewidth = 1, alpha = 0.3) +
     ggplot2::stat_summary(
@@ -374,7 +380,10 @@ generateMoboPlot <- function(data, x, y, fillColourGroup = "ConditionID", ytext,
     ytext <- stringr::str_to_title(y)
   }
 
-  maxIteration <- max(as.numeric(data[[x]]), na.rm = TRUE)
+  # A factor's storage codes are not its numeric labels; route factors through
+  # character first so e.g. levels c(10, 20, 30) are not read as c(1, 2, 3).
+  x_numeric <- if (is.factor(data[[x]])) as.numeric(as.character(data[[x]])) else as.numeric(data[[x]])
+  maxIteration <- max(x_numeric, na.rm = TRUE)
   numberOptimizations <- maxIteration - numberSamplingSteps
 
   p <- data |> ggplot2::ggplot() +
@@ -388,7 +397,7 @@ generateMoboPlot <- function(data, x, y, fillColourGroup = "ConditionID", ytext,
     see::scale_fill_see() +
     see::scale_color_see() +
     ggplot2::labs(y = ytext) +
-    ggplot2::theme(legend.position.inside = legendPos) +
+    ggplot2::theme(legend.position = "inside", legend.position.inside = legendPos) +
     ggplot2::labs(x = "Iteration") +
     ggplot2::stat_summary(fun = mean, geom = "point", size = 4.0, alpha = 0.9) +
     ggplot2::stat_summary(fun = mean, geom = "line", linewidth = 1, alpha = 0.3) +
@@ -654,13 +663,13 @@ ggbetweenstatsWithPriorNormalityCheckAsterisk <- function(data, x, y, ylab, xlab
   # Only add asterisks if there are significant differences
   if (nrow(df) > 0) {
     # adjust to the maximum value in the dataset
-    lowestNumberText <- paste0("NA=0.0; else=", toString(round((max(data[[y]]) + 0.5), digits = 2)))
+    lowestNumberText <- paste0("NA=0.0; else=", toString(round((max(data[[y]], na.rm = TRUE) + 0.5), digits = 2)))
 
     # Explicitly call car::recode and wrap in as.numeric
     y_positions_asterisks <- as.numeric(car::recode(df$asterisk_label, recodes = lowestNumberText))
 
     count <- 0
-    for (i in 1:length(y_positions_asterisks)) {
+    for (i in seq_along(y_positions_asterisks)) {
       if (y_positions_asterisks[i] != 0.0) {
         y_positions_asterisks[i] <- y_positions_asterisks[i] + count * 0.25
         count <- count + 1
@@ -755,11 +764,11 @@ ggwithinstatsWithPriorNormalityCheckAsterisk <- function(data, x, y, ylab, xlabe
   # Only add asterisks if there are significant differences
   if (nrow(df) > 0) {
     # adjust to the maximum value in the dataset
-    lowestNumberText <- paste0("NA=0.0; else=", toString(round((max(data[[y]]) + 0.5), digits = 2)))
+    lowestNumberText <- paste0("NA=0.0; else=", toString(round((max(data[[y]], na.rm = TRUE) + 0.5), digits = 2)))
     y_positions_asterisks <- as.numeric(car::recode(df$asterisk_label, recodes = lowestNumberText))
 
     count <- 0
-    for (i in 1:length(y_positions_asterisks)) {
+    for (i in seq_along(y_positions_asterisks)) {
       if (y_positions_asterisks[i] != 0.0) {
         y_positions_asterisks[i] <- y_positions_asterisks[i] + count * 0.25
         count <- count + 1

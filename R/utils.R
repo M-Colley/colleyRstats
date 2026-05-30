@@ -78,9 +78,9 @@ pathPrep <- function(path = "clipboard", read_fn = NULL, write_fn = NULL) {
     return(function(...) invisible(NULL))
   }
 
-  writer <- get_clip_writer()
+  from_clipboard <- identical(path, "clipboard")
 
-  y <- if (identical(path, "clipboard")) {
+  y <- if (from_clipboard) {
     reader <- get_clip_reader()
     reader()
   } else {
@@ -88,7 +88,12 @@ pathPrep <- function(path = "clipboard", read_fn = NULL, write_fn = NULL) {
   }
 
   x <- chartr("\\", "/", y)
-  writer(x)
+  # Only write back to the clipboard when the path was read from it; otherwise
+  # an explicit `path` argument would silently clobber the user's clipboard.
+  if (from_clipboard) {
+    writer <- get_clip_writer()
+    writer(x)
+  }
   return(x)
 }
 
@@ -98,6 +103,7 @@ pathPrep <- function(path = "clipboard", read_fn = NULL, write_fn = NULL) {
 #' @return A data frame with the median and label.
 #' @export
 n_fun <- function(x) {
+  x <- x[!is.na(x)]
   return(data.frame(y = median(x), label = paste0("n = ", length(x))))
 }
 
@@ -148,8 +154,11 @@ normalize <- function(x_vector, old_min, old_max, new_min, new_max) {
 #' @param x the x column
 #' @param y the y column
 #'
-#' @return TRUE if all groups are normal, FALSE otherwise. For groups with
-#'   n > 5000, Shapiro-Wilk is skipped and the function returns FALSE with a warning.
+#' @return TRUE if all groups are normal, FALSE otherwise. For groups with more
+#'   than 5000 non-missing values, Shapiro-Wilk is computed on a random sample of
+#'   5000 observations (a warning is emitted); the returned value still reflects
+#'   that sampled test. Because the sample is drawn randomly, results for such
+#'   large groups are not reproducible unless a seed is set beforehand.
 #' @export
 check_normality_by_group <- function(data, x, y) {
   # Input validation
@@ -259,7 +268,10 @@ rFromWilcox <- function(wilcoxModel, N) {
   not_empty(N)
 
   z <- stats::qnorm(wilcoxModel$p.value / 2)
-  r <- z / sqrt(N)
+  # Report the magnitude: z is derived from a two-sided p-value and is always
+  # negative, so the raw quotient would spuriously report a negative effect
+  # size regardless of the true direction.
+  r <- abs(z / sqrt(N))
 
   msg <- sprintf(
     "%s Effect Size, r = %.3f, z = %.3f",
@@ -299,7 +311,10 @@ rFromWilcoxAdjusted <- function(wilcoxModel, N, adjustFactor) {
   not_empty(adjustFactor)
 
   z <- stats::qnorm(wilcoxModel$p.value * adjustFactor / 2)
-  r <- z / sqrt(N)
+  # Report the magnitude: z is derived from a two-sided p-value and is always
+  # negative, so the raw quotient would spuriously report a negative effect
+  # size regardless of the true direction.
+  r <- abs(z / sqrt(N))
 
   msg <- sprintf(
     "%s Effect Size, r = %.3f, z = %.3f",
@@ -331,7 +346,10 @@ rFromNPAV <- function(pvalue, N) {
   not_empty(N)
 
   z <- qnorm(pvalue / 2)
-  r <- z / sqrt(N)
+  # Report the magnitude: z is derived from a two-sided p-value and is always
+  # negative, so the raw quotient would spuriously report a negative effect
+  # size regardless of the true direction.
+  r <- abs(z / sqrt(N))
 
   stringtowrite <- sprintf(
     "\\effectsize{%s}, Z=%s",
@@ -751,7 +769,7 @@ add_pareto_emoa_column <- function(data, objectives) {
   data$PARETO_EMOA <- FALSE
 
   # Mark TRUE for rows in the original data that match any row in the Pareto front
-  for (i in 1:nrow(pareto_df)) {
+  for (i in seq_len(nrow(pareto_df))) {
     matching_row <- which(
       apply(objective_data, 1, function(x) all(x == pareto_df[i, ]))
     )
@@ -869,7 +887,6 @@ remove_outliers_REI <- function(df, header = FALSE, variables = "", range = c(1,
   }
 
   # Calculate REI and related metrics
-  numLevels <- range[2] - range[1] + 1
   numQuestions <- ncol(testDF) - 1
   getResponses <- function(df) {
     recordedResponses <- unique(as.vector(as.matrix(df)))

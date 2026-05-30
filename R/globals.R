@@ -1,7 +1,7 @@
+# Data-frame column names referenced via non-standard evaluation (dplyr verbs
+# and base subset()). Kept intentionally minimal: only symbols that R's own
+# codetools flags as unbound globals are declared here, so the list cannot
+# silently mask a genuine typo or a misused base-function name.
 utils::globalVariables(c(
-  "ConditionID", "p.value", "p-adjusted", "statistic", "estimate",
-  "df.error", "Comparison", "Z", "group1", "group2",
-  "asterisk_label", "group_all_data_equal", "phaseCol",
-  "REI", "Suspicious", "Percentile", "PARETO_EMOA",
-  "x", "y", "df", "sd"
+  "p.value", "p-adjusted", "group1", "group2", "asterisk_label"
 ))

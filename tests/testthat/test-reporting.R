@@ -158,3 +158,87 @@ test_that("reportDunnTestTable can compute the Dunn test internally", {
     NA
   )
 })
+
+# Build a small within-subjects data set with a strong factor effect so that
+# the ART contrasts are reliably significant.
+make_art_con <- function() {
+  set.seed(123)
+  n <- 20
+  df <- data.frame(
+    UserID = factor(rep(seq_len(n), times = 3)),
+    mode   = factor(rep(c("Hand", "Eye", "Both"), each = n)),
+    prime  = factor(rep(rep(c("A", "B"), each = n / 2), times = 3))
+  )
+  df$score <- as.numeric(df$mode) * 2 + stats::rnorm(nrow(df))
+
+  m <- ARTool::art(score ~ mode * prime + Error(UserID / mode), data = df)
+  list(ac = ARTool::art.con(m, ~ mode, adjust = "holm"), data = df)
+}
+
+test_that("reportArtCon and reportArtConTable handle significant findings", {
+  skip_if_not_installed("ARTool")
+  skip_if_not_installed("emmeans")
+
+  fit <- make_art_con()
+
+  expect_message(
+    reportArtCon(fit$ac, data = fit$data, iv = "mode", dv = "score", paired = TRUE, id = "UserID"),
+    "post-hoc test"
+  )
+
+  expect_error(
+    reportArtConTable(fit$ac, data = fit$data, iv = "mode", dv = "score", paired = TRUE, id = "UserID"),
+    NA
+  )
+})
+
+test_that("reportArtConTable computes a paired rank-biserial effect size", {
+  skip_if_not_installed("ARTool")
+  skip_if_not_installed("emmeans")
+
+  fit <- make_art_con()
+
+  # Capture the printed LaTeX table and confirm the effect-size column is
+  # populated (not NA) when a valid pairing id is supplied.
+  out <- utils::capture.output(
+    reportArtConTable(fit$ac, data = fit$data, iv = "mode", dv = "score", paired = TRUE, id = "UserID")
+  )
+  r_rows <- grep("&", out, value = TRUE)
+  expect_true(length(r_rows) > 0)
+  expect_false(any(grepl("NA", out)))
+})
+
+test_that("reportArtCon accepts a summarised contrast object", {
+  skip_if_not_installed("ARTool")
+  skip_if_not_installed("emmeans")
+
+  fit <- make_art_con()
+
+  expect_message(
+    reportArtCon(summary(fit$ac), data = fit$data, iv = "mode", dv = "score"),
+    "post-hoc test"
+  )
+})
+
+test_that("reportArtCon reports no significant differences when appropriate", {
+  skip_if_not_installed("ARTool")
+  skip_if_not_installed("emmeans")
+
+  set.seed(7)
+  n <- 20
+  df <- data.frame(
+    UserID = factor(rep(seq_len(n), times = 3)),
+    mode   = factor(rep(c("Hand", "Eye", "Both"), each = n)),
+    prime  = factor(rep(rep(c("A", "B"), each = n / 2), times = 3))
+  )
+  # No mode effect -> contrasts should be non-significant
+  df$score <- stats::rnorm(nrow(df))
+
+  m <- ARTool::art(score ~ mode * prime + Error(UserID / mode), data = df)
+  ac <- ARTool::art.con(m, ~ mode, adjust = "holm")
+
+  expect_message(
+    reportArtCon(ac, data = df, iv = "mode", dv = "score"),
+    "no significant differences"
+  )
+})

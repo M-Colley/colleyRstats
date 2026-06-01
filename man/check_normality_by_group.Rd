@@ -14,8 +14,11 @@ check_normality_by_group(data, x, y)
 \item{y}{the y column}
 }
 \value{
-TRUE if all groups are normal, FALSE otherwise. For groups with
-n > 5000, Shapiro-Wilk is skipped and the function returns FALSE with a warning.
+TRUE if all groups are normal, FALSE otherwise. For groups with more
+than 5000 non-missing values, Shapiro-Wilk is computed on a random sample of
+5000 observations (a warning is emitted); the returned value still reflects
+that sampled test. Because the sample is drawn randomly, results for such
+large groups are not reproducible unless a seed is set beforehand.
 }
 \description{
 Check normality for groups

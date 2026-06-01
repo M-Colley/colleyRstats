@@ -1040,3 +1040,384 @@ reportDunnTestTable <- function(d = NULL, data, iv = "testiv", dv = "testdv", or
 
   invisible(NULL)
 }
+
+
+# Internal: coerce an art.con() result (or its summary) into a tidy data frame
+# with normalised column names. `art.con()` returns an emmeans `emmGrid`; its
+# summary carries `contrast`, `estimate`, `SE`, `df`, `t.ratio`/`z.ratio` and
+# `p.value`. Also accepts an already-summarised data frame so callers may pass
+# either `ac` or `summary(ac)`.
+.art_con_to_df <- function(ac) {
+  if (inherits(ac, "emmGrid")) {
+    tbl <- as.data.frame(summary(ac))
+  } else {
+    tbl <- as.data.frame(ac)
+  }
+
+  # Contrast label column
+  if (!"contrast" %in% names(tbl)) {
+    cand <- names(tbl)[vapply(tbl, function(x) is.character(x) || is.factor(x), logical(1))]
+    if (length(cand) == 0) {
+      stop("Could not find a contrast/label column in the art.con() object.")
+    }
+    names(tbl)[names(tbl) == cand[1]] <- "contrast"
+  }
+  tbl$contrast <- as.character(tbl$contrast)
+
+  # p-value column (already adjusted by art.con()'s `adjust` argument)
+  if (!"p.value" %in% names(tbl)) {
+    pcol <- grep("^p\\.value$|p\\.val|Pr\\(>", names(tbl), ignore.case = TRUE, value = TRUE)
+    if (length(pcol) == 0) {
+      stop("Could not find a p-value column in the art.con() object.")
+    }
+    names(tbl)[names(tbl) == pcol[1]] <- "p.value"
+  }
+
+  # Test statistic column: prefer t.ratio, fall back to z.ratio
+  if (!"statistic" %in% names(tbl)) {
+    scol <- grep("^t\\.ratio$|^z\\.ratio$", names(tbl), value = TRUE)
+    tbl$statistic <- if (length(scol) > 0) tbl[[scol[1]]] else NA_real_
+  }
+  if (!"df" %in% names(tbl)) {
+    tbl$df <- NA_real_
+  }
+
+  tbl
+}
+
+
+# Internal: rank-biserial correlation for one pair of conditions, computed from
+# the raw data. For unpaired data the formula interface is used. For paired
+# (within-subjects) data we aggregate to one value per subject x condition
+# (mean of any replicate trials), align the two conditions by `id`, and use the
+# two-vector interface (the formula interface of effectsize does not support
+# `paired = TRUE`).
+.art_con_effect_size <- function(data, iv, dv, condA, condB, paired = FALSE, id = NULL) {
+  data_subset <- data |>
+    dplyr::filter(!!rlang::sym(iv) %in% c(condA, condB)) |>
+    droplevels()
+
+  if (!paired) {
+    es <- effectsize::rank_biserial(
+      stats::as.formula(paste(dv, "~", iv)),
+      data = data_subset
+    )
+    return(abs(es$r_rank_biserial))
+  }
+
+  if (is.null(id) || !id %in% names(data)) {
+    stop("`paired = TRUE` requires `id` to name the subject/pairing column.")
+  }
+
+  wide <- data_subset |>
+    dplyr::group_by(!!rlang::sym(id), !!rlang::sym(iv)) |>
+    dplyr::summarise(.value = mean(!!rlang::sym(dv), na.rm = TRUE), .groups = "drop") |>
+    tidyr::pivot_wider(names_from = !!rlang::sym(iv), values_from = ".value")
+
+  x <- wide[[condA]]
+  y <- wide[[condB]]
+  keep <- stats::complete.cases(x, y)
+  es <- effectsize::rank_biserial(x[keep], y[keep], paired = TRUE)
+  abs(es$r_rank_biserial)
+}
+
+
+#' Report significant ART contrasts (art.con) as LaTeX text
+#'
+#' Companion to [reportDunnTest()] for aligned-rank-transform (ART) models. It
+#' extracts the significant pairwise comparisons produced by [ARTool::art.con()]
+#' (an \pkg{emmeans} contrast grid), computes the mean and standard deviation of
+#' the groups involved from the raw data, and prints LaTeX-formatted sentences.
+#'
+#' The p-values are taken as-is from the contrast object, i.e. they are already
+#' adjusted by whatever `adjust` was passed to `art.con()` (e.g. `"holm"`). The
+#' effect size is the rank-biserial correlation computed from the raw data. ART
+#' is most often used for within-subjects designs; pass `paired = TRUE` together
+#' with `id` (the subject column) to obtain the paired rank-biserial effect size.
+#'
+#' Attention: `ac` must be a pairwise contrast over a single factor `iv`
+#' (e.g. `art.con(model, ~ interaction_mode, adjust = "holm")`).
+#'
+#' Required commands in LaTeX:
+#' \code{\\newcommand{\\padjminor}{\\textit{p$_{adj}<$}}}
+#' \code{\\newcommand{\\padj}{\\textit{p$_{adj}$=}}}
+#' \code{\\newcommand{\\rankbiserial}[1]{$r_{rb} = #1$}}
+#'
+#' @param ac the contrast object returned by [ARTool::art.con()] (or its `summary()`)
+#' @param data the raw data frame used to fit the model
+#' @param iv independent variable (the contrasted factor)
+#' @param dv dependent variable
+#' @param paired whether to compute the rank-biserial effect size for paired
+#'   (within-subjects) data. Defaults to `FALSE`. When `TRUE`, `id` is required.
+#' @param id the subject/pairing column, used only when `paired = TRUE`. Replicate
+#'   trials per subject and condition are averaged before pairing.
+#'
+#' @return A message describing the statistical results.
+#' @export
+#'
+#' @examples
+#' \donttest{
+#' if (requireNamespace("ARTool", quietly = TRUE) &&
+#'   requireNamespace("emmeans", quietly = TRUE)) {
+#'   set.seed(123)
+#'   n <- 20
+#'   df <- data.frame(
+#'     UserID = factor(rep(seq_len(n), times = 3)),
+#'     mode   = factor(rep(c("Hand", "Eye", "Both"), each = n)),
+#'     prime  = factor(rep(rep(c("A", "B"), each = n / 2), times = 3))
+#'   )
+#'   df$score <- as.numeric(df$mode) * 2 + stats::rnorm(nrow(df))
+#'
+#'   m  <- ARTool::art(score ~ mode * prime + Error(UserID / mode), data = df)
+#'   ac <- ARTool::art.con(m, ~ mode, adjust = "holm")
+#'   reportArtCon(ac, data = df, iv = "mode", dv = "score", paired = TRUE, id = "UserID")
+#' }
+#' }
+reportArtCon <- function(ac, data, iv = "testiv", dv = "testdv", paired = FALSE, id = NULL) {
+  not_empty(ac)
+  not_empty(data)
+  not_empty(iv)
+  not_empty(dv)
+
+  tbl <- .art_con_to_df(ac)
+
+  # Check for significance globally first
+  if (!any(tbl$p.value < 0.05, na.rm = TRUE)) {
+    message(paste0("A post-hoc test found no significant differences for ", dv, ". "))
+    return(invisible(NULL))
+  }
+
+  # 1. Collect all significant findings into a list
+  findings <- list()
+
+  for (i in seq_along(tbl$p.value)) {
+    if (!is.na(tbl$p.value[i]) && tbl$p.value[i] < 0.05) {
+      # --- P-Value Formatting ---
+      pValueNumeric <- tbl$p.value[i]
+      if (pValueNumeric < 0.001) {
+        pValueStr <- "\\padjminor{0.001}"
+      } else {
+        pValueStr <- paste0("\\padj{", sprintf("%.3f", round(pValueNumeric, digits = 3)), "}")
+      }
+
+      # --- Split Conditions ---
+      # emmeans pairwise contrasts are labelled "A - B"
+      parts <- strsplit(tbl$contrast[i], " - ", fixed = TRUE)[[1]]
+      condA <- trimws(parts[1])
+      condB <- trimws(parts[2])
+
+      # --- Calculate Effect Size (rank-biserial from the raw data) ---
+      esStr <- ""
+      tryCatch(
+        {
+          rrb <- .art_con_effect_size(data, iv, dv, condA, condB, paired = paired, id = id)
+          esStr <- paste0(", \\rankbiserial{", sprintf("%.2f", rrb), "}")
+        },
+        error = function(e) {}
+      )
+
+      # --- Calculate Means/SDs ---
+      statsA <- data |>
+        dplyr::filter(!!rlang::sym(iv) == condA) |>
+        dplyr::summarise(m = mean(!!rlang::sym(dv), na.rm = TRUE), sd = stats::sd(!!rlang::sym(dv), na.rm = TRUE))
+
+      statsB <- data |>
+        dplyr::filter(!!rlang::sym(iv) == condB) |>
+        dplyr::summarise(m = mean(!!rlang::sym(dv), na.rm = TRUE), sd = stats::sd(!!rlang::sym(dv), na.rm = TRUE))
+
+      strStatsA <- paste0("(\\m{", sprintf("%.2f", statsA$m), "}, \\sd{", sprintf("%.2f", statsA$sd), "})")
+      strStatsB <- paste0("(\\m{", sprintf("%.2f", statsB$m), "}, \\sd{", sprintf("%.2f", statsB$sd), "})")
+
+      # --- Determine Direction (Winner vs Loser) ---
+      if (statsA$m >= statsB$m) {
+        winner <- condA
+        winnerStats <- strStatsA
+        loserString <- paste0(
+          condB, " (\\m{", sprintf("%.2f", statsB$m),
+          "}, \\sd{", sprintf("%.2f", statsB$sd), "}; ", pValueStr, esStr, ")"
+        )
+      } else {
+        winner <- condB
+        winnerStats <- strStatsB
+        loserString <- paste0(
+          condA, " (\\m{", sprintf("%.2f", statsA$m),
+          "}, \\sd{", sprintf("%.2f", statsA$sd), "}; ", pValueStr, esStr, ")"
+        )
+      }
+
+      findings[[length(findings) + 1]] <- list(
+        winner = winner,
+        winnerStats = winnerStats,
+        loserString = loserString
+      )
+    }
+  }
+
+  # 2. Group findings by Winner and construct sentences
+  if (length(findings) > 0) {
+    df_res <- do.call(rbind, lapply(findings, as.data.frame, stringsAsFactors = FALSE))
+
+    unique_winners <- unique(df_res$winner)
+
+    for (w in unique_winners) {
+      subset_res <- df_res[df_res$winner == w, ]
+
+      # Oxford-comma join of the beaten conditions
+      losers <- subset_res$loserString
+      n <- length(losers)
+
+      if (n == 1) {
+        joined_losers <- losers[1]
+      } else if (n == 2) {
+        joined_losers <- paste(losers, collapse = " and ")
+      } else {
+        joined_losers <- paste0(paste(losers[1:(n - 1)], collapse = ", "), ", and ", losers[n])
+      }
+
+      iv_cmd <- paste0("\\", iv)
+
+      final_str <- paste0(
+        "A post-hoc test found that ", dv, " for the ", iv_cmd, " ", w,
+        " was significantly higher ", subset_res$winnerStats[1],
+        " than for ", joined_losers, ". "
+      )
+
+      message(final_str)
+    }
+  }
+  invisible(NULL)
+}
+
+
+#' Report ART contrasts (art.con) as a LaTeX table. Customizable with sensible
+#' defaults. Companion to [reportDunnTestTable()].
+#'
+#' Required commands in LaTeX:
+#' \code{\\newcommand{\\padjminor}{\\textit{p$_{adj}<$}}}
+#' \code{\\newcommand{\\padj}{\\textit{p$_{adj}$=}}}
+#' \code{\\newcommand{\\rankbiserial}[1]{$r_{rb} = #1$}}
+#'
+#' @param ac the contrast object returned by [ARTool::art.con()] (or its `summary()`)
+#' @param data the raw data frame used to fit the model
+#' @param iv independent variable (the contrasted factor)
+#' @param dv dependent variable
+#' @param paired whether to compute the rank-biserial effect size for paired
+#'   (within-subjects) data. Defaults to `FALSE`. When `TRUE`, `id` is required.
+#' @param id the subject/pairing column, used only when `paired = TRUE`. Replicate
+#'   trials per subject and condition are averaged before pairing.
+#' @param orderByP whether to order by the p value
+#' @param numberDigitsForPValue the number of digits to show
+#' @param latexSize which size for the text
+#' @param orderText whether to order the text
+#'
+#' @return A message describing the statistical results in a table.
+#' @export
+#'
+#' @examples
+#' \donttest{
+#' if (requireNamespace("ARTool", quietly = TRUE) &&
+#'   requireNamespace("emmeans", quietly = TRUE)) {
+#'   set.seed(123)
+#'   n <- 20
+#'   df <- data.frame(
+#'     UserID = factor(rep(seq_len(n), times = 3)),
+#'     mode   = factor(rep(c("Hand", "Eye", "Both"), each = n)),
+#'     prime  = factor(rep(rep(c("A", "B"), each = n / 2), times = 3))
+#'   )
+#'   df$score <- as.numeric(df$mode) * 2 + stats::rnorm(nrow(df))
+#'
+#'   m  <- ARTool::art(score ~ mode * prime + Error(UserID / mode), data = df)
+#'   ac <- ARTool::art.con(m, ~ mode, adjust = "holm")
+#'   reportArtConTable(ac, data = df, iv = "mode", dv = "score", paired = TRUE, id = "UserID")
+#' }
+#' }
+reportArtConTable <- function(ac, data, iv = "testiv", dv = "testdv", paired = FALSE, id = NULL, orderByP = FALSE, numberDigitsForPValue = 4, latexSize = "small", orderText = TRUE) {
+  not_empty(ac)
+  not_empty(data)
+  not_empty(iv)
+  not_empty(dv)
+
+  src <- .art_con_to_df(ac)
+
+  table <- data.frame(
+    Comparison = as.character(src$contrast),
+    t = src$statistic,
+    df = src$df,
+    `p-adjusted` = src$p.value,
+    check.names = FALSE
+  )
+
+  # only show significant ones
+  table <- subset(table, `p-adjusted` < 0.05)
+
+  # Check if there are any significant results
+  if (nrow(table) == 0) {
+    message(paste0("A post-hoc test found no significant differences for ", dv, ". "))
+    return(invisible(NULL))
+  }
+
+  # Calculate effect sizes for the significant comparisons
+  effectSizes <- numeric(nrow(table))
+  for (i in seq_len(nrow(table))) {
+    comparison <- as.character(table[i, "Comparison"])
+    parts <- strsplit(comparison, " - ", fixed = TRUE)[[1]]
+    firstCondition <- trimws(parts[1])
+    secondCondition <- trimws(parts[2])
+
+    tryCatch(
+      {
+        effectSizes[i] <- .art_con_effect_size(
+          data, iv, dv, firstCondition, secondCondition,
+          paired = paired, id = id
+        )
+      },
+      error = function(e) {
+        # Super-assign so the failure is recorded in the enclosing vector;
+        # a plain `<-` here would only mutate a discarded local copy.
+        effectSizes[i] <<- NA
+      }
+    )
+  }
+
+  # Add effect size column
+  table$r <- effectSizes
+
+  if (orderByP) {
+    table <- table[order(table$`p-adjusted`), ]
+  }
+
+  if (orderText) {
+    table <- table[order(table$Comparison), ]
+  }
+
+  # Replace 0.000 with <0.001 automatically
+  table$`p-adjusted` <- ifelse(table$`p-adjusted` < 0.001, "<0.001",
+    formatC(table$`p-adjusted`, digits = numberDigitsForPValue, format = "f")
+  )
+
+  # Format effect size
+  table$r <- formatC(table$r, digits = 2, format = "f")
+
+  if (requireNamespace("xtable", quietly = TRUE)) {
+    xtable_obj <- xtable::xtable(table,
+      digits = c(0, 0, 2, 0, 0, 2),
+      caption = paste0(
+        "Post-hoc ART contrasts for independent variable \\", iv,
+        " and dependent variable \\", dv,
+        ". Positive t-values mean that the first-named level is sig. higher than the second-named (on the aligned-rank scale). For negative t-values, the opposite is true. Effect size reported as rank-biserial correlation (r)."
+      ),
+      label = paste0("tab:artcon-", iv, "-", dv)
+    )
+
+    print(xtable_obj, type = "latex", size = latexSize, caption.placement = "top", include.rownames = FALSE)
+  } else {
+    message(paste0(
+      "Post-hoc ART contrasts for independent variable \\", iv,
+      " and dependent variable \\", dv,
+      ". Positive t-values mean that the first-named level is sig. higher than the second-named (on the aligned-rank scale). For negative t-values, the opposite is true. Effect size reported as rank-biserial correlation (r).\n"
+    ))
+    print(table)
+  }
+
+  invisible(NULL)
+}

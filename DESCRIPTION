@@ -45,7 +45,7 @@ Suggests:
 	BayesFactor,
 	bayestestR,
     Cairo,
-    dunn.test,
+    dunn.test (>= 1.4.1),
     DT,
     emmeans,
     emoa,

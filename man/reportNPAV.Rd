@@ -7,7 +7,12 @@ Only significant main and interaction effects are reported.
 P-values are rounded for the third digit and partial eta squared values are provided when possible.
 Attention: the independent variables of the formula and the term specifying the participant must be factors (i.e., use as.factor()).}
 \usage{
-reportNPAV(model, dv = "Testdependentvariable", write_to_clipboard = FALSE)
+reportNPAV(
+  model,
+  dv = "Testdependentvariable",
+  write_to_clipboard = FALSE,
+  sink_to = NULL
+)
 }
 \arguments{
 \item{model}{the model of the np.anova}
@@ -15,12 +20,16 @@ reportNPAV(model, dv = "Testdependentvariable", write_to_clipboard = FALSE)
 \item{dv}{the name of the dependent variable that should be reported}
 
 \item{write_to_clipboard}{whether to write to the clipboard}
+
+\item{sink_to}{optional path of a \code{.tex} file to write the sentences to,
+so a manuscript can \code{\\input{}} them}
 }
 \value{
-A message describing the statistical results.
+Invisibly returns the reported sentence(s) as a character vector;
+the text is also emitted via \code{message()}.
 }
 \description{
-Deprecated: \code{reportNPAV()} will be removed in colleyRstats 0.1.0.
+Deprecated: \code{reportNPAV()} will be removed in a future release.
 Use \code{reportART()} with ARTool instead.
 }
 \details{

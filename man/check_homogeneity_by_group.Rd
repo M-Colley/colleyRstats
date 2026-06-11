@@ -14,7 +14,10 @@ check_homogeneity_by_group(data, x, y)
 \item{y}{the dependent variable (column name as string)}
 }
 \value{
-TRUE if Levene's test is non-significant (p >= .05), FALSE otherwise
+TRUE if Levene's test is non-significant (p >= .05), FALSE otherwise.
+The Levene test result (columns \code{df1}, \code{df2}, \code{statistic},
+\code{p}) is attached in the \code{"test"} attribute, e.g. for use in a
+methods section via \code{\link[=assumption_methods_text]{assumption_methods_text()}}.
 }
 \description{
 Check homogeneity of variances across groups

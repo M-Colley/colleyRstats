@@ -68,6 +68,21 @@ test_that("generateMoboPlot2 returns a ggplot object", {
   expect_s3_class(p, "ggplot")
 })
 
+test_that("generateMoboPlot2 rejects data without both phases", {
+  df <- data.frame(
+    Iteration = 1:10,
+    score = rnorm(10),
+    ConditionID = rep(c("A", "B"), each = 5),
+    Phase = rep("optimization", 10)
+  )
+
+  # Used to silently produce -Inf annotation positions
+  expect_error(
+    generateMoboPlot2(data = df, x = "Iteration", y = "score"),
+    "sampling"
+  )
+})
+
 test_that("generateMoboPlot2 uses documented default grouping and labels", {
   df <- data.frame(
     Iteration = 1:10,

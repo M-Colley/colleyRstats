@@ -9,6 +9,47 @@ test_that("normalize scales values correctly", {
   expect_equal(normalize(10, 0, 100, 0, 1), 0.1)
 })
 
+test_that("normalize rejects a zero-width input range", {
+  expect_error(normalize(1:5, 2, 2, 0, 1), "must differ")
+})
+
+test_that("replace_values leaves untouched numeric columns bit-identical", {
+  df <- data.frame(
+    label = c("bad", "good"),
+    value = c(pi, exp(1))
+  )
+
+  result <- replace_values(df, to_replace = "bad", replace_with = "worse")
+
+  expect_equal(result$label, c("worse", "good"))
+  # A character round-trip would lose the last digits of precision
+  expect_identical(result$value, df$value)
+})
+
+test_that("replace_values only modifies matching numeric entries", {
+  df <- data.frame(code = c(99, 1.5, 99), keep = c(pi, pi, pi))
+
+  result <- replace_values(df, to_replace = "99", replace_with = "0")
+
+  expect_equal(result$code, c(0, 1.5, 0))
+  expect_identical(result$keep, df$keep)
+})
+
+test_that(".p_to_asterisk follows APA boundaries", {
+  expect_identical(
+    colleyRstats:::.p_to_asterisk(c(0.0005, 0.001, 0.005, 0.01, 0.03, 0.05, 0.5, NA)),
+    c("***", "**", "**", "*", "*", NA, NA, NA)
+  )
+})
+
+test_that("rFromWilcoxAdjusted caps adjusted p-values at 1", {
+  fake_w <- list(p.value = 0.9, data.name = "fake data")
+
+  expect_message(result <- rFromWilcoxAdjusted(fake_w, N = 20, adjustFactor = 5), "Effect Size")
+  expect_false(is.nan(result$r))
+  expect_equal(result$z, qnorm(0.5))
+})
+
 test_that("replace_values swaps items correctly", {
   df <- data.frame(a = c("bad", "good", "bad"), b = 1:3)
 
@@ -179,6 +220,9 @@ test_that("checkAssumptionsForAnova reports parametric guidance", {
 })
 
 test_that("reshape_data writes a reshaped Excel file", {
+  skip_if_not_installed("readxl")
+  skip_if_not_installed("writexl")
+
   toy <- data.frame(
     ID = c(1, 2),
     videoinfo1 = c("marker", "marker"),
@@ -215,6 +259,52 @@ test_that("add_pareto_emoa_column marks pareto front points", {
   expect_equal(nrow(result), 3)
 })
 
+test_that("add_pareto_emoa_column excludes dominated points (minimization)", {
+  skip_if_not_installed("emoa")
+
+  data <- data.frame(
+    trust = c(1, 2, 3, 3),
+    predictability = c(3, 2, 1, 3)
+  )
+
+  result <- add_pareto_emoa_column(data, objectives = c("trust", "predictability"))
+  # (3, 3) is dominated by every other point; the trade-off points remain
+  expect_equal(result$PARETO_EMOA, c(TRUE, TRUE, TRUE, FALSE))
+
+  # Single row is trivially on the front
+  single <- add_pareto_emoa_column(data[1, ], objectives = c("trust", "predictability"))
+  expect_true(single$PARETO_EMOA)
+})
+
+test_that("reshape_data rejects sections with unequal column counts", {
+  skip_if_not_installed("readxl")
+  skip_if_not_installed("writexl")
+
+  toy <- data.frame(
+    ID = c(1, 2),
+    videoinfo1 = c("marker", "marker"),
+    A = c(10, 11),
+    B = c(12, 13),
+    videoinfo2 = c("marker", "marker"),
+    C = c(20, 21),
+    stringsAsFactors = FALSE
+  )
+
+  tmp_in <- tempfile(fileext = ".xlsx")
+  tmp_out <- tempfile(fileext = ".xlsx")
+  writexl::write_xlsx(toy, tmp_in)
+
+  expect_error(
+    reshape_data(
+      input_filepath = tmp_in,
+      marker = "videoinfo",
+      id_col = "ID",
+      output_filepath = tmp_out
+    ),
+    "same number of columns"
+  )
+})
+
 test_that("remove_outliers_REI calculates REI and flags", {
   df <- data.frame(var1 = c(1, 2, 3), var2 = c(2, 3, 4))
   result <- remove_outliers_REI(df, header = FALSE, variables = "", range = c(1, 5))
@@ -235,4 +325,30 @@ test_that("remove_outliers_REI validates inputs", {
     remove_outliers_REI(df, header = FALSE, variables = "", range = c(1, 5)),
     "Not enough columns found with the given phrase."
   )
+})
+
+test_that("remove_outliers_REI validates and applies the range argument", {
+  df <- data.frame(var1 = c(1, 2, 3), var2 = c(2, 3, 4))
+
+  expect_error(
+    remove_outliers_REI(df, header = FALSE, variables = "", range = 1),
+    "length 2"
+  )
+  expect_error(
+    remove_outliers_REI(df, header = FALSE, variables = "", range = c(5, 1)),
+    "length 2"
+  )
+
+  df_out_of_range <- data.frame(var1 = c(1, 2, 99), var2 = c(2, 3, 4))
+  expect_warning(
+    remove_outliers_REI(df_out_of_range, header = FALSE, variables = "", range = c(1, 5)),
+    "outside the declared Likert"
+  )
+})
+
+test_that("remove_outliers_REI tolerates missing responses", {
+  df <- data.frame(var1 = c(1, 2, NA), var2 = c(2, 3, 4), var3 = c(1, 1, 2))
+  result <- remove_outliers_REI(df, header = FALSE, variables = "", range = c(1, 5))
+
+  expect_false(any(is.na(result$REI)))
 })

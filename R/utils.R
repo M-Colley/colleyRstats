@@ -144,7 +144,66 @@ stat_sum_df <- function(fun, geom = "crossbar", ...) {
 #' @examples
 #' normalize(c(1, 2, 3, 4, 5), 1, 5, 0, 1)
 normalize <- function(x_vector, old_min, old_max, new_min, new_max) {
+  if (old_max == old_min) {
+    stop("`old_min` and `old_max` must differ; cannot rescale a zero-width range.")
+  }
   return(new_min + ((x_vector - old_min) / (old_max - old_min)) * (new_max - new_min))
+}
+
+
+# Internal: write report sentences to a (LaTeX) text file so a manuscript can
+# \input{} them; parent directories are created as needed. Re-running an
+# analysis then updates the paper without any copy-paste.
+.write_tex <- function(sentences, path) {
+  not_empty(path)
+  dir <- dirname(path)
+  if (!dir.exists(dir)) {
+    dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+  }
+  writeLines(paste(sentences, collapse = "\n"), con = path)
+  message("Wrote results to '", path, "'.")
+  invisible(path)
+}
+
+# Internal: number formatting for reported statistics (fixed decimal places).
+.fmt_num <- function(x, digits = 2) {
+  sprintf(paste0("%.", digits, "f"), x)
+}
+
+# Internal: like .fmt_num, but for statistics bounded within [-1, 1] by
+# definition (p-values, r, eta^2). APA style omits their leading zero; opt in
+# via options(colleyRstats.leading_zero = FALSE).
+.fmt_bounded <- function(x, digits = 2) {
+  out <- .fmt_num(x, digits)
+  if (!isTRUE(getOption("colleyRstats.leading_zero", TRUE))) {
+    out <- sub("^(-?)0\\.", "\\1.", out)
+  }
+  out
+}
+
+# Internal: LaTeX p-value macro, e.g. "\\p{0.033}", or "\\pminor{0.001}" below
+# the reporting threshold. macro/minor_macro switch to the adjusted-p variants
+# ("padj"/"padjminor") used by the post-hoc reporters.
+.fmt_p_macro <- function(p, macro = "p", minor_macro = "pminor", digits = 3, threshold = 0.001) {
+  if (p < threshold) {
+    paste0("\\", minor_macro, "{", .fmt_bounded(threshold, digits), "}")
+  } else {
+    paste0("\\", macro, "{", .fmt_bounded(p, digits), "}")
+  }
+}
+
+
+# Internal: significance stars for (adjusted) p-values following the APA
+# convention *** p < .001, ** p < .01, * p < .05. Boundary values fall into
+# the next-weaker category (e.g. p = 0.01 yields "*"); non-significant or NA
+# p-values yield NA so callers can filter them out.
+.p_to_asterisk <- function(p) {
+  dplyr::case_when(
+    p < 0.001 ~ "***",
+    p < 0.01 ~ "**",
+    p < 0.05 ~ "*",
+    .default = NA_character_
+  )
 }
 
 
@@ -154,7 +213,10 @@ normalize <- function(x_vector, old_min, old_max, new_min, new_max) {
 #' @param x the x column
 #' @param y the y column
 #'
-#' @return TRUE if all groups are normal, FALSE otherwise. For groups with more
+#' @return TRUE if all groups are normal, FALSE otherwise. The per-group
+#'   Shapiro-Wilk statistics are attached as a data frame in the \code{"tests"}
+#'   attribute (columns: group, \code{W}, \code{p_value}), e.g. for use in a
+#'   methods section via [assumption_methods_text()]. For groups with more
 #'   than 5000 non-missing values, Shapiro-Wilk is computed on a random sample of
 #'   5000 observations (a warning is emitted); the returned value still reflects
 #'   that sampled test. Because the sample is drawn randomly, results for such
@@ -173,28 +235,30 @@ check_normality_by_group <- function(data, x, y) {
     data[[y]] <- val
   }
 
+  # Count non-missing values so the sampling warning below fires exactly when
+  # the Shapiro-Wilk branch actually samples (it tests na.omit()-ed values).
   group_sizes <- data |>
     dplyr::group_by(!!dplyr::sym(x)) |>
-    dplyr::summarise(n = dplyr::n(), .groups = "drop")
+    dplyr::summarise(n = sum(!is.na(!!dplyr::sym(y))), .groups = "drop")
 
   results <- data |>
     dplyr::group_by(!!dplyr::sym(x)) |>
     dplyr::summarise(
-      p_value = {
+      shapiro = list({
         values <- stats::na.omit(!!dplyr::sym(y))
         if (length(values) >= 3 && stats::var(values, na.rm = TRUE) > 0) {
           if (length(values) > 5000) {
-            sampled <- sample(values, size = 5000)
-            stats::shapiro.test(sampled)$p.value
-          } else {
-            stats::shapiro.test(values)$p.value
+            values <- sample(values, size = 5000)
           }
+          tst <- stats::shapiro.test(values)
+          c(W = unname(tst$statistic), p_value = tst$p.value)
         } else {
-          NA_real_ # Cannot test
+          c(W = NA_real_, p_value = NA_real_) # Cannot test
         }
-      },
+      }),
       .groups = "drop"
-    )
+    ) |>
+    tidyr::unnest_wider("shapiro")
 
   if (any(group_sizes$n > 5000)) {
     warning("Groups with n > 5000 were tested using a random sample of 5000 observations.", call. = FALSE)
@@ -203,6 +267,7 @@ check_normality_by_group <- function(data, x, y) {
   # If any group is significant (p < 0.05), data is NOT normal
   all_normal <- !any(results$p_value < 0.05, na.rm = TRUE)
 
+  attr(all_normal, "tests") <- as.data.frame(results)
   return(all_normal)
 }
 
@@ -213,7 +278,10 @@ check_normality_by_group <- function(data, x, y) {
 #' @param x the grouping variable (column name as string)
 #' @param y the dependent variable (column name as string)
 #'
-#' @return TRUE if Levene's test is non-significant (p >= .05), FALSE otherwise
+#' @return TRUE if Levene's test is non-significant (p >= .05), FALSE otherwise.
+#'   The Levene test result (columns \code{df1}, \code{df2}, \code{statistic},
+#'   \code{p}) is attached in the \code{"test"} attribute, e.g. for use in a
+#'   methods section via [assumption_methods_text()].
 #' @export
 check_homogeneity_by_group <- function(data, x, y) {
   not_empty(data)
@@ -234,11 +302,9 @@ check_homogeneity_by_group <- function(data, x, y) {
   # rstatix::levene_test returns a tibble with column 'p'
   p_val <- levene_res$p[1L]
 
-  if (is.na(p_val)) {
-    return(FALSE)
-  }
-
-  return(p_val >= 0.05)
+  result <- if (is.na(p_val)) FALSE else p_val >= 0.05
+  attr(result, "test") <- as.data.frame(levene_res)
+  return(result)
 }
 
 
@@ -310,7 +376,10 @@ rFromWilcoxAdjusted <- function(wilcoxModel, N, adjustFactor) {
   not_empty(N)
   not_empty(adjustFactor)
 
-  z <- stats::qnorm(wilcoxModel$p.value * adjustFactor / 2)
+  # An adjusted p-value (e.g. Bonferroni-style p * factor) can exceed 1, and
+  # qnorm() would then return NaN; probabilities are capped at 1.
+  adjusted_p <- min(wilcoxModel$p.value * adjustFactor, 1)
+  z <- stats::qnorm(adjusted_p / 2)
   # Report the magnitude: z is derived from a two-sided p-value and is always
   # negative, so the raw quotient would spuriously report a negative effect
   # size regardless of the true direction.
@@ -499,9 +568,12 @@ checkAssumptionsForAnova <- function(data, y, factors) {
     dplyr::group_by(dplyr::across(dplyr::all_of(factors))) |>
     rstatix::shapiro_test(!!rlang::sym(y))
 
-  # Check if the normality assumption holds (p > 0.05 for all groups)
+  # Check if the normality assumption holds (p >= 0.05 for all groups)
   test_p <- extract_p_value(test)
-  if (all(is.na(test_p)) || min(test_p, na.rm = TRUE) <= 0.05) {
+  if (all(is.na(test_p))) {
+    return(emit_guidance("Group-wise normality could not be assessed (e.g., too few observations per group). Take the non-parametric ANOVA to be safe."))
+  }
+  if (min(test_p, na.rm = TRUE) < 0.05) {
     return(emit_guidance("You must take the non-parametric ANOVA as normality assumption by groups is violated (one or more p < 0.05)."))
   }
 
@@ -553,51 +625,57 @@ replace_values <- function(data, to_replace, replace_with) {
   # Create a named vector for replacements
   replace_map <- setNames(replace_with, to_replace)
 
-  # Apply replacements column-wise
+  # Apply replacements column-wise. Only the matching entries are touched:
+  # round-tripping a whole numeric column through as.character()/as.numeric()
+  # would silently lose precision in values that were never replaced
+  # (as.character() keeps only 15 significant digits).
   data[] <- lapply(data, function(column) {
     # Convert factors to characters and restore factor levels after replacement
     if (is.factor(column)) {
       column_chr <- as.character(column)
-      replaced <- ifelse(!is.na(column_chr) & column_chr %in% names(replace_map),
-        replace_map[column_chr],
-        column_chr
-      )
+      hits <- !is.na(column_chr) & column_chr %in% names(replace_map)
+      if (!any(hits)) {
+        return(column)
+      }
+      column_chr[hits] <- replace_map[column_chr[hits]]
       new_levels <- unique(c(levels(column), replace_with))
-      return(factor(replaced, levels = new_levels))
+      return(factor(column_chr, levels = new_levels))
     }
 
     # Replace values for character columns
     if (is.character(column)) {
-      return(ifelse(!is.na(column) & column %in% names(replace_map),
-        replace_map[column],
-        column
-      ))
-    }
-
-    # Replace values for logical/numeric columns only if replacements are compatible
-    column_chr <- as.character(column)
-    replaced_chr <- ifelse(!is.na(column_chr) & column_chr %in% names(replace_map),
-      replace_map[column_chr],
-      column_chr
-    )
-
-    if (is.logical(column)) {
-      coerced <- as.logical(replaced_chr)
-      if (any(is.na(coerced) & !is.na(replaced_chr))) {
-        stop("Replacement values are incompatible with logical columns.")
+      hits <- !is.na(column) & column %in% names(replace_map)
+      if (any(hits)) {
+        column[hits] <- replace_map[column[hits]]
       }
-      return(coerced)
+      return(column)
     }
 
-    if (is.numeric(column) || is.integer(column)) {
-      coerced <- suppressWarnings(as.numeric(replaced_chr))
-      if (any(is.na(coerced) & !is.na(replaced_chr))) {
+    # Logical/numeric columns: match on the character representation, replace
+    # in place, and only if the replacements are type-compatible
+    if (is.logical(column) || is.numeric(column)) {
+      column_chr <- as.character(column)
+      hits <- !is.na(column_chr) & column_chr %in% names(replace_map)
+      if (!any(hits)) {
+        return(column)
+      }
+      replacement_chr <- unname(replace_map[column_chr[hits]])
+
+      if (is.logical(column)) {
+        coerced <- as.logical(replacement_chr)
+        if (any(is.na(coerced) & !is.na(replacement_chr))) {
+          stop("Replacement values are incompatible with logical columns.")
+        }
+        column[hits] <- coerced
+        return(column)
+      }
+
+      coerced <- suppressWarnings(as.numeric(replacement_chr))
+      if (any(is.na(coerced) & !is.na(replacement_chr))) {
         stop("Replacement values are incompatible with numeric columns.")
       }
-      if (is.integer(column)) {
-        return(as.integer(coerced))
-      }
-      return(coerced)
+      column[hits] <- if (is.integer(column)) as.integer(coerced) else coerced
+      return(column)
     }
 
     column
@@ -654,11 +732,11 @@ replace_values <- function(data, to_replace, replace_with) {
 #'   print(out)
 #' }
 #' }
-#'
-#' @importFrom dplyr select bind_rows bind_cols
-#' @importFrom readxl read_excel
-#' @importFrom writexl write_xlsx
 reshape_data <- function(input_filepath, sheetName = "Results", marker = "videoinfo", id_col = "ID", output_filepath) {
+  if (!requireNamespace("readxl", quietly = TRUE) || !requireNamespace("writexl", quietly = TRUE)) {
+    stop("Packages 'readxl' and 'writexl' are required for reshape_data(). Please install them.")
+  }
+
   # Read the Excel file into a data frame. If the requested sheet is missing,
   # fall back to the first available sheet to keep the helper robust for
   # single-sheet workbooks created on the fly (e.g., in tests).
@@ -666,37 +744,33 @@ reshape_data <- function(input_filepath, sheetName = "Results", marker = "videoi
   sheet_to_read <- if (sheetName %in% available_sheets) sheetName else available_sheets[[1]]
   df <- readxl::read_excel(input_filepath, sheet = sheet_to_read)
 
-  # Initialize an empty vector to store the current columns for each marker section
-  current_columns <- c()
-
   # Extract the custom "ID" column
   id_column <- df |> dplyr::select(dplyr::all_of(id_col))
 
-  # Loop through each column (excluding ID) to identify given markers and reshape data accordingly
-  slices <- list()
+  # Sections are the runs of columns between marker columns (markers
+  # themselves are dropped); section 0 holds any columns before the first
+  # marker. Empty runs (adjacent markers) are discarded.
   data_columns <- setdiff(names(df), id_col)
-  for (col in data_columns) {
-    if (startsWith(col, marker)) {
-      if (length(current_columns) > 0) {
-        sliced_df <- df |> dplyr::select(dplyr::all_of(current_columns))
-        slices[[length(slices) + 1]] <- dplyr::bind_cols(id_column, sliced_df)
-      }
-      current_columns <- c()
-    } else {
-      current_columns <- c(current_columns, col)
-    }
-  }
+  is_marker <- startsWith(data_columns, marker)
+  section_id <- cumsum(is_marker)
+  section_cols <- split(data_columns[!is_marker], section_id[!is_marker])
+  section_cols <- Filter(length, section_cols)
 
-  if (length(current_columns) > 0) {
-    sliced_df <- df |> dplyr::select(dplyr::all_of(current_columns))
-    slices[[length(slices) + 1]] <- dplyr::bind_cols(id_column, sliced_df)
-  }
-
-  if (length(slices) == 0) {
+  if (length(section_cols) == 0) {
     long_df <- dplyr::bind_cols(id_column, df |> dplyr::select(-dplyr::all_of(id_col)))
   } else {
-    base_names <- names(slices[[1]])
-    slices <- lapply(slices, function(slice) {
+    widths <- lengths(section_cols)
+    if (length(unique(widths)) > 1) {
+      stop(
+        "All sections delimited by marker '", marker,
+        "' must contain the same number of columns; found section widths: ",
+        paste(widths, collapse = ", "), "."
+      )
+    }
+
+    base_names <- c(id_col, section_cols[[1]])
+    slices <- lapply(section_cols, function(cols) {
+      slice <- dplyr::bind_cols(id_column, df |> dplyr::select(dplyr::all_of(cols)))
       names(slice) <- base_names
       slice
     })
@@ -753,30 +827,10 @@ add_pareto_emoa_column <- function(data, objectives) {
   # Select only the objective columns
   objective_data <- data |> dplyr::select(dplyr::all_of(objectives))
 
-  # If there's only one row, mark it as PARETO_EMOA directly
-  if (nrow(objective_data) == 1) {
-    data$PARETO_EMOA <- TRUE
-    return(data)
-  }
-
-  # Transpose and convert to matrix as required by the nondominated_points function
-  pareto_points <- emoa::nondominated_points(t(as.matrix(objective_data)))
-
-  # Convert the Pareto points matrix back to a data frame for comparison
-  pareto_df <- as.data.frame(t(pareto_points))
-
-  # Initialize the PARETO_EMOA column as FALSE
-  data$PARETO_EMOA <- FALSE
-
-  # Mark TRUE for rows in the original data that match any row in the Pareto front
-  for (i in seq_len(nrow(pareto_df))) {
-    matching_row <- which(
-      apply(objective_data, 1, function(x) all(x == pareto_df[i, ]))
-    )
-    if (length(matching_row) > 0) {
-      data$PARETO_EMOA[matching_row] <- TRUE
-    }
-  }
+  # emoa expects one point per matrix *column* (criteria in rows) and
+  # minimises every criterion. is_dominated() flags each point directly, so no
+  # error-prone float-equality matching against the front is needed.
+  data$PARETO_EMOA <- !emoa::is_dominated(t(as.matrix(objective_data)))
 
   # Return the updated data frame
   return(data)
@@ -836,11 +890,16 @@ add_pareto_moocore_column <- function(data, objectives) {
 
 
 
-#' Remove outliers and calculate REI
+#' Flag suspicious survey responses via the Response Entropy Index (REI)
 #'
 #' This function takes a data frame, optional header information, variables to consider,
 #' and a range for a Likert scale. It then calculates the Response Entropy Index (REI)
-#' and flags suspicious entries based on percentiles.
+#' and flags suspicious entries based on percentiles. Note that no rows are
+#' removed; entries are only flagged via the `Suspicious` column.
+#'
+#' Missing responses are ignored when tallying answers. Responses outside the
+#' declared Likert `range` trigger a warning (they often indicate mis-coded
+#' data) but are still included in the REI computation.
 #'
 #' For more information on the REI method, refer to:
 #' [Response Entropy Index Method](https://ojs.ub.uni-konstanz.de/srm/article/view/7832)
@@ -848,7 +907,8 @@ add_pareto_moocore_column <- function(data, objectives) {
 #' @param df Data frame containing the data.
 #' @param header Logical indicating if the data frame has a header. Defaults to FALSE.
 #' @param variables Character string specifying which variables to consider, separated by commas.
-#' @param range Numeric vector specifying the range of the Likert scale. Defaults to c(1, 5).
+#' @param range Numeric vector of length 2 specifying the range of the Likert scale
+#'   (used to sanity-check the responses). Defaults to c(1, 5).
 #'
 #' @return A data frame with calculated REI, percentile, and a 'Suspicious' flag.
 #' @export
@@ -862,6 +922,9 @@ remove_outliers_REI <- function(df, header = FALSE, variables = "", range = c(1,
   # Validate and parse variables
   if (variables == "" && header == TRUE) {
     stop("Please input variables to consider!")
+  }
+  if (!is.numeric(range) || length(range) != 2 || range[1] > range[2]) {
+    stop("`range` must be a numeric vector of length 2 with range[1] <= range[2].")
   }
   iniVariables <- stringr::str_split(variables, ",")
   variableNames <- unique(trimws(iniVariables[[1]]))
@@ -889,9 +952,21 @@ remove_outliers_REI <- function(df, header = FALSE, variables = "", range = c(1,
   # Calculate REI and related metrics
   numQuestions <- ncol(testDF) - 1
   getResponses <- function(df) {
+    # NA responses are excluded from the tally; without na.rm a single NA
+    # would poison the row's counts for every response option.
     recordedResponses <- unique(as.vector(as.matrix(df)))
-    tallies <- sapply(recordedResponses, function(x) rowSums(df == x))
+    recordedResponses <- recordedResponses[!is.na(recordedResponses)]
+    tallies <- sapply(recordedResponses, function(x) rowSums(df == x, na.rm = TRUE))
     return(tallies)
+  }
+
+  response_values <- suppressWarnings(as.numeric(as.vector(as.matrix(testDF[, -1]))))
+  if (any(response_values < range[1] | response_values > range[2], na.rm = TRUE)) {
+    warning(
+      "Responses outside the declared Likert `range` [", range[1], ", ", range[2],
+      "] were found; they are still included in the REI computation.",
+      call. = FALSE
+    )
   }
 
   tallies <- getResponses(testDF[, -1])

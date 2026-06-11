@@ -64,5 +64,4 @@ if (requireNamespace(c("write_xlsx", "readxl"), quietly = TRUE)) {
   print(out)
 }
 }
-
 }

@@ -14,7 +14,10 @@ check_normality_by_group(data, x, y)
 \item{y}{the y column}
 }
 \value{
-TRUE if all groups are normal, FALSE otherwise. For groups with more
+TRUE if all groups are normal, FALSE otherwise. The per-group
+Shapiro-Wilk statistics are attached as a data frame in the \code{"tests"}
+attribute (columns: group, \code{W}, \code{p_value}), e.g. for use in a
+methods section via \code{\link[=assumption_methods_text]{assumption_methods_text()}}. For groups with more
 than 5000 non-missing values, Shapiro-Wilk is computed on a random sample of
 5000 observations (a warning is emitted); the returned value still reflects
 that sampled test. Because the sample is drawn randomly, results for such

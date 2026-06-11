@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{remove_outliers_REI}
 \alias{remove_outliers_REI}
-\title{Remove outliers and calculate REI}
+\title{Flag suspicious survey responses via the Response Entropy Index (REI)}
 \usage{
 remove_outliers_REI(df, header = FALSE, variables = "", range = c(1, 5))
 }
@@ -13,7 +13,8 @@ remove_outliers_REI(df, header = FALSE, variables = "", range = c(1, 5))
 
 \item{variables}{Character string specifying which variables to consider, separated by commas.}
 
-\item{range}{Numeric vector specifying the range of the Likert scale. Defaults to c(1, 5).}
+\item{range}{Numeric vector of length 2 specifying the range of the Likert scale
+(used to sanity-check the responses). Defaults to c(1, 5).}
 }
 \value{
 A data frame with calculated REI, percentile, and a 'Suspicious' flag.
@@ -21,9 +22,14 @@ A data frame with calculated REI, percentile, and a 'Suspicious' flag.
 \description{
 This function takes a data frame, optional header information, variables to consider,
 and a range for a Likert scale. It then calculates the Response Entropy Index (REI)
-and flags suspicious entries based on percentiles.
+and flags suspicious entries based on percentiles. Note that no rows are
+removed; entries are only flagged via the \code{Suspicious} column.
 }
 \details{
+Missing responses are ignored when tallying answers. Responses outside the
+declared Likert \code{range} trigger a warning (they often indicate mis-coded
+data) but are still included in the REI computation.
+
 For more information on the REI method, refer to:
 \href{https://ojs.ub.uni-konstanz.de/srm/article/view/7832}{Response Entropy Index Method}
 }

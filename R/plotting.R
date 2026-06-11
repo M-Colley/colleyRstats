@@ -117,6 +117,9 @@ generateEffectPlot <- function(data,
 
   # Latex extension
   if (useLatexMarkup) {
+    if (!requireNamespace("ggtext", quietly = TRUE)) {
+      stop("Package 'ggtext' is required for `useLatexMarkup = TRUE`. Please install it.")
+    }
     p <- p + ggplot2::theme(
       legend.text = ggplot2::element_text(
         family = "sans",
@@ -256,11 +259,6 @@ generateMoboPlot2 <- function(data, x = "Iteration", y, phaseCol = "Phase", fill
   not_empty(fillColourGroup)
   stopifnot(all(c(x, y, phaseCol) %in% names(data)))
 
-  if (!base::require("ggplot2", quietly = TRUE)) {
-    stop("Package 'ggplot2' is required for generateMoboPlot2().")
-  }
-
-
   # as default, just add the y variable in Title caps
   if (missing(ytext)) {
     ytext <- stringr::str_to_title(y)
@@ -271,6 +269,12 @@ generateMoboPlot2 <- function(data, x = "Iteration", y, phaseCol = "Phase", fill
   x_numeric <- if (is.factor(data[[x]])) as.numeric(as.character(data[[x]])) else as.numeric(data[[x]])
   # Match phase labels case-insensitively so "Sampling"/"sampling" both work.
   phase <- tolower(as.character(data[[phaseCol]]))
+  if (!any(phase == "sampling", na.rm = TRUE) || !any(phase == "optimization", na.rm = TRUE)) {
+    stop(
+      "Column '", phaseCol,
+      "' must contain both 'sampling' and 'optimization' rows (case-insensitive)."
+    )
+  }
   numberSamplingSteps <- max(x_numeric[phase == "sampling"], na.rm = TRUE)
   numberOptimizations <- max(x_numeric[phase == "optimization"], na.rm = TRUE) - numberSamplingSteps
 
@@ -292,11 +296,12 @@ generateMoboPlot2 <- function(data, x = "Iteration", y, phaseCol = "Phase", fill
       width = 0.5, position = ggplot2::position_dodge(width = 0.1), alpha = 0.5
     ) +
     ggplot2::annotate("text", x = numberSamplingSteps / 2.0, y = horizontalLinePosY - horizontalLineDistToText, label = "Sampling", size = annotationTextSize, fontface = "bold") +
-    ggplot2::geom_segment(
-      ggplot2::aes(
-        x = 0, y = horizontalLinePosY,
-        xend = numberSamplingSteps + 0.2, yend = horizontalLinePosY
-      ),
+    # annotate() draws the guide lines exactly once; mapping these constants
+    # inside aes() would draw one overlapping segment per data row.
+    ggplot2::annotate(
+      "segment",
+      x = 0, y = horizontalLinePosY,
+      xend = numberSamplingSteps + 0.2, yend = horizontalLinePosY,
       linetype = "dashed", color = "black"
     ) +
     ggplot2::annotate("text",
@@ -304,16 +309,16 @@ generateMoboPlot2 <- function(data, x = "Iteration", y, phaseCol = "Phase", fill
       y = horizontalLinePosY - horizontalLineDistToText, label = "Optimization",
       size = annotationTextSize, fontface = "bold"
     ) +
-    ggplot2::geom_segment(
-      ggplot2::aes(
-        x = numberSamplingSteps + 0.8, y = horizontalLinePosY,
-        xend = maxIteration, yend = horizontalLinePosY
-      ),
+    ggplot2::annotate(
+      "segment",
+      x = numberSamplingSteps + 0.8, y = horizontalLinePosY,
+      xend = maxIteration, yend = horizontalLinePosY,
       color = "black"
     ) +
     ggpmisc::stat_poly_eq(ggpmisc::use_label(c("eq", "R2")), label.y = labelPosFormulaY, label.x = labelPosFormulaX, size = annotationTextSize) +
     ggpmisc::stat_poly_line(fullrange = FALSE, alpha = 0.1, linetype = "dashed", linewidth = 0.5) +
-    ggplot2::geom_vline(ggplot2::aes(xintercept = numberSamplingSteps + 0.5),
+    ggplot2::geom_vline(
+      xintercept = numberSamplingSteps + 0.5,
       linetype = "dashed", color = "black", alpha = 0.5
     )
 
@@ -321,8 +326,8 @@ generateMoboPlot2 <- function(data, x = "Iteration", y, phaseCol = "Phase", fill
     f_sym <- rlang::sym(fillColourGroup)
     p <- p +
       ggplot2::aes(fill = !!f_sym, colour = !!f_sym, group = !!f_sym) +
-      see::scale_fill_see(labels  = if (!is.null(fillLabels)) fillLabels else waiver()) +
-      see::scale_color_see(labels  = if (!is.null(fillLabels)) fillLabels else waiver())
+      see::scale_fill_see(labels  = if (!is.null(fillLabels)) fillLabels else ggplot2::waiver()) +
+      see::scale_color_see(labels  = if (!is.null(fillLabels)) fillLabels else ggplot2::waiver())
   } else {
     p <- p + ggplot2::aes(group = 1)
   }
@@ -371,10 +376,6 @@ generateMoboPlot <- function(data, x, y, fillColourGroup = "ConditionID", ytext,
   not_empty(y)
   not_empty(fillColourGroup)
 
-  if (!base::require("ggplot2", quietly = TRUE)) {
-    stop("Package 'ggplot2' is required for generateMoboPlot().")
-  }
-
   # as default, just add the y variable in Title caps
   if (missing(ytext)) {
     ytext <- stringr::str_to_title(y)
@@ -409,13 +410,14 @@ generateMoboPlot <- function(data, x, y, fillColourGroup = "ConditionID", ytext,
       alpha = 0.5
     ) +
     ggplot2::annotate("text", x = numberSamplingSteps / 2.0, y = verticalLinePosY - 0.2, label = "Sampling") +
-    ggplot2::geom_segment(
-      ggplot2::aes(
-        x = 0,
-        y = verticalLinePosY,
-        xend = numberSamplingSteps + 0.2,
-        yend = verticalLinePosY
-      ),
+    # annotate() draws the guide lines exactly once; mapping these constants
+    # inside aes() would draw one overlapping segment per data row.
+    ggplot2::annotate(
+      "segment",
+      x = 0,
+      y = verticalLinePosY,
+      xend = numberSamplingSteps + 0.2,
+      yend = verticalLinePosY,
       linetype = "dashed",
       color = "black"
     ) +
@@ -425,19 +427,18 @@ generateMoboPlot <- function(data, x, y, fillColourGroup = "ConditionID", ytext,
       y = verticalLinePosY - 0.2,
       label = "Optimization"
     ) +
-    ggplot2::geom_segment(
-      ggplot2::aes(
-        x = numberSamplingSteps + 0.8,
-        y = verticalLinePosY,
-        xend = maxIteration,
-        yend = verticalLinePosY
-      ),
+    ggplot2::annotate(
+      "segment",
+      x = numberSamplingSteps + 0.8,
+      y = verticalLinePosY,
+      xend = maxIteration,
+      yend = verticalLinePosY,
       color = "black"
     ) +
     ggpmisc::stat_poly_eq(ggpmisc::use_label(c("eq", "R2")), label.y = labelPosFormulaY) +
     ggpmisc::stat_poly_line(fullrange = FALSE, alpha = 0.1, linetype = "dashed", linewidth = 0.5) +
     ggplot2::geom_vline(
-      ggplot2::aes(xintercept = numberSamplingSteps + 0.5),
+      xintercept = numberSamplingSteps + 0.5,
       linetype = "dashed",
       color = "black",
       alpha = 0.5
@@ -498,7 +499,7 @@ ggwithinstatsWithPriorNormalityCheck <- function(data, x, y, ylab, xlabels = NUL
 
   plot <- ggstatsplot::ggwithinstats(
     data = data, x = !!x, y = !!y, type = type, centrality.type = "p", ylab = ylab, xlab = "", pairwise.comparisons = showPairwiseComp, var.equal = group_all_data_equal,
-    centrality.point.args = list(size = 5, alpha = 0.5, color = "darkblue"), package = "pals", palette = "glasbey",
+    centrality.point.args = list(size = 5, alpha = 0.5, color = "darkblue"), palette = "pals::glasbey",
     plot.type = plotType,
     p.adjust.method = "holm",
     ggplot.component = list(
@@ -571,7 +572,7 @@ ggbetweenstatsWithPriorNormalityCheck <- function(data, x, y, ylab, xlabels = NU
   # if one group_all_data_equal then we use the var.equal = TRUE, see here: https://github.com/IndrajeetPatil/ggstatsplot/issues/880
   plot <- ggstatsplot::ggbetweenstats(
     data = data, x = !!x, y = !!y, type = type, centrality.type = "p", ylab = ylab, xlab = "", pairwise.comparisons = showPairwiseComp, var.equal = group_all_data_equal,
-    centrality.point.args = list(size = 5, alpha = 0.5, color = "darkblue"), package = "pals", palette = "glasbey", plot.type = plotType,
+    centrality.point.args = list(size = 5, alpha = 0.5, color = "darkblue"), palette = "pals::glasbey", plot.type = plotType,
     p.adjust.method = "holm",
     ggplot.component = list(
       ggplot2::theme(
@@ -641,15 +642,13 @@ ggbetweenstatsWithPriorNormalityCheckAsterisk <- function(data, x, y, ylab, xlab
   df <- statsExpressions::pairwise_comparisons(data = data, x = !!x, y = !!y, type = type, p.adjust.method = "holm") |>
     dplyr::mutate(groups = purrr::pmap(.l = list(group1, group2), .f = c)) |>
     dplyr::arrange(group1) |>
-    dplyr::mutate(asterisk_label = ifelse(`p.value` < 0.05 & `p.value` > 0.01, "*",
-                                          ifelse(`p.value` < 0.01 & `p.value` > 0.001, "**",
-                                                 ifelse(`p.value` < 0.001, "***", NA)))) |>
+    dplyr::mutate(asterisk_label = .p_to_asterisk(p.value)) |>
     dplyr::filter(!is.na(asterisk_label))
 
   # Create the base plot
   p <- ggstatsplot::ggbetweenstats(
     data = data, x = !!x, y = !!y, type = type, centrality.type = "p", ylab = ylab, xlab = "", pairwise.display = "none", var.equal = group_all_data_equal,
-    centrality.point.args = list(size = 5, alpha = 0.5, color = "darkblue"), package = "pals", palette = "glasbey", plot.type = plotType,
+    centrality.point.args = list(size = 5, alpha = 0.5, color = "darkblue"), palette = "pals::glasbey", plot.type = plotType,
     p.adjust.method = "holm",
     ggplot.component = list(
       ggplot2::theme(
@@ -662,19 +661,14 @@ ggbetweenstatsWithPriorNormalityCheckAsterisk <- function(data, x, y, ylab, xlab
 
   # Only add asterisks if there are significant differences
   if (nrow(df) > 0) {
-    # adjust to the maximum value in the dataset
-    lowestNumberText <- paste0("NA=0.0; else=", toString(round((max(data[[y]], na.rm = TRUE) + 0.5), digits = 2)))
-
-    # Explicitly call car::recode and wrap in as.numeric
-    y_positions_asterisks <- as.numeric(car::recode(df$asterisk_label, recodes = lowestNumberText))
-
-    count <- 0
-    for (i in seq_along(y_positions_asterisks)) {
-      if (y_positions_asterisks[i] != 0.0) {
-        y_positions_asterisks[i] <- y_positions_asterisks[i] + count * 0.25
-        count <- count + 1
-      }
-    }
+    # Stack the brackets above the largest observed value, spaced relative to
+    # the data range so the layout works for any dependent-variable scale
+    # (e.g. 1-7 Likert and 0-100 TLX alike). df only contains significant
+    # comparisons at this point, so no NA handling is needed.
+    y_max <- max(data[[y]], na.rm = TRUE)
+    y_span <- y_max - min(data[[y]], na.rm = TRUE)
+    step <- if (y_span > 0) 0.05 * y_span else 0.25
+    y_positions_asterisks <- y_max + step * seq_len(nrow(df))
 
     p <- p + ggsignif::geom_signif(
       comparisons = df$groups,
@@ -737,20 +731,18 @@ ggwithinstatsWithPriorNormalityCheckAsterisk <- function(data, x, y, ylab, xlabe
   is_normal <- check_normality_by_group(data, x, y)
   type <- ifelse(is_normal, "p", "np")
 
-  # homogeneity of variances: Levene
-  group_all_data_equal <- check_homogeneity_by_group(data, x, y)
+  # No Levene check here: ggwithinstats() (repeated measures) takes no
+  # var.equal argument, so computing it would be wasted work.
 
   df <- statsExpressions::pairwise_comparisons(data = data, x = !!x, y = !!y, type = type, p.adjust.method = "holm") |>
     dplyr::mutate(groups = purrr::pmap(.l = list(group1, group2), .f = c)) |>
     dplyr::arrange(group1) |>
-    dplyr::mutate(asterisk_label = ifelse(`p.value` < 0.05 & `p.value` > 0.01, "*",
-                                          ifelse(`p.value` < 0.01 & `p.value` > 0.001, "**",
-                                                 ifelse(`p.value` < 0.001, "***", NA)))) |>
+    dplyr::mutate(asterisk_label = .p_to_asterisk(p.value)) |>
     dplyr::filter(!is.na(asterisk_label))
 
   p <- ggstatsplot::ggwithinstats(
     data = data, x = !!x, y = !!y, type = type, centrality.type = "p", ylab = ylab, xlab = "", pairwise.display = "none",
-    centrality.point.args = list(size = 5, alpha = 0.5, color = "darkblue"), package = "pals", palette = "glasbey", plot.type = plotType,
+    centrality.point.args = list(size = 5, alpha = 0.5, color = "darkblue"), palette = "pals::glasbey", plot.type = plotType,
     p.adjust.method = "holm",
     ggplot.component = list(
       ggplot2::theme(
@@ -763,17 +755,14 @@ ggwithinstatsWithPriorNormalityCheckAsterisk <- function(data, x, y, ylab, xlabe
 
   # Only add asterisks if there are significant differences
   if (nrow(df) > 0) {
-    # adjust to the maximum value in the dataset
-    lowestNumberText <- paste0("NA=0.0; else=", toString(round((max(data[[y]], na.rm = TRUE) + 0.5), digits = 2)))
-    y_positions_asterisks <- as.numeric(car::recode(df$asterisk_label, recodes = lowestNumberText))
-
-    count <- 0
-    for (i in seq_along(y_positions_asterisks)) {
-      if (y_positions_asterisks[i] != 0.0) {
-        y_positions_asterisks[i] <- y_positions_asterisks[i] + count * 0.25
-        count <- count + 1
-      }
-    }
+    # Stack the brackets above the largest observed value, spaced relative to
+    # the data range so the layout works for any dependent-variable scale
+    # (e.g. 1-7 Likert and 0-100 TLX alike). df only contains significant
+    # comparisons at this point, so no NA handling is needed.
+    y_max <- max(data[[y]], na.rm = TRUE)
+    y_span <- y_max - min(data[[y]], na.rm = TRUE)
+    step <- if (y_span > 0) 0.05 * y_span else 0.25
+    y_positions_asterisks <- y_max + step * seq_len(nrow(df))
 
     p <- p + ggsignif::geom_signif(
       comparisons = df$groups,

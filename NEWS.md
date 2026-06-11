@@ -41,7 +41,7 @@
 ## DEPENDENCIES
 
 - Reduced hard dependencies: ARTool, car, clipr, conflicted, FSA, ggtext, readxl, report, rstatix, writexl, and xtable moved from Imports to Suggests (functions that need them check at runtime and degrade gracefully or stop with an informative message). `car` is no longer used by the package code at all.
-- The minimum R version is now 4.2.0 (was 4.6.0).
+- ggplot2 moved from Imports to Depends: the ggproto stats of ggpmisc 0.7.0/ggpp 0.6.0 resolve their parent classes via the search path, so `generateMoboPlot()`/`generateMoboPlot2()` fail with "object 'Stat' not found" whenever ggplot2 is not attached. Attaching colleyRstats now attaches ggplot2 as well.
 
 ## MISC
 

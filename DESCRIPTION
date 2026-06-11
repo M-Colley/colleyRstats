@@ -13,11 +13,11 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 8.0.0
 Language: en-US
 Depends:
-    R (>= 4.6.0)
+    R (>= 4.6.0),
+    ggplot2 (>= 4.0.3)
 Imports:
     dplyr (>= 1.2.1),
     effectsize (>= 1.0.2),
-    ggplot2 (>= 4.0.3),
     ggpmisc (>= 0.7.0),
     ggsignif,
     ggstatsplot (>= 1.0.0),

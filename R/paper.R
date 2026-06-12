@@ -42,8 +42,11 @@ latex_preamble <- function(path = NULL) {
 #'
 #' Saves a ggplot with sizes matching common two-column conference/journal
 #' layouts (e.g., ACM): a single-column figure is 3.33 in wide, a full-width
-#' figure 7 in. PDFs are rendered with \code{grDevices::cairo_pdf} so that
-#' fonts are embedded and unicode glyphs survive.
+#' figure 7 in. On Windows and Linux, PDFs are rendered with
+#' \code{grDevices::cairo_pdf} so that fonts are embedded and unicode glyphs
+#' survive; on macOS the default pdf device is used instead, because R's
+#' cairo on macOS is known to crash some setups (e.g., GitHub Actions
+#' runners) and the macOS device handles fonts well on its own.
 #'
 #' @param plot The plot to save (defaults to the last plot displayed).
 #' @param filename Output path; the extension selects the device
@@ -53,6 +56,9 @@ latex_preamble <- function(path = NULL) {
 #' @param width Figure width in inches; overrides \code{columns}.
 #' @param height Figure height in inches. Defaults to 2/3 of the width.
 #' @param dpi Resolution for raster output. Default 300.
+#' @param device Graphics device passed to [ggplot2::ggsave()]. The default
+#'   \code{NULL} selects it automatically as described above; pass e.g.
+#'   \code{grDevices::cairo_pdf} explicitly to override.
 #'
 #' @return Invisibly returns \code{filename}.
 #' @export
@@ -63,7 +69,7 @@ latex_preamble <- function(path = NULL) {
 #'   ggplot2::geom_boxplot()
 #' save_paper_figure(p, file.path(tempdir(), "cyl-mpg.pdf"), columns = 1)
 #' }
-save_paper_figure <- function(plot = ggplot2::last_plot(), filename, columns = 1, width = NULL, height = NULL, dpi = 300) {
+save_paper_figure <- function(plot = ggplot2::last_plot(), filename, columns = 1, width = NULL, height = NULL, dpi = 300, device = NULL) {
   not_empty(filename)
   if (!columns %in% c(1, 2)) {
     stop("`columns` must be 1 (single column) or 2 (full width).")
@@ -81,15 +87,27 @@ save_paper_figure <- function(plot = ggplot2::last_plot(), filename, columns = 1
     dir.create(dir, recursive = TRUE, showWarnings = FALSE)
   }
 
+  # cairo_pdf gives embedded fonts and proper unicode on Windows/Linux, but
+  # R's cairo on macOS can corrupt memory and crash the session (observed as
+  # segfaults on GitHub Actions macOS runners), so it is never auto-selected
+  # there; macOS' own pdf device handles fonts well.
   is_pdf <- grepl("\\.pdf$", filename, ignore.case = TRUE)
-  if (is_pdf) {
+  if (is.null(device) && is_pdf) {
+    use_cairo <- isTRUE(capabilities("cairo")[[1]]) &&
+      !identical(Sys.info()[["sysname"]], "Darwin")
+    if (use_cairo) {
+      device <- grDevices::cairo_pdf
+    }
+  }
+
+  if (is.null(device)) {
     ggplot2::ggsave(
-      filename = filename, plot = plot, device = grDevices::cairo_pdf,
-      width = width, height = height, units = "in"
+      filename = filename, plot = plot,
+      width = width, height = height, units = "in", dpi = dpi
     )
   } else {
     ggplot2::ggsave(
-      filename = filename, plot = plot,
+      filename = filename, plot = plot, device = device,
       width = width, height = height, units = "in", dpi = dpi
     )
   }

@@ -10,7 +10,8 @@ save_paper_figure(
   columns = 1,
   width = NULL,
   height = NULL,
-  dpi = 300
+  dpi = 300,
+  device = NULL
 )
 }
 \arguments{
@@ -27,6 +28,10 @@ Ignored when \code{width} is given.}
 \item{height}{Figure height in inches. Defaults to 2/3 of the width.}
 
 \item{dpi}{Resolution for raster output. Default 300.}
+
+\item{device}{Graphics device passed to \code{\link[ggplot2:ggsave]{ggplot2::ggsave()}}. The default
+\code{NULL} selects it automatically as described above; pass e.g.
+\code{grDevices::cairo_pdf} explicitly to override.}
 }
 \value{
 Invisibly returns \code{filename}.
@@ -34,8 +39,11 @@ Invisibly returns \code{filename}.
 \description{
 Saves a ggplot with sizes matching common two-column conference/journal
 layouts (e.g., ACM): a single-column figure is 3.33 in wide, a full-width
-figure 7 in. PDFs are rendered with \code{grDevices::cairo_pdf} so that
-fonts are embedded and unicode glyphs survive.
+figure 7 in. On Windows and Linux, PDFs are rendered with
+\code{grDevices::cairo_pdf} so that fonts are embedded and unicode glyphs
+survive; on macOS the default pdf device is used instead, because R's
+cairo on macOS is known to crash some setups (e.g., GitHub Actions
+runners) and the macOS device handles fonts well on its own.
 }
 \examples{
 \donttest{

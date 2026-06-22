@@ -639,7 +639,7 @@ ggbetweenstatsWithPriorNormalityCheckAsterisk <- function(data, x, y, ylab, xlab
   group_all_data_equal <- check_homogeneity_by_group(data, x, y)
 
   # Calculate pairwise comparisons
-  df <- statsExpressions::pairwise_comparisons(data = data, x = !!x, y = !!y, type = type, p.adjust.method = "holm") |>
+  df <- statsExpressions::pairwise_comparisons(data = data, x = !!x, y = !!y, type = type, paired = FALSE, p.adjust.method = "holm") |>
     dplyr::mutate(groups = purrr::pmap(.l = list(group1, group2), .f = c)) |>
     dplyr::arrange(group1) |>
     dplyr::mutate(asterisk_label = .p_to_asterisk(p.value)) |>
@@ -734,7 +734,7 @@ ggwithinstatsWithPriorNormalityCheckAsterisk <- function(data, x, y, ylab, xlabe
   # No Levene check here: ggwithinstats() (repeated measures) takes no
   # var.equal argument, so computing it would be wasted work.
 
-  df <- statsExpressions::pairwise_comparisons(data = data, x = !!x, y = !!y, type = type, p.adjust.method = "holm") |>
+  df <- statsExpressions::pairwise_comparisons(data = data, x = !!x, y = !!y, type = type, paired = TRUE, p.adjust.method = "holm") |>
     dplyr::mutate(groups = purrr::pmap(.l = list(group1, group2), .f = c)) |>
     dplyr::arrange(group1) |>
     dplyr::mutate(asterisk_label = .p_to_asterisk(p.value)) |>

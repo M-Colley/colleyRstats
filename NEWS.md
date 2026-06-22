@@ -1,3 +1,8 @@
+# colleyRstats 0.1.1
+
+## BUG FIXES
+- adjustment of the post-hoc test due to changes in the `ggstatsplot` implementation
+
 # colleyRstats 0.1.0
 
 ## NEW FEATURES

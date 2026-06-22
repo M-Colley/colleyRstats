@@ -156,10 +156,30 @@ test_that("reportggstatsplot reports results", {
 })
 
 test_that("reportggstatsplotPostHoc reports significant differences", {
-  plt <- ggstatsplot::ggbetweenstats(mtcars, am, mpg)
+  # A 3-level factor (cyl) is required: with only two groups ggstatsplot emits
+  # no pairwise comparisons (see the note on the NA test below), so `am` would
+  # yield "No pairwise comparison data found" instead of a post-hoc sentence.
+  plt <- ggstatsplot::ggbetweenstats(mtcars, cyl, mpg)
   expect_message(
-    reportggstatsplotPostHoc(data = mtcars, p = plt, iv = "am", dv = "mpg"),
+    reportggstatsplotPostHoc(data = mtcars, p = plt, iv = "cyl", dv = "mpg"),
     "post-hoc test"
+  )
+})
+
+test_that("reportggstatsplotPostHoc names the post-hoc test from the `test` column", {
+  # Drive the function with a controlled pairwise table so the reported test
+  # name is independent of ggstatsplot's version-specific defaults.
+  pwc <- data.frame(
+    group1 = "A", group2 = "B",
+    p.value = 0.01, test = "Games-Howell",
+    stringsAsFactors = FALSE
+  )
+  fake_plot <- structure(list(dummy = TRUE), pairwise_comparisons_data = pwc)
+  df <- data.frame(grp = c("A", "A", "B", "B"), val = c(5, 6, 1, 2))
+
+  expect_message(
+    reportggstatsplotPostHoc(df, fake_plot, iv = "grp", dv = "val"),
+    "Games-Howell post-hoc test"
   )
 })
 

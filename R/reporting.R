@@ -766,7 +766,15 @@ reportggstatsplotPostHoc <- function(data, p, iv = "testiv", dv = "testdv", labe
   not_empty(dv)
 
   # Extract stats from the ggstatsplot object
-  stats <- ggstatsplot::extract_stats(p)$pairwise_comparisons_data
+  stats <- attr(p, "pairwise_comparisons_data")
+  # Fallback
+  if (is.null(stats)) {
+    stats <- ggstatsplot::extract_stats(p)$pairwise_comparisons_data
+  }
+  if (is.null(stats) || nrow(stats) == 0) {
+    message(paste0("No pairwise comparison data found for ", dv, ". "))
+    return(invisible(NULL))
+  }
 
   if (!any(stats$p.value < 0.05, na.rm = TRUE)) {
     message(paste0("A post-hoc test found no significant differences for ", dv, ". "))
@@ -801,6 +809,14 @@ reportggstatsplotPostHoc <- function(data, p, iv = "testiv", dv = "testdv", labe
       firstLabel <- map_label(firstCondition)
       secondLabel <- map_label(secondCondition)
 
+      # Name the post-hoc test (e.g. "Games-Howell", "Dunn") from the `test`
+      # column when present; fall back to a generic phrasing otherwise.
+      testName <- if ("test" %in% names(stats) && !is.na(stats$test[i]) && nzchar(stats$test[i])) {
+        paste0("A ", stats$test[i], " post-hoc test found that ")
+      } else {
+        "A post-hoc test found that "
+      }
+
       valueOne <- data |>
         dplyr::filter(!!rlang::sym(iv) == firstCondition) |>
         dplyr::summarise(dplyr::across(
@@ -821,9 +837,9 @@ reportggstatsplotPostHoc <- function(data, p, iv = "testiv", dv = "testdv", labe
 
       # Construct and print output string
       sentence <- if (as.numeric(valueOne[1, 1]) > as.numeric(valueTwo[1, 1])) {
-        paste0("A post-hoc test found that ", firstLabel, " was significantly higher", firstStatsStr, " in terms of \\", dv, " compared to ", secondLabel, secondStatsStr, "; ", pValue, "). ")
+        paste0(testName, firstLabel, " was significantly higher", firstStatsStr, " in terms of \\", dv, " compared to ", secondLabel, secondStatsStr, "; ", pValue, "). ")
       } else {
-        paste0("A post-hoc test found that ", secondLabel, " was significantly higher", secondStatsStr, " in terms of \\", dv, " compared to ", firstLabel, firstStatsStr, "; ", pValue, "). ")
+        paste0(testName, secondLabel, " was significantly higher", secondStatsStr, " in terms of \\", dv, " compared to ", firstLabel, firstStatsStr, "; ", pValue, "). ")
       }
       message(sentence)
       sentences <- c(sentences, sentence)

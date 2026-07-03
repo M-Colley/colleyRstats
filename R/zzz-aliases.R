@@ -45,6 +45,18 @@ report_art_con_table <- reportArtConTable
 #' @export
 check_assumptions_anova <- checkAssumptionsForAnova
 
+#' @rdname reportGLMM
+#' @export
+report_glmm <- reportGLMM
+
+#' @rdname reportCLMM
+#' @export
+report_clmm <- reportCLMM
+
+#' @rdname recommend_test
+#' @export
+recommend_analysis <- recommend_test
+
 #' @rdname generateEffectPlot
 #' @export
 plot_effect <- generateEffectPlot

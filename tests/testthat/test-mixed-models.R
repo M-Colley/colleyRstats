@@ -187,6 +187,25 @@ test_that("reportCLMM reports odds ratios and omits the thresholds", {
   expect_false(grepl("\\|", txt))
 })
 
+test_that(".fmt_p_macro tolerates NA without erroring", {
+  # Regression: an un-estimable fixed effect yields p = NA; formatting it used
+  # to abort with "missing value where TRUE/FALSE needed".
+  expect_identical(colleyRstats:::.fmt_p_macro(NA_real_), "\\p{NA}")
+  expect_identical(
+    colleyRstats:::.fmt_p_macro(NA_real_, macro = "padj", minor_macro = "padjminor"),
+    "\\padj{NA}"
+  )
+})
+
+test_that("reportGLMM does not crash on a rank-deficient model", {
+  skip_if_not_installed("parameters")
+  set.seed(1)
+  d <- data.frame(y = rnorm(30), g = factor(rep(c("a", "b", "c"), 10)))
+  d$g_copy <- d$g # perfectly collinear -> aliased / un-estimable terms
+  m <- stats::lm(y ~ g + g_copy, data = d)
+  expect_error(suppressWarnings(suppressMessages(reportGLMM(m, dv = "y"))), NA)
+})
+
 test_that("reportCLMM rejects a non-ordinal model", {
   skip_if_not_installed("lme4")
   skip_if_not_installed("ordinal")

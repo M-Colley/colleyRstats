@@ -631,19 +631,30 @@ print.colley_recommendation <- function(x, ...) {
     est <- .fmt_num(row$Coefficient)
     ci <- paste0("[", .fmt_num(row$CI_low), ", ", .fmt_num(row$CI_high), "]")
     stat_txt <- .fmt_stat(row$.stat_name, row$.stat, row$df_error)
-    p_macro <- .fmt_p_macro(row$p)
-    significant <- !is.na(row$p) && row$p < alpha
+    # A fixed effect can have an un-estimable p-value (NA) when the model is
+    # rank-deficient or the optimiser did not converge for that term; report it
+    # as un-assessable rather than crashing or claiming non-significance.
+    p_na <- is.na(row$p)
+    p_macro <- if (p_na) "$p$ = NA" else .fmt_p_macro(row$p)
+    significant <- !p_na && row$p < alpha
 
     clause <- paste0(
       "$", label, " = ", est, "$, ", ci_pct, "\\% CI $", ci, "$",
       if (nzchar(stat_txt)) paste0(", ", stat_txt) else "",
       ", ", p_macro
     )
-    sentence <- paste0(
-      "The effect of \\textit{", latex_escape(row$Parameter), "} on ", dv_tex, " was ",
-      if (significant) "significant" else "not significant",
-      " (", clause, ")."
-    )
+    sentence <- if (p_na) {
+      paste0(
+        "The effect of \\textit{", latex_escape(row$Parameter), "} on ", dv_tex,
+        " could not be assessed (", clause, ")."
+      )
+    } else {
+      paste0(
+        "The effect of \\textit{", latex_escape(row$Parameter), "} on ", dv_tex, " was ",
+        if (significant) "significant" else "not significant",
+        " (", clause, ")."
+      )
+    }
     sentences <- c(sentences, sentence)
   }
 

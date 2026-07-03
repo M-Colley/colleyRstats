@@ -290,6 +290,9 @@ expand_latex_macros <- function(x) {
 # the reporting threshold. macro/minor_macro switch to the adjusted-p variants
 # ("padj"/"padjminor") used by the post-hoc reporters.
 .fmt_p_macro <- function(p, macro = "p", minor_macro = "pminor", digits = 3, threshold = 0.001) {
+  if (is.na(p)) {
+    return(paste0("\\", macro, "{NA}"))
+  }
   if (p < threshold) {
     paste0("\\", minor_macro, "{", .fmt_bounded(threshold, digits), "}")
   } else {

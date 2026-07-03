@@ -17,6 +17,7 @@ reportArtConTable(
   numberDigitsForPValue = 4,
   latexSize = "small",
   orderText = TRUE,
+  style = c("hline", "booktabs"),
   sink_to = NULL
 )
 
@@ -31,6 +32,7 @@ report_art_con_table(
   numberDigitsForPValue = 4,
   latexSize = "small",
   orderText = TRUE,
+  style = c("hline", "booktabs"),
   sink_to = NULL
 )
 }
@@ -56,6 +58,10 @@ trials per subject and condition are averaged before pairing.}
 \item{latexSize}{which size for the text}
 
 \item{orderText}{whether to order the comparisons alphabetically; ignored when \code{orderByP = TRUE}}
+
+\item{style}{table rule style: \code{"hline"} (default) or \code{"booktabs"}
+(\code{\\toprule}/\code{\\midrule}/\code{\\bottomrule}; needs
+\code{\\usepackage{booktabs}}).}
 
 \item{sink_to}{optional path of a \code{.tex} file to write the table to,
 so a manuscript can \code{\\input{}} it}

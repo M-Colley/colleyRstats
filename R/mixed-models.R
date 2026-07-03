@@ -611,7 +611,8 @@ print.colley_recommendation <- function(x, ...) {
     include_intercept = include_intercept
   )
 
-  intro <- paste0("A ", info$kind, " was fitted for ", dv, ".")
+  dv_tex <- latex_escape(dv)
+  intro <- paste0("A ", info$kind, " was fitted for ", dv_tex, ".")
 
   if (nrow(eff) == 0L) {
     intro <- paste0(intro, " No fixed-effect terms were available to report.")
@@ -639,7 +640,7 @@ print.colley_recommendation <- function(x, ...) {
       ", ", p_macro
     )
     sentence <- paste0(
-      "The effect of \\textit{", row$Parameter, "} on ", dv, " was ",
+      "The effect of \\textit{", latex_escape(row$Parameter), "} on ", dv_tex, " was ",
       if (significant) "significant" else "not significant",
       " (", clause, ")."
     )

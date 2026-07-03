@@ -8,6 +8,11 @@
 #'
 #' @param path Optional path of a \code{.tex} file to write the definitions to.
 #'
+#' @param path Optional path of a \code{.tex} file to write the definitions to.
+#'   If the path ends in \code{.sty}, a \code{\\ProvidesPackage} header is added
+#'   so it can be uploaded to Overleaf and loaded with
+#'   \code{\\usepackage{colleyRstats}} (see also [use_colleyrstats_sty()]).
+#'
 #' @return Invisibly returns the macro definitions as a character vector;
 #'   the text is also emitted via \code{message()}.
 #' @export
@@ -15,8 +20,31 @@
 #' @examples
 #' latex_preamble()
 latex_preamble <- function(path = NULL) {
-  macros <- c(
-    "% colleyRstats: LaTeX commands required by the report functions",
+  as_sty <- !is.null(path) && grepl("\\.sty$", path, ignore.case = TRUE)
+  macros <- if (as_sty) {
+    .colley_sty_lines()
+  } else {
+    c("% colleyRstats: LaTeX commands required by the report functions", .colley_macro_lines())
+  }
+
+  message(paste(macros, collapse = "\n"))
+  if (!is.null(path)) {
+    # Write verbatim: these ARE the macro definitions, so they must never be run
+    # through the plain-mode macro expander that .write_tex() applies.
+    dir <- dirname(path)
+    if (!dir.exists(dir)) dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+    writeLines(paste(macros, collapse = "\n"), con = path)
+    message("Wrote preamble to '", path, "'.")
+  }
+  invisible(macros)
+}
+
+
+# Internal: the single source of truth for the report macros. Both
+# latex_preamble() and the shipped inst/colleyRstats.sty derive from this, so
+# they can never drift apart (a test asserts the .sty matches).
+.colley_macro_lines <- function() {
+  c(
     "\\newcommand{\\F}[3]{$F({#1},{#2})={#3}$}",
     "\\newcommand{\\p}{\\textit{p=}}",
     "\\newcommand{\\pminor}{\\textit{p$<$}}",
@@ -29,12 +57,18 @@ latex_preamble <- function(path = NULL) {
     "\\newcommand{\\rankbiserial}[1]{$r_{rb} = #1$}",
     "\\newcommand{\\effectsize}{\\textit{r=}}"
   )
+}
 
-  message(paste(macros, collapse = "\n"))
-  if (!is.null(path)) {
-    .write_tex(macros, path)
-  }
-  invisible(macros)
+# Internal: the macro lines wrapped as a LaTeX package (colleyRstats.sty).
+.colley_sty_lines <- function() {
+  c(
+    "% colleyRstats.sty -- macros required by the colleyRstats report functions.",
+    "% Upload to Overleaf and load with \\usepackage{colleyRstats}.",
+    "\\NeedsTeXFormat{LaTeX2e}",
+    "\\ProvidesPackage{colleyRstats}[colleyRstats reporting macros]",
+    .colley_macro_lines(),
+    "\\endinput"
+  )
 }
 
 

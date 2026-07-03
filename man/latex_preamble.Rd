@@ -7,7 +7,10 @@
 latex_preamble(path = NULL)
 }
 \arguments{
-\item{path}{Optional path of a \code{.tex} file to write the definitions to.}
+\item{path}{Optional path of a \code{.tex} file to write the definitions to.
+If the path ends in \code{.sty}, a \code{\\ProvidesPackage} header is added
+so it can be uploaded to Overleaf and loaded with
+\code{\\usepackage{colleyRstats}} (see also \code{\link[=use_colleyrstats_sty]{use_colleyrstats_sty()}}).}
 }
 \value{
 Invisibly returns the macro definitions as a character vector;

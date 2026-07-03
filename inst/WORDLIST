@@ -14,6 +14,8 @@ ascorbic
 Asterisks
 bayes
 Bergh
+booktabs
+brms
 BFs
 BibTeX
 binwidth
@@ -23,6 +25,8 @@ boxviolin
 Cairo
 chartjunk
 Cikara
+CLMM
+clmm
 codecov
 codesize
 colorbar
@@ -65,6 +69,10 @@ ggcorrmat
 ggdotplotstats
 gghistostats
 ggpiestats
+glmer
+GLMM
+glmm
+glmmTMB
 ggplot
 ggscatterstats
 ggstatsplot
@@ -90,6 +98,7 @@ Jeffreys
 joss
 Kass
 Keselman
+Kruskal
 labelled
 LDHF
 LDLF
@@ -101,6 +110,8 @@ Lifecycle
 Likert
 LimeSurvey
 LinkedIn
+lmer
+LMM
 ln
 Lüdecke
 Lüpsen
@@ -109,7 +120,10 @@ MacOS
 Mair
 Makowski
 Mangiafico
+Mann
+MASS
 Mattan
+mclogit
 McNemar
 McNemar's
 McNemar’s
@@ -119,8 +133,11 @@ moiré
 Morey
 MPAA
 mpaa
+multinom
+nbinom
 nd
 NHST
+nnet
 noncentral
 np
 nparLD
@@ -128,13 +145,16 @@ npav
 NPAV
 Oneway
 ORCID
+Overleaf
 Otterstetter
 partialization
 patchwork
 Penfield
 piechart
+Poisson
 pre
 preprocess
+providecommand
 Psychonomic
 purrr
 Quarto
@@ -152,6 +172,7 @@ setosa
 Shachar
 Shapiro
 signif
+siunitx
 tibble
 tibbles
 tidiers
@@ -167,6 +188,7 @@ virginica
 Wagenmakers
 Welch
 Welch's
+Whitney
 Wiernik
 Wilcoxon
 Wilk

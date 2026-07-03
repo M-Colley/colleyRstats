@@ -153,16 +153,121 @@ normalize <- function(x_vector, old_min, old_max, new_min, new_max) {
 
 # Internal: write report sentences to a (LaTeX) text file so a manuscript can
 # \input{} them; parent directories are created as needed. Re-running an
-# analysis then updates the paper without any copy-paste.
+# analysis then updates the paper without any copy-paste. When the option
+# colleyRstats.macros is set to FALSE, the colleyRstats stat macros are expanded
+# to plain standard-LaTeX math so the file compiles with no custom preamble.
 .write_tex <- function(sentences, path) {
   not_empty(path)
   dir <- dirname(path)
   if (!dir.exists(dir)) {
     dir.create(dir, recursive = TRUE, showWarnings = FALSE)
   }
-  writeLines(paste(sentences, collapse = "\n"), con = path)
+  body <- paste(sentences, collapse = "\n")
+  if (!isTRUE(getOption("colleyRstats.macros", TRUE))) {
+    body <- expand_latex_macros(body)
+  }
+  writeLines(body, con = path)
   message("Wrote results to '", path, "'.")
   invisible(path)
+}
+
+
+#' Escape LaTeX special characters in plain text
+#'
+#' Makes an arbitrary string safe to drop into a LaTeX document by escaping the
+#' characters that would otherwise be interpreted as markup
+#' (\code{\\ \{ \} $ & # _ % ~ ^ < >}). Use it on variable names, factor-level
+#' labels, captions -- anything user-supplied that reaches the \code{.tex}. This
+#' is what prevents a dependent variable called \code{tlx_mental} from producing
+#' an un-compilable \code{tlx_mental} (a subscript error) in Overleaf.
+#'
+#' @param x A character vector (or something coercible to one).
+#' @return A character vector with LaTeX specials escaped; \code{NA} is
+#'   preserved.
+#' @export
+#' @examples
+#' latex_escape("tlx_mental")
+#' latex_escape("cost (%) & margin")
+latex_escape <- function(x) {
+  if (length(x) == 0) {
+    return(character(0))
+  }
+  x <- as.character(x)
+  na <- is.na(x)
+  bs <- "\001" # sentinel for the original backslashes
+  x <- gsub("\\", bs, x, fixed = TRUE)
+  x <- gsub("{", "\\{", x, fixed = TRUE)
+  x <- gsub("}", "\\}", x, fixed = TRUE)
+  x <- gsub("$", "\\$", x, fixed = TRUE)
+  x <- gsub("&", "\\&", x, fixed = TRUE)
+  x <- gsub("#", "\\#", x, fixed = TRUE)
+  x <- gsub("_", "\\_", x, fixed = TRUE)
+  x <- gsub("%", "\\%", x, fixed = TRUE)
+  x <- gsub("~", "\\textasciitilde{}", x, fixed = TRUE)
+  x <- gsub("^", "\\textasciicircum{}", x, fixed = TRUE)
+  x <- gsub("<", "\\textless{}", x, fixed = TRUE)
+  x <- gsub(">", "\\textgreater{}", x, fixed = TRUE)
+  x <- gsub(bs, "\\textbackslash{}", x, fixed = TRUE)
+  x[na] <- NA_character_
+  x
+}
+
+# Internal shorthand.
+.latex_escape <- latex_escape
+
+# Internal: render a variable/factor-level name for LaTeX. By default (option
+# colleyRstats.name_macros = TRUE) an all-letters name is emitted as "\name" so
+# the author can control its typography centrally via \newcommand (see
+# emit_name_macros()); any name that is NOT a valid LaTeX command name (digits,
+# underscores, spaces, ...) is emitted as escaped plain text instead, because
+# "\tlx_mental" is itself an un-compilable control sequence. Setting the option
+# to FALSE always emits escaped plain text.
+.tex_name <- function(x) {
+  use_macro <- isTRUE(getOption("colleyRstats.name_macros", TRUE))
+  vapply(as.character(x), function(nm) {
+    if (isTRUE(use_macro) && grepl("^[A-Za-z]+$", nm)) {
+      paste0("\\", nm)
+    } else {
+      latex_escape(nm)
+    }
+  }, character(1), USE.NAMES = FALSE)
+}
+
+
+#' Expand the colleyRstats LaTeX macros to plain standard LaTeX
+#'
+#' The report functions normally emit compact custom macros (\code{\\F},
+#' \code{\\p}, \code{\\m}, \code{\\sd}, \code{\\df}, \code{\\chisq},
+#' \code{\\padj}, \code{\\padjminor}, \code{\\pminor}, \code{\\rankbiserial},
+#' \code{\\effectsize}) that require [latex_preamble()] definitions. This
+#' expands them into equivalent plain math (e.g. \code{\\F{2}{57}{4.50}} becomes
+#' \code{$F(2, 57) = 4.50$}) so the text compiles in any document with no custom
+#' preamble -- the "zero-setup Overleaf" path. It is applied automatically by
+#' the \code{sink_to}/\code{emit_overleaf()} writers when
+#' \code{options(colleyRstats.macros = FALSE)}.
+#'
+#' @param x A character vector of report text.
+#' @return The text with the macros expanded to standard LaTeX math.
+#' @export
+#' @examples
+#' expand_latex_macros("A significant effect (\\F{2}{57}{4.50}, \\p{0.012}).")
+expand_latex_macros <- function(x) {
+  x <- as.character(x)
+  rp <- function(pat, repl) x <<- gsub(pat, repl, x, perl = TRUE)
+  # three-argument F macro first
+  rp("\\\\F\\{([^{}]*)\\}\\{([^{}]*)\\}\\{([^{}]*)\\}", "$F(\\1, \\2) = \\3$")
+  # adjusted-p variants before the plain ones so the longer name wins
+  rp("\\\\padjminor\\{([^{}]*)\\}", "$p_{adj} < \\1$")
+  rp("\\\\padj\\{([^{}]*)\\}", "$p_{adj} = \\1$")
+  rp("\\\\pminor\\{([^{}]*)\\}", "$p < \\1$")
+  rp("\\\\p\\{([^{}]*)\\}", "$p = \\1$")
+  rp("\\\\m\\{([^{}]*)\\}", "$M = \\1$")
+  rp("\\\\sd\\{([^{}]*)\\}", "$SD = \\1$")
+  rp("\\\\df\\{([^{}]*)\\}", "$df = \\1$")
+  rp("\\\\rankbiserial\\{([^{}]*)\\}", "$r_{rb} = \\1$")
+  rp("\\\\effectsize\\{([^{}]*)\\}", "$r = \\1$")
+  rp("\\\\chisq", "$\\\\chi^2$")
+  x
 }
 
 # Internal: number formatting for reported statistics (fixed decimal places).

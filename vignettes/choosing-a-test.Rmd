@@ -1,0 +1,169 @@
+---
+title: "Choosing the right test (and mixed models)"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Choosing the right test (and mixed models)}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+
+# The mixed-model fits and their reporters need packages that live in
+# Suggests. Guard the dependent chunks so the vignette still builds without
+# them; the classify_outcome()/recommend_test() chunks need none of these.
+has_mixed <- requireNamespace("lme4", quietly = TRUE) &&
+  requireNamespace("ordinal", quietly = TRUE) &&
+  requireNamespace("parameters", quietly = TRUE)
+```
+
+```{r}
+library(colleyRstats)
+```
+
+Picking a statistical test is not a matter of taste: it follows from properties
+of the data. `colleyRstats` makes that reasoning explicit. This vignette walks
+through the decision helpers and then shows how to fit and report the models
+they recommend.
+
+## The idea: scale x dependence x assumptions
+
+A principled model choice is the product of three questions, in order:
+
+1. **What is the outcome's measurement scale?** This fixes the model *family*
+   (Gaussian, binomial, Poisson, cumulative-link) before anything else.
+2. **Are the observations independent or clustered?** Repeated measures or any
+   grouped structure needs random effects, i.e. a *mixed* model.
+3. **For a continuous outcome, do the parametric assumptions hold?** Group-wise
+   normality (and, between subjects, homogeneity of variance) decides between a
+   parametric and a rank-based method.
+
+`classify_outcome()` answers the first question. It maps a variable to one of
+`"continuous"`, `"ordinal"`, `"binary"`, `"count"`, or `"nominal"` using simple,
+transparent rules (ordered factor -> ordinal; two distinct values -> binary; a
+few-valued integer -> ordinal/Likert; a non-negative integer with more values ->
+count; anything else numeric -> continuous).
+
+```{r}
+set.seed(1)
+d <- data.frame(
+  id      = factor(rep(1:20, each = 3)),
+  cond    = factor(rep(c("A", "B", "C"), times = 20)),
+  score   = rnorm(60),
+  rating  = factor(sample(1:5, 60, TRUE), ordered = TRUE),
+  correct = rbinom(60, 1, 0.5)
+)
+
+classify_outcome(d$score)    # continuous
+classify_outcome(d$rating)   # ordinal (ordered factor)
+classify_outcome(d$correct)  # binary (two distinct values)
+```
+
+Getting the scale right matters because it, not the analyst's habit, dictates
+the family: a 1-5 rating is not an interval score, and a 0/1 accuracy is not
+Gaussian. When a heuristic is genuinely ambiguous (a wide Likert item versus a
+small count) you can override it via the `outcome_type` argument of
+`recommend_test()`.
+
+## `recommend_test()` as the decision helper
+
+`recommend_test()` runs all three questions and returns a
+`"colley_recommendation"` object. It carries the fields that let you act on the
+advice: `recommendation` (a human-readable label), `model_function` (the R
+function to call), `reporter` (the matching colleyRstats reporter), `fit_call`
+(a ready-to-edit call), `rationale` (why), and `methods_text` (an APA-style
+sentence). A `print` method summarises it.
+
+The same outcome routes to different models depending on scale and dependence.
+An **ordinal** outcome measured repeatedly within `id` gives a cumulative link
+mixed model (CLMM):
+
+```{r}
+rec_clmm <- recommend_test(d, outcome = "rating", predictors = "cond", cluster = "id")
+rec_clmm
+```
+
+A **binary** outcome with the same clustering gives a binomial generalized
+linear mixed model (GLMM):
+
+```{r}
+rec_glmm <- recommend_test(d, outcome = "correct", predictors = "cond", cluster = "id")
+rec_glmm
+```
+
+A **continuous** outcome compared **between** subjects (no `cluster`) triggers
+the assumption checks and lands on ANOVA or its rank-based fallback:
+
+```{r}
+rec_anova <- recommend_test(d, outcome = "score", predictors = "cond")
+rec_anova
+```
+
+Each recommendation also exposes machine-usable fields and a paste-ready methods
+sentence:
+
+```{r}
+rec_clmm$model_function
+rec_clmm$reporter
+rec_clmm$fit_call
+cat(rec_glmm$methods_text)
+```
+
+## Fitting and reporting the recommended models
+
+Once a model is fitted, the reporters turn it into manuscript-ready LaTeX/APA
+sentences, one per fixed-effect term, with the effect size, its confidence
+interval, the test statistic, and the p-value. `reportGLMM()` handles
+`lme4::lmer` / `lme4::glmer` / `glmmTMB::glmmTMB` and plain `lm`/`glm`;
+`reportCLMM()` handles `ordinal::clmm` / `ordinal::clm`. The reporters pick the
+effect-size scale from the family: **odds ratios** for binomial and
+cumulative-link models, **incidence-rate ratios** for counts, and raw
+coefficients (`b`) with a `t`/`z` statistic for Gaussian fits.
+
+The fits below require **lme4**, **ordinal**, and **parameters** (all in
+Suggests), so the chunk is guarded by `has_mixed`; the vignette still builds
+without them.
+
+For the **ordinal** recommendation, fit the CLMM and report it with
+`reportCLMM()`. Because the family is cumulative-link, the effects are reported
+as odds ratios (the multiplicative change in the odds of a higher rating):
+
+```{r, eval = has_mixed}
+m_clmm <- ordinal::clmm(rating ~ cond + (1 | id), data = d)
+reportCLMM(m_clmm, dv = "rating")
+```
+
+For the **binary** recommendation, fit the binomial GLMM and report it with
+`reportGLMM()`; the binomial family is likewise exponentiated to odds ratios,
+with a `z` statistic:
+
+```{r, eval = has_mixed}
+m_glmm <- lme4::glmer(correct ~ cond + (1 | id), data = d, family = binomial)
+reportGLMM(m_glmm, dv = "accuracy")
+```
+
+`reportGLMM()` also covers **Gaussian** mixed and ordinary models. Here a linear
+mixed model is reported on the raw coefficient scale, with `b` and a `t(df)`
+statistic rather than an odds ratio -- the reporter adapts the wording to the
+family automatically:
+
+```{r, eval = has_mixed}
+m_lmm <- lme4::lmer(score ~ cond + (1 | id), data = d)
+reportGLMM(m_lmm, dv = "score")
+```
+
+Both reporters return the sentences invisibly (and emit them via `message()`),
+and can optionally copy to the clipboard (`write_to_clipboard = TRUE`) or write
+a `.tex` file to `\input{}` in a manuscript (`sink_to =`). The LaTeX uses the
+`\p` / `\pminor` macros from `latex_preamble()`.
+
+## Next steps
+
+- Override an ambiguous scale with `recommend_test(..., outcome_type = ...)`.
+- For non-parametric routes surfaced by the continuous branch, see
+  `reportDunnTest()`, `reportArtCon()`, and `reportNparLD()`.
+- Use `rec$methods_text` as a first draft of the Methods paragraph.

@@ -17,6 +17,7 @@ reportDunnTestTable(
   numberDigitsForPValue = 4,
   latexSize = "small",
   orderText = TRUE,
+  style = c("hline", "booktabs"),
   sink_to = NULL
 )
 
@@ -29,6 +30,7 @@ report_dunn_test_table(
   numberDigitsForPValue = 4,
   latexSize = "small",
   orderText = TRUE,
+  style = c("hline", "booktabs"),
   sink_to = NULL
 )
 }
@@ -48,6 +50,11 @@ report_dunn_test_table(
 \item{latexSize}{which size for the text}
 
 \item{orderText}{whether to order the comparisons alphabetically; ignored when \code{orderByP = TRUE}}
+
+\item{style}{table rule style: \code{"hline"} (default, classic
+\code{\\hline} rules) or \code{"booktabs"} (journal-standard
+\code{\\toprule}/\code{\\midrule}/\code{\\bottomrule}; needs
+\code{\\usepackage{booktabs}}).}
 
 \item{sink_to}{optional path of a \code{.tex} file to write the table to,
 so a manuscript can \code{\\input{}} it}

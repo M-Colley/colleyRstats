@@ -215,6 +215,7 @@ reportART <- function(model, dv = "Testdependentvariable", write_to_clipboard = 
   # Check that the model and dependent variable are not empty
   not_empty(model)
   not_empty(dv)
+  dv_tex <- latex_escape(dv)
 
   # Check if the model has a "Pr(>F)" column
   if ("Pr(>F)" %!in% colnames(model)) {
@@ -222,7 +223,7 @@ reportART <- function(model, dv = "Testdependentvariable", write_to_clipboard = 
   } else {
     # Check if any p-values are significant
     if (!any(model$`Pr(>F)` < 0.05, na.rm = TRUE)) {
-      message_to_write <- paste0("The ART found no significant effects on ", dv, ". ")
+      message_to_write <- paste0("The ART found no significant effects on ", dv_tex, ". ")
       message(message_to_write)
       if (write_to_clipboard) {
         .write_clipboard(message_to_write)
@@ -294,7 +295,7 @@ reportART <- function(model, dv = "Testdependentvariable", write_to_clipboard = 
             " effect of \\",
             trimws(model$descriptions[i]),
             " on ",
-            dv,
+            dv_tex,
             " (\\F{",
             numeratordf,
             "}{",
@@ -378,6 +379,7 @@ reportART <- function(model, dv = "Testdependentvariable", write_to_clipboard = 
 reportNparLD <- function(model, dv = "Testdependentvariable", write_to_clipboard = FALSE, sink_to = NULL) {
   not_empty(model)
   not_empty(dv)
+  dv_tex <- latex_escape(dv)
 
   # first retrieve relevant subset
   model <- as.data.frame(model$ANOVA.test)
@@ -414,9 +416,9 @@ reportNparLD <- function(model, dv = "Testdependentvariable", write_to_clipboard
 
 
       if (stringr::str_detect(model$descriptions[i], "X")) {
-        stringtowrite <- paste0("The nparLD analysis found a significant interaction effect of \\", trimws(model$descriptions[i]), " on ", dv, " (\\F{", Fvalue, "}, \\df{", numeratordf, "}, ", pValue, ")")
+        stringtowrite <- paste0("The nparLD analysis found a significant interaction effect of \\", trimws(model$descriptions[i]), " on ", dv_tex, " (\\F{", numeratordf, "}{$\\infty$}{", Fvalue, "}, ", pValue, ")")
       } else {
-        stringtowrite <- paste0("The nparLD analysis found a significant main effect of \\", trimws(model$descriptions[i]), " on ", dv, " (\\F{", Fvalue, "}, \\df{", numeratordf, "}, ", pValue, ")")
+        stringtowrite <- paste0("The nparLD analysis found a significant main effect of \\", trimws(model$descriptions[i]), " on ", dv_tex, " (\\F{", numeratordf, "}{$\\infty$}{", Fvalue, "}, ", pValue, ")")
       }
 
       effect_size_text <- ""
@@ -692,10 +694,12 @@ reportggstatsplot <- function(p, iv = "independent", dv = "Testdependentvariable
   }
 
 
+  dv_tex <- latex_escape(dv)
+  method_tex <- latex_escape(stats$method)
   if (!stats$p.value < 0.05) {
-    msg <- paste0("A ", stats$method, " found no significant effects on ", dv, " ", resultString, ". ")
+    msg <- paste0("A ", method_tex, " found no significant effects on ", dv_tex, " ", resultString, ". ")
   } else {
-    msg <- paste0("A ", stats$method, " found a significant effect of \\", iv, " on ", dv, " ", resultString, ". ")
+    msg <- paste0("A ", method_tex, " found a significant effect of ", .tex_name(iv), " on ", dv_tex, " ", resultString, ". ")
   }
 
   message(msg)
@@ -806,13 +810,13 @@ reportggstatsplotPostHoc <- function(data, p, iv = "testiv", dv = "testdv", labe
       firstCondition <- stats$group1[i]
       secondCondition <- stats$group2[i]
 
-      firstLabel <- map_label(firstCondition)
-      secondLabel <- map_label(secondCondition)
+      firstLabel <- latex_escape(map_label(firstCondition))
+      secondLabel <- latex_escape(map_label(secondCondition))
 
       # Name the post-hoc test (e.g. "Games-Howell", "Dunn") from the `test`
       # column when present; fall back to a generic phrasing otherwise.
       testName <- if ("test" %in% names(stats) && !is.na(stats$test[i]) && nzchar(stats$test[i])) {
-        paste0("A ", stats$test[i], " post-hoc test found that ")
+        paste0("A ", latex_escape(stats$test[i]), " post-hoc test found that ")
       } else {
         "A post-hoc test found that "
       }
@@ -836,10 +840,11 @@ reportggstatsplotPostHoc <- function(data, p, iv = "testiv", dv = "testdv", labe
       secondStatsStr <- paste0(" (\\m{", .fmt_num(as.numeric(valueTwo[1, 1])), "}, \\sd{", .fmt_num(as.numeric(valueTwo[1, 2])), "})")
 
       # Construct and print output string
+      dv_tex <- .tex_name(dv)
       sentence <- if (as.numeric(valueOne[1, 1]) > as.numeric(valueTwo[1, 1])) {
-        paste0(testName, firstLabel, " was significantly higher", firstStatsStr, " in terms of \\", dv, " compared to ", secondLabel, secondStatsStr, "; ", pValue, "). ")
+        paste0(testName, firstLabel, " was significantly higher", firstStatsStr, " in terms of ", dv_tex, " compared to ", secondLabel, secondStatsStr, "; ", pValue, "). ")
       } else {
-        paste0(testName, secondLabel, " was significantly higher", secondStatsStr, " in terms of \\", dv, " compared to ", firstLabel, firstStatsStr, "; ", pValue, "). ")
+        paste0(testName, secondLabel, " was significantly higher", secondStatsStr, " in terms of ", dv_tex, " compared to ", firstLabel, firstStatsStr, "; ", pValue, "). ")
       }
       message(sentence)
       sentences <- c(sentences, sentence)
@@ -894,11 +899,12 @@ reportDunnTest <- function(d, data, iv = "testiv", dv = "testdv", sink_to = NULL
   not_empty(d)
   not_empty(iv)
   not_empty(dv)
+  dv_tex <- latex_escape(dv)
 
   # Check for significance globally first
   # Note: d$res$P.adj can contain NAs, so we remove them for the check
   if (!any(d$res$P.adj < 0.05, na.rm = TRUE)) {
-    no_diff_msg <- paste0("A post-hoc test found no significant differences for ", dv, ". ")
+    no_diff_msg <- paste0("A post-hoc test found no significant differences for ", dv_tex, ". ")
     message(no_diff_msg)
     if (!is.null(sink_to)) {
       .write_tex(no_diff_msg, sink_to)
@@ -953,21 +959,23 @@ reportDunnTest <- function(d, data, iv = "testiv", dv = "testdv", sink_to = NULL
       strStatsB <- paste0("(\\m{", .fmt_num(statsB$m), "}, \\sd{", .fmt_num(statsB$sd), "})")
 
       # --- Determine Direction (Winner vs Loser) ---
+      # Condition names are escaped here (display only); the raw condA/condB are
+      # kept above for filtering the data.
       if (statsA$m >= statsB$m) {
-        winner <- trimws(condA)
+        winner <- latex_escape(trimws(condA))
         winnerStats <- strStatsA
-        loser <- trimws(condB)
+        loser <- latex_escape(trimws(condB))
         # The stats/p/es string for the "loser" part of the sentence
         loserString <- paste0(
-          trimws(condB), " (\\m{", .fmt_num(statsB$m),
+          latex_escape(trimws(condB)), " (\\m{", .fmt_num(statsB$m),
           "}, \\sd{", .fmt_num(statsB$sd), "}; ", pValueStr, esStr, ")"
         )
       } else {
-        winner <- trimws(condB)
+        winner <- latex_escape(trimws(condB))
         winnerStats <- strStatsB
-        loser <- trimws(condA)
+        loser <- latex_escape(trimws(condA))
         loserString <- paste0(
-          trimws(condA), " (\\m{", .fmt_num(statsA$m),
+          latex_escape(trimws(condA)), " (\\m{", .fmt_num(statsA$m),
           "}, \\sd{", .fmt_num(statsA$sd), "}; ", pValueStr, esStr, ")"
         )
       }
@@ -1007,11 +1015,12 @@ reportDunnTest <- function(d, data, iv = "testiv", dv = "testdv", sink_to = NULL
       }
 
       # --- Construct the final sentence ---
-      # Replace "scenario" with the LaTeX formatted IV name (e.g., \miou)
-      iv_cmd <- paste0("\\", iv)
+      # Render the IV name (a macro like \scenario when it is a valid command
+      # name, escaped plain text otherwise).
+      iv_cmd <- .tex_name(iv)
 
       final_str <- paste0(
-        "A post-hoc test found that ", dv, " for the ", iv_cmd, " ", w,
+        "A post-hoc test found that ", dv_tex, " for the ", iv_cmd, " ", w,
         " was significantly higher ", subset_res$winnerStats[1],
         " than for ", joined_losers, ". "
       )
@@ -1041,6 +1050,10 @@ reportDunnTest <- function(d, data, iv = "testiv", dv = "testdv", sink_to = NULL
 #' @param numberDigitsForPValue the number of digits to show
 #' @param latexSize which size for the text
 #' @param orderText whether to order the comparisons alphabetically; ignored when `orderByP = TRUE`
+#' @param style table rule style: \code{"hline"} (default, classic
+#'   \code{\\hline} rules) or \code{"booktabs"} (journal-standard
+#'   \code{\\toprule}/\code{\\midrule}/\code{\\bottomrule}; needs
+#'   \code{\\usepackage{booktabs}}).
 #' @param sink_to optional path of a \code{.tex} file to write the table to,
 #'   so a manuscript can \code{\\input{}} it
 #'
@@ -1068,10 +1081,11 @@ reportDunnTest <- function(d, data, iv = "testiv", dv = "testdv", sink_to = NULL
 #'   )
 #' }
 #' }
-reportDunnTestTable <- function(d = NULL, data, iv = "testiv", dv = "testdv", orderByP = FALSE, numberDigitsForPValue = 4, latexSize = "small", orderText = TRUE, sink_to = NULL) {
+reportDunnTestTable <- function(d = NULL, data, iv = "testiv", dv = "testdv", orderByP = FALSE, numberDigitsForPValue = 4, latexSize = "small", orderText = TRUE, style = c("hline", "booktabs"), sink_to = NULL) {
   not_empty(data)
   not_empty(iv)
   not_empty(dv)
+  style <- match.arg(style)
 
   # If d is not provided, calculate it
   if (is.null(d)) {
@@ -1096,7 +1110,7 @@ reportDunnTestTable <- function(d = NULL, data, iv = "testiv", dv = "testdv", or
 
   # Check if there are any significant results
   if (nrow(table) == 0) {
-    no_diff_msg <- paste0("A post-hoc test found no significant differences for ", dv, ". ")
+    no_diff_msg <- paste0("A post-hoc test found no significant differences for ", latex_escape(dv), ". ")
     message(no_diff_msg)
     if (!is.null(sink_to)) {
       .write_tex(no_diff_msg, sink_to)
@@ -1155,19 +1169,21 @@ reportDunnTestTable <- function(d = NULL, data, iv = "testiv", dv = "testdv", or
   # Format effect size
   table$r <- formatC(table$r, digits = 2, format = "f")
 
+  caption_txt <- paste0(
+    "Post-hoc comparisons for independent variable ", .tex_name(iv),
+    " and dependent variable ", .tex_name(dv),
+    ". Positive Z-values mean that the first-named level is sig. higher than the second-named. For negative Z-values, the opposite is true. Effect size reported as rank-biserial correlation (r)."
+  )
+
   # Adjust the xtable call to handle the modified columns
   if (requireNamespace("xtable", quietly = TRUE)) {
     xtable_obj <- xtable::xtable(table,
       digits = c(0, 0, 4, 0, 0),
-      caption = paste0(
-        "Post-hoc comparisons for independent variable \\", iv,
-        " and dependent variable \\", dv,
-        ". Positive Z-values mean that the first-named level is sig. higher than the second-named. For negative Z-values, the opposite is true. Effect size reported as rank-biserial correlation (r)."
-      ),
+      caption = caption_txt,
       label = paste0("tab:posthoc-", iv, "-", dv)
     )
 
-    latex_str <- print(xtable_obj, type = "latex", size = latexSize, caption.placement = "top", include.rownames = FALSE, print.results = FALSE)
+    latex_str <- print(xtable_obj, type = "latex", size = latexSize, caption.placement = "top", include.rownames = FALSE, booktabs = identical(style, "booktabs"), print.results = FALSE)
     cat(latex_str)
     if (!is.null(sink_to)) {
       .write_tex(latex_str, sink_to)
@@ -1175,11 +1191,7 @@ reportDunnTestTable <- function(d = NULL, data, iv = "testiv", dv = "testdv", or
     return(invisible(latex_str))
   }
 
-  message(paste0(
-    "Post-hoc comparisons for independent variable \\", iv,
-    " and dependent variable \\", dv,
-    ". Positive Z-values mean that the first-named level is sig. higher than the second-named. For negative Z-values, the opposite is true. Effect size reported as rank-biserial correlation (r).\n"
-  ))
+  message(paste0(caption_txt, "\n"))
   print(table)
 
   invisible(NULL)
@@ -1467,6 +1479,9 @@ reportArtCon <- function(ac, data, iv = "testiv", dv = "testdv", paired = FALSE,
 #' @param numberDigitsForPValue the number of digits to show
 #' @param latexSize which size for the text
 #' @param orderText whether to order the comparisons alphabetically; ignored when `orderByP = TRUE`
+#' @param style table rule style: \code{"hline"} (default) or \code{"booktabs"}
+#'   (\code{\\toprule}/\code{\\midrule}/\code{\\bottomrule}; needs
+#'   \code{\\usepackage{booktabs}}).
 #' @param sink_to optional path of a \code{.tex} file to write the table to,
 #'   so a manuscript can \code{\\input{}} it
 #'
@@ -1492,11 +1507,12 @@ reportArtCon <- function(ac, data, iv = "testiv", dv = "testdv", paired = FALSE,
 #'   reportArtConTable(ac, data = df, iv = "mode", dv = "score", paired = TRUE, id = "UserID")
 #' }
 #' }
-reportArtConTable <- function(ac, data, iv = "testiv", dv = "testdv", paired = FALSE, id = NULL, orderByP = FALSE, numberDigitsForPValue = 4, latexSize = "small", orderText = TRUE, sink_to = NULL) {
+reportArtConTable <- function(ac, data, iv = "testiv", dv = "testdv", paired = FALSE, id = NULL, orderByP = FALSE, numberDigitsForPValue = 4, latexSize = "small", orderText = TRUE, style = c("hline", "booktabs"), sink_to = NULL) {
   not_empty(ac)
   not_empty(data)
   not_empty(iv)
   not_empty(dv)
+  style <- match.arg(style)
 
   src <- .art_con_to_df(ac)
 
@@ -1513,7 +1529,7 @@ reportArtConTable <- function(ac, data, iv = "testiv", dv = "testdv", paired = F
 
   # Check if there are any significant results
   if (nrow(table) == 0) {
-    no_diff_msg <- paste0("A post-hoc test found no significant differences for ", dv, ". ")
+    no_diff_msg <- paste0("A post-hoc test found no significant differences for ", latex_escape(dv), ". ")
     message(no_diff_msg)
     if (!is.null(sink_to)) {
       .write_tex(no_diff_msg, sink_to)
@@ -1568,18 +1584,20 @@ reportArtConTable <- function(ac, data, iv = "testiv", dv = "testdv", paired = F
   # Format effect size
   table$r <- formatC(table$r, digits = 2, format = "f")
 
+  caption_txt <- paste0(
+    "Post-hoc ART contrasts for independent variable ", .tex_name(iv),
+    " and dependent variable ", .tex_name(dv),
+    ". Positive t-values mean that the first-named level is sig. higher than the second-named (on the aligned-rank scale). For negative t-values, the opposite is true. Effect size reported as rank-biserial correlation (r)."
+  )
+
   if (requireNamespace("xtable", quietly = TRUE)) {
     xtable_obj <- xtable::xtable(table,
       digits = c(0, 0, 2, 0, 0, 2),
-      caption = paste0(
-        "Post-hoc ART contrasts for independent variable \\", iv,
-        " and dependent variable \\", dv,
-        ". Positive t-values mean that the first-named level is sig. higher than the second-named (on the aligned-rank scale). For negative t-values, the opposite is true. Effect size reported as rank-biserial correlation (r)."
-      ),
+      caption = caption_txt,
       label = paste0("tab:artcon-", iv, "-", dv)
     )
 
-    latex_str <- print(xtable_obj, type = "latex", size = latexSize, caption.placement = "top", include.rownames = FALSE, print.results = FALSE)
+    latex_str <- print(xtable_obj, type = "latex", size = latexSize, caption.placement = "top", include.rownames = FALSE, booktabs = identical(style, "booktabs"), print.results = FALSE)
     cat(latex_str)
     if (!is.null(sink_to)) {
       .write_tex(latex_str, sink_to)
@@ -1587,11 +1605,7 @@ reportArtConTable <- function(ac, data, iv = "testiv", dv = "testdv", paired = F
     return(invisible(latex_str))
   }
 
-  message(paste0(
-    "Post-hoc ART contrasts for independent variable \\", iv,
-    " and dependent variable \\", dv,
-    ". Positive t-values mean that the first-named level is sig. higher than the second-named (on the aligned-rank scale). For negative t-values, the opposite is true. Effect size reported as rank-biserial correlation (r).\n"
-  ))
+  message(paste0(caption_txt, "\n"))
   print(table)
 
   invisible(NULL)

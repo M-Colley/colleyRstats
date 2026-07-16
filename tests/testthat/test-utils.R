@@ -115,6 +115,58 @@ test_that("not_empty throws error on NULL or NA", {
   expect_true(not_empty(5))
 })
 
+test_that("not_empty names the offending argument in its default message", {
+  my_input <- NULL
+  expect_error(not_empty(my_input), "`my_input` must not be empty")
+  # An explicit message still wins
+  expect_error(not_empty(NULL, msg = "custom message"), "custom message")
+})
+
+test_that("column checks name the missing column and list available ones", {
+  df <- data.frame(group = rep(c("A", "B"), each = 5), value = rnorm(10))
+
+  expect_error(
+    check_normality_by_group(df, "grp", "value"),
+    "'grp' not found in `data`"
+  )
+  expect_error(
+    check_normality_by_group(df, "group", "typo"),
+    "Available columns: group, value"
+  )
+  expect_error(
+    reportMeanAndSD(df, iv = "group", dv = "nope"),
+    "'nope' not found"
+  )
+  expect_error(
+    checkAssumptionsForAnova(df, y = "value", factors = c("group", "missing1")),
+    "'missing1' not found"
+  )
+})
+
+test_that("add_pareto columns validate objective columns", {
+  skip_if_not_installed("emoa")
+
+  df <- data.frame(trust = c(1, 2), label = c("a", "b"))
+
+  expect_error(
+    add_pareto_emoa_column(df, objectives = c("trust", "comfort")),
+    "'comfort' not found"
+  )
+  expect_error(
+    add_pareto_emoa_column(df, objectives = c("trust", "label")),
+    "must be numeric"
+  )
+})
+
+test_that("remove_outliers_REI accepts a character vector of variables", {
+  df <- data.frame(var1 = c(1, 2, 3), var2 = c(2, 3, 4), other = c(9, 9, 9))
+
+  res_vector <- remove_outliers_REI(df, header = TRUE, variables = c("var1", "var2"))
+  res_string <- remove_outliers_REI(df, header = TRUE, variables = "var1,var2")
+
+  expect_identical(res_vector$REI, res_string$REI)
+})
+
 test_that("na.zero replaces NA values with zero", {
   expect_equal(na.zero(c(NA, 1, NA, 2)), c(0, 1, 0, 2))
 })

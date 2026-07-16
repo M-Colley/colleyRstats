@@ -1,3 +1,23 @@
+# Internal: warn when custom x-axis labels cannot match the number of factor
+# levels -- scale_x_discrete() would then silently mislabel or drop categories,
+# which is easy to miss in a final figure.
+.check_xlabels <- function(data, x, xlabels) {
+  if (is.null(xlabels) || length(xlabels) == 0) {
+    return(invisible(NULL))
+  }
+  n_levels <- length(unique(stats::na.omit(as.character(data[[x]]))))
+  if (length(xlabels) != n_levels) {
+    warning(
+      "`xlabels` has length ", length(xlabels), " but `", x, "` has ",
+      n_levels, " observed level", if (n_levels == 1) "" else "s",
+      "; the axis labels may not line up with the groups.",
+      call. = FALSE
+    )
+  }
+  invisible(NULL)
+}
+
+
 #' Function to define a plot, either showing the main or interaction effect in bold.
 #'
 #' @param data the data frame
@@ -56,6 +76,8 @@ generateEffectPlot <- function(data,
   not_empty(y)
   not_empty(fillColourGroup)
   not_empty(shownEffect)
+  .check_columns(data, c(x, y, fillColourGroup))
+  .check_xlabels(data, x, xLabelsOverwrite)
 
   p <- data |>
     ggplot2::ggplot() +
@@ -257,7 +279,12 @@ generateMoboPlot2 <- function(data, x = "Iteration", y, phaseCol = "Phase", fill
   not_empty(x)
   not_empty(y)
   not_empty(fillColourGroup)
-  stopifnot(all(c(x, y, phaseCol) %in% names(data)))
+  # fillColourGroup = "" means "no grouping" (see below), so it is only
+  # validated as a column when actually used.
+  .check_columns(data, c(x, y, phaseCol))
+  if (is.character(fillColourGroup) && nzchar(fillColourGroup)) {
+    .check_columns(data, fillColourGroup)
+  }
 
   # as default, just add the y variable in Title caps
   if (missing(ytext)) {
@@ -375,6 +402,7 @@ generateMoboPlot <- function(data, x, y, fillColourGroup = "ConditionID", ytext,
   not_empty(x)
   not_empty(y)
   not_empty(fillColourGroup)
+  .check_columns(data, c(x, y, fillColourGroup))
 
   # as default, just add the y variable in Title caps
   if (missing(ytext)) {
@@ -490,15 +518,17 @@ ggwithinstatsWithPriorNormalityCheck <- function(data, x, y, ylab, xlabels = NUL
   not_empty(x)
   not_empty(y)
   not_empty(ylab)
+  .check_columns(data, c(x, y))
+  .check_xlabels(data, x, xlabels)
 
   is_normal <- check_normality_by_group(data, x, y)
   type <- ifelse(is_normal, "p", "np")
 
-  # homogeneity of variances: Levene
-  group_all_data_equal <- check_homogeneity_by_group(data, x, y)
+  # No Levene check here: ggwithinstats() (repeated measures) takes no
+  # var.equal argument, so computing it would be wasted work.
 
   plot <- ggstatsplot::ggwithinstats(
-    data = data, x = !!x, y = !!y, type = type, centrality.type = "p", ylab = ylab, xlab = "", pairwise.comparisons = showPairwiseComp, var.equal = group_all_data_equal,
+    data = data, x = !!x, y = !!y, type = type, centrality.type = "p", ylab = ylab, xlab = "", pairwise.comparisons = showPairwiseComp,
     centrality.point.args = list(size = 5, alpha = 0.5, color = "darkblue"), palette = "pals::glasbey",
     plot.type = plotType,
     p.adjust.method = "holm",
@@ -562,6 +592,8 @@ ggbetweenstatsWithPriorNormalityCheck <- function(data, x, y, ylab, xlabels = NU
   not_empty(x)
   not_empty(y)
   not_empty(ylab)
+  .check_columns(data, c(x, y))
+  .check_xlabels(data, x, xlabels)
 
   is_normal <- check_normality_by_group(data, x, y)
   type <- ifelse(is_normal, "p", "np")
@@ -631,6 +663,8 @@ ggbetweenstatsWithPriorNormalityCheckAsterisk <- function(data, x, y, ylab, xlab
   not_empty(y)
   not_empty(ylab)
   not_empty(xlabels)
+  .check_columns(data, c(x, y))
+  .check_xlabels(data, x, xlabels)
 
   is_normal <- check_normality_by_group(data, x, y)
   type <- ifelse(is_normal, "p", "np")
@@ -727,6 +761,8 @@ ggwithinstatsWithPriorNormalityCheckAsterisk <- function(data, x, y, ylab, xlabe
   not_empty(y)
   not_empty(ylab)
   not_empty(xlabels)
+  .check_columns(data, c(x, y))
+  .check_xlabels(data, x, xlabels)
 
   is_normal <- check_normality_by_group(data, x, y)
   type <- ifelse(is_normal, "p", "np")

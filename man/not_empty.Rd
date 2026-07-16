@@ -4,12 +4,13 @@
 \alias{not_empty}
 \title{Ensure input is not empty}
 \usage{
-not_empty(x, msg = "Input must not be empty.")
+not_empty(x, msg = NULL)
 }
 \arguments{
 \item{x}{The object to check}
 
-\item{msg}{The error message to display}
+\item{msg}{The error message to display. The default names the offending
+argument, e.g. \code{"`data` must not be empty."}.}
 }
 \value{
 Invisible TRUE if valid.

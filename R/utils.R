@@ -3,10 +3,14 @@
 #' Stops execution if x is NULL, empty, or contains only NAs.
 #'
 #' @param x The object to check
-#' @param msg The error message to display
+#' @param msg The error message to display. The default names the offending
+#'   argument, e.g. \code{"`data` must not be empty."}.
 #' @return Invisible TRUE if valid.
 #' @export
-not_empty <- function(x, msg = "Input must not be empty.") {
+not_empty <- function(x, msg = NULL) {
+  if (is.null(msg)) {
+    msg <- paste0("`", deparse(substitute(x))[1], "` must not be empty.")
+  }
   if (is.null(x) || length(x) == 0) {
     stop(msg, call. = FALSE)
   }
@@ -15,6 +19,25 @@ not_empty <- function(x, msg = "Input must not be empty.") {
     stop(msg, call. = FALSE)
   }
 
+  invisible(TRUE)
+}
+
+# Internal: assert that the given column names exist in `data`, with an error
+# message that names the missing columns and lists the available ones. This
+# turns the cryptic downstream dplyr/rlang errors ("object 'X' not found") that
+# a simple typo in `x`/`y`/`iv`/`dv` used to trigger into an actionable one.
+.check_columns <- function(data, cols, data_arg = "data") {
+  cols <- as.character(cols)
+  missing_cols <- setdiff(cols, names(data))
+  if (length(missing_cols) > 0) {
+    stop(
+      "Column", if (length(missing_cols) > 1) "s" else "", " ",
+      paste0("'", missing_cols, "'", collapse = ", "),
+      " not found in `", data_arg, "`. Available columns: ",
+      paste0(names(data), collapse = ", "), ".",
+      call. = FALSE
+    )
+  }
   invisible(TRUE)
 }
 
@@ -333,6 +356,7 @@ expand_latex_macros <- function(x) {
 check_normality_by_group <- function(data, x, y) {
   # Input validation
   if (missing(data) || missing(x) || missing(y)) stop("Missing arguments")
+  .check_columns(data, c(x, y))
 
   # Ensure numeric
   if (!is.numeric(data[[y]])) {
@@ -395,6 +419,7 @@ check_homogeneity_by_group <- function(data, x, y) {
   not_empty(data)
   not_empty(x)
   not_empty(y)
+  .check_columns(data, c(x, y))
 
   if (!requireNamespace("rstatix", quietly = TRUE)) {
     warning("Package 'rstatix' not installed. Assuming unequal variances (var.equal = FALSE).")
@@ -503,8 +528,10 @@ rFromWilcoxAdjusted <- function(wilcoxModel, N, adjustFactor) {
 
 
 #' Calculation based on Rosenthal's formula (1994). N stands for the *number of measurements*.
-#' Necessary command:
-# \newcommand{\effectsize}{\textit{r=}}
+#'
+#' Necessary LaTeX command:
+#' \code{\\newcommand{\\effectsize}{\\textit{r=}}}
+#'
 #' @param pvalue p value
 #' @param N number of measurements in the experiment
 #'
@@ -640,6 +667,7 @@ checkAssumptionsForAnova <- function(data, y, factors) {
   not_empty(data)
   not_empty(y)
   not_empty(factors)
+  .check_columns(data, c(y, factors))
 
   if (!requireNamespace("rstatix", quietly = TRUE)) {
     stop("Package 'rstatix' is required for checkAssumptionsForAnova(). Please install it.")
@@ -702,9 +730,10 @@ checkAssumptionsForAnova <- function(data, y, factors) {
 #'
 #' @description
 #' Replace all occurrences of given values in all columns of a data frame.
+#' Factor levels are preserved (and extended by the replacement values), and
+#' numeric/logical columns are only touched where a value actually matches, so
+#' unrelated entries keep their exact binary representation.
 #'
-#' @name data the data frame
-#' @description The `data` data frame contains a collection of records, with attributes organized in columns. It may include various types of values, such as numerical, categorical, or textual data.
 #' @param data The input data frame to be modified.
 #' @param to_replace A vector of values to be replaced within the data frame. This must be the same length as `replace_with`.
 #' @param replace_with A vector of corresponding replacement values. This must be the same length as `to_replace`.
@@ -813,17 +842,19 @@ replace_values <- function(data, to_replace, replace_with) {
 #'
 #' @examples
 #' \donttest{
-#' if (requireNamespace(c("write_xlsx", "readxl"), quietly = TRUE)) {
+#' if (requireNamespace("writexl", quietly = TRUE) &&
+#'   requireNamespace("readxl", quietly = TRUE)) {
 #'   tmp_in  <- tempfile(fileext = ".xlsx")
 #'   tmp_out <- tempfile(fileext = ".xlsx")
 #'
-#'   # Minimal toy input that includes your required pieces:
-#'   # an ID column and something that contains the marker value.
+#'   # Two marker-delimited sections of equal width; each section is stacked
+#'   # under the first one, keyed by the ID column.
 #'   toy <- data.frame(
-#'     ID = c(1, 1, 2, 2),
-#'     section = c("videoinfo", "videoinfo", "videoinfo", "videoinfo"),
-#'     key = c("fps", "duration_s", "fps", "duration_s"),
-#'     value = c(30, 12.3, 25, 9.8),
+#'     ID = c(1, 2),
+#'     videoinfo1 = c("marker", "marker"),
+#'     rating = c(10, 11),
+#'     videoinfo2 = c("marker", "marker"),
+#'     rating2 = c(20, 21),
 #'     stringsAsFactors = FALSE
 #'   )
 #'
@@ -931,9 +962,18 @@ add_pareto_emoa_column <- function(data, objectives) {
   # Input checks
   not_empty(data)
   not_empty(objectives)
+  .check_columns(data, objectives)
 
   # Select only the objective columns
   objective_data <- data |> dplyr::select(dplyr::all_of(objectives))
+  non_numeric <- names(objective_data)[!vapply(objective_data, is.numeric, logical(1))]
+  if (length(non_numeric) > 0) {
+    stop(
+      "All objective columns must be numeric; not numeric: ",
+      paste0("'", non_numeric, "'", collapse = ", "), ".",
+      call. = FALSE
+    )
+  }
 
   # emoa expects one point per matrix *column* (criteria in rows) and
   # minimises every criterion. is_dominated() flags each point directly, so no
@@ -978,9 +1018,18 @@ add_pareto_moocore_column <- function(data, objectives) {
   # Input checks
   not_empty(data)
   not_empty(objectives)
+  .check_columns(data, objectives)
 
   # Select only the objective columns
   objective_data <- data |> dplyr::select(dplyr::all_of(objectives))
+  non_numeric <- names(objective_data)[!vapply(objective_data, is.numeric, logical(1))]
+  if (length(non_numeric) > 0) {
+    stop(
+      "All objective columns must be numeric; not numeric: ",
+      paste0("'", non_numeric, "'", collapse = ", "), ".",
+      call. = FALSE
+    )
+  }
 
   # If there's only one row, mark it as PARETO_EMOA directly
   if (nrow(objective_data) == 1) {
@@ -1014,7 +1063,9 @@ add_pareto_moocore_column <- function(data, objectives) {
 #'
 #' @param df Data frame containing the data.
 #' @param header Logical indicating if the data frame has a header. Defaults to FALSE.
-#' @param variables Character string specifying which variables to consider, separated by commas.
+#' @param variables Which variables to consider: either a single character
+#'   string with names separated by commas (\code{"var1,var2"}) or a character
+#'   vector (\code{c("var1", "var2")}).
 #' @param range Numeric vector of length 2 specifying the range of the Likert scale
 #'   (used to sanity-check the responses). Defaults to c(1, 5).
 #'
@@ -1027,7 +1078,9 @@ add_pareto_moocore_column <- function(data, objectives) {
 #' result <- remove_outliers_REI(df, TRUE, "var1,var2", c(1, 5))
 #' }
 remove_outliers_REI <- function(df, header = FALSE, variables = "", range = c(1, 5)) {
-  # Validate and parse variables
+  # Validate and parse variables; a character vector is collapsed so both
+  # "var1,var2" and c("var1", "var2") work.
+  variables <- paste(variables, collapse = ",")
   if (variables == "" && header == TRUE) {
     stop("Please input variables to consider!")
   }

@@ -18,9 +18,11 @@ The primary goal of this package is to significantly reduce repetitive coding ef
 
 ## Key Features
 - **Automated Assumption Checking**: For ANOVA models, automatically verify normality and homogeneity of variance.
-- **Enhanced colleyRstats Functions**: Easily switch between parametric and non-parametric versions of tests based on the data's characteristics.
-- **APA-Compliant Reporting**: Copy-paste-ready results in LaTeX format, suitable for academic publications.
-- **Custom Visualizations**: Generate effect plots and multi-objective optimization plots with minimal effort.
+- **Enhanced `ggstatsplot` Wrappers**: Automatically switch between parametric and non-parametric versions of tests based on the data's characteristics.
+- **Principled Test Selection**: `recommend_test()` inspects your data (scale, clustering, assumptions) and recommends the matching model -- including mixed models -- with a ready-to-edit fit call and methods sentence.
+- **APA-Compliant Reporting**: Copy-paste-ready results in LaTeX format, suitable for academic publications; reporters cover ART, Dunn, nparLD, GLMM/CLMM, and ggstatsplot results.
+- **One-Call Pipelines**: `analyze_and_report()` / `report_all()` produce the figure, methods sentence, omnibus result, and post-hoc comparisons for one or many dependent variables in a single call; `emit_overleaf()` bundles everything into an Overleaf-ready folder.
+- **Custom Visualizations**: Generate effect plots and multi-objective optimization plots with minimal effort; `save_paper_figure()` saves them with publication presets.
 - **Pareto Analysis and Post-Hoc Tests**: Automate these analyses and produce formatted outputs.
 
 ## Installation
@@ -28,12 +30,26 @@ The primary goal of this package is to significantly reduce repetitive coding ef
 | Type        | Command                                  |
 |:------------|:-----------------------------------------|
 | Release     | `install.packages("colleyRstats")`       |
+| Development | `remotes::install_github("M-Colley/colleyRstats")` |
 
 ## Getting Started
 
-For a short end-to-end workflow covering setup, assumption checks, plotting, and reporting, see the vignette:
+The vignettes walk through the main workflows end-to-end:
 
-- `vignette("getting-started", package = "colleyRstats")`
+- `vignette("getting-started", package = "colleyRstats")` -- setup, assumption checks, plotting, and reporting in a nutshell.
+- `vignette("analyzing-a-user-study", package = "colleyRstats")` -- a typical (HCI) user study from raw data to manuscript-ready text and figures.
+- `vignette("choosing-a-test", package = "colleyRstats")` -- how `recommend_test()` selects tests and mixed models, and how to report them.
+- `vignette("overleaf", package = "colleyRstats")` -- getting the LaTeX output into an Overleaf project that compiles immediately.
+
+The quickest way to see what the package does is the one-call pipeline:
+
+```r
+library(colleyRstats)
+
+result <- analyze_and_report(mtcars, dv = "mpg", iv = "cyl")
+result$plot       # ggstatsplot figure (parametric/non-parametric auto-selected)
+result$sentences  # methods sentence + omnibus result + post-hoc comparisons
+```
 
 ## Summary of Benefits 
 - **Code Reduction**: Automates common tasks in data analysis, such as assumption checks and reporting.
@@ -89,7 +105,7 @@ Generates APA-compliant LaTeX output for within-subject designs analyzed using n
 \newcommand{\pminor}{\textit{p$<$}}
 ```
 
-**Deprecated:** `reportNPAV()` will be removed in colleyRstats 0.1.0 (2025-12-31). Use `reportART()` with ARTool instead.
+**Deprecated:** `reportNPAV()` is deprecated and will be removed in a future release. Use `reportART()` with ARTool instead.
 
 **Example:**
 
@@ -98,18 +114,8 @@ model <- np.anova(tlx_mental ~ factor1 * factor2 + Error(Subject / factor1), dat
 reportNPAV(model, "Dependent Variable")
 ```
 
-### `reportNPAVChi`
-
-Similar to reportNPAV, but for between-subject designs. This function generates formatted LaTeX output for non-parametric ANOVA results. LaTeX commands:
-
-```latex
-\newcommand{\F}[3]{$F({#1},{#2})={#3}$}
-\newcommand{\p}{\textit{p=}}
-\newcommand{\pminor}{\textit{p$<$}}
-```
-
 ### `reportNparLD`
-Reports the model produced by nparLD in APA-compliant format. While still supported, this function has largely been superseded by np.anova for non-parametric variance analyses.
+Reports the model produced by nparLD in APA-compliant format. For factorial non-parametric designs, the Aligned Rank Transform (`reportART()` with ARTool) is usually the more general choice.
 
 ### `reportMeanAndSD`
 For each level of an independent variable, this function calculates the mean and standard deviation of a dependent variable and returns them in APA-compliant LaTeX format:
@@ -153,12 +159,14 @@ Generates LaTeX-formatted results from art models for factorial designs. The nec
 **Example:**
 
 ```r
-model <- art(formula = dependent_var ~ factor1 * factor2 + Error(Subject / (factor1 * factor2)), data = main_df) |> anova()
+model <- art(formula = dependent_var ~ factor1 * factor2 + Error(Subject / (factor1 * factor2)), data = main_df)
 reportART(anova(model), "Dependent Variable")
 ```
 
+Follow up significant effects with `reportArtCon()` / `reportArtConTable()`, which report the pairwise `art.con()` contrasts as sentences or a LaTeX table (including rank-biserial effect sizes).
+
 ### `add_pareto_emoa_column`
-This function adds a Pareto front classification column to a dataset, useful in multi-objective optimization scenarios.
+This function adds a Pareto front classification column to a dataset, useful in multi-objective optimization scenarios. `add_pareto_moocore_column()` is the equivalent based on the `moocore` package (adds a `PARETO_MOOCORE` column).
 
 Attention: must be done per User - Condition etc group.
 
@@ -212,7 +220,7 @@ new_df <- replace_values(main_df, to_replace = c("bad_val1", "bad_val2"), replac
 
 ## Using NPAV (Lüpsen) with this package
 
-`reportNPAV()` formats results from Lüpsen’s nonparametric ANOVA (`np.anova`) output. **Deprecated:** `reportNPAV()` will be removed in colleyRstats 0.1.0 (2025-12-31). Use `reportART()` with ARTool instead. NPAV is not shipped with this package, and it is loaded manually by the user from Lüpsen’s site: `https://www.uni-koeln.de/~luepsen/R/`.
+`reportNPAV()` formats results from Lüpsen’s nonparametric ANOVA (`np.anova`) output. **Deprecated:** `reportNPAV()` is deprecated and will be removed in a future release; use `reportART()` with ARTool instead. NPAV is not shipped with this package, and it is loaded manually by the user from Lüpsen’s site: `https://www.uni-koeln.de/~luepsen/R/`.
 
 This step requires internet access, so it is documented here (not in `@examples`, which should run offline during package checks).
 

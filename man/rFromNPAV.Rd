@@ -2,8 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{rFromNPAV}
 \alias{rFromNPAV}
-\title{Calculation based on Rosenthal's formula (1994). N stands for the \emph{number of measurements}.
-Necessary command:}
+\title{Calculation based on Rosenthal's formula (1994). N stands for the \emph{number of measurements}.}
 \usage{
 rFromNPAV(pvalue, N)
 }
@@ -22,8 +21,8 @@ to the console.
 }
 }
 \description{
-Calculation based on Rosenthal's formula (1994). N stands for the \emph{number of measurements}.
-Necessary command:
+Necessary LaTeX command:
+\code{\\newcommand{\\effectsize}{\\textit{r=}}}
 }
 \examples{
 rFromNPAV(0.02, N = 180)

@@ -78,7 +78,14 @@ colleyRstats::reportART(art_summary, dv = "score")
 
 ## Next steps
 
+- `vignette("analyzing-a-user-study")` walks a complete within-subjects study
+  from raw data to manuscript-ready text and figures, including the one-call
+  `analyze_and_report()` / `report_all()` pipeline.
+- `vignette("choosing-a-test")` shows how `recommend_test()` selects the right
+  test or mixed model from the data, and how to report GLMMs/CLMMs.
+- `vignette("overleaf")` covers getting the LaTeX output into an Overleaf
+  project that compiles immediately (`latex_preamble()`, `use_colleyrstats_sty()`,
+  `emit_overleaf()`).
 - Browse the reference for reporting helpers such as `reportMeanAndSD()` and
-  `reportDunnTest()`.
-- Use `generateMoboPlot()` or `generateMoboPlot2()` for optimization studies.
-- See the README for a broader catalog of available helpers.
+  `reportDunnTest()`, and use `generateMoboPlot()` / `generateMoboPlot2()` for
+  optimization studies.

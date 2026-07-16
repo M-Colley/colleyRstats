@@ -129,6 +129,41 @@ test_that("generateEffectPlot applies custom axis and legend labels", {
   expect_equal(p$labels$fill, "Emotion")
 })
 
+test_that("plot wrappers reject unknown column names with a clear error", {
+  main_df <- data.frame(
+    CondID = factor(rep(c("A", "B"), each = 15)),
+    tlx_mental = rnorm(30)
+  )
+
+  expect_error(
+    ggbetweenstatsWithPriorNormalityCheck(
+      data = main_df, x = "Cond_typo", y = "tlx_mental", ylab = "Mental Demand"
+    ),
+    "'Cond_typo' not found"
+  )
+  expect_error(
+    generateEffectPlot(
+      data = main_df, x = "CondID", y = "missing_dv", fillColourGroup = "CondID"
+    ),
+    "'missing_dv' not found"
+  )
+})
+
+test_that("plot wrappers warn when xlabels length does not match the groups", {
+  main_df <- data.frame(
+    CondID = factor(rep(c("A", "B", "C"), each = 10)),
+    tlx_mental = rnorm(30)
+  )
+
+  expect_warning(
+    ggbetweenstatsWithPriorNormalityCheck(
+      data = main_df, x = "CondID", y = "tlx_mental",
+      ylab = "Mental Demand", xlabels = c("Only", "Two")
+    ),
+    "xlabels"
+  )
+})
+
 test_that("ggwithinstatsWithPriorNormalityCheck returns a ggplot object", {
   main_df <- data.frame(
     Participant = factor(rep(1:10, each = 3)),

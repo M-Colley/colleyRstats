@@ -1,3 +1,41 @@
+# colleyRstats 0.1.3
+
+## NEW FEATURES
+
+- New vignette "Analyzing a typical user study" (`vignette("analyzing-a-user-study")`): a complete walkthrough from raw within-subjects data to manuscript-ready figures and LaTeX text.
+- Friendlier errors everywhere a column name is passed: plotting and reporting functions now validate `x`/`y`/`iv`/`dv`/`factors`/`objectives` up front and report which column is missing plus the available columns, instead of failing later with a cryptic dplyr/rlang error.
+- The plot wrappers warn when `xlabels` does not match the number of observed groups (previously the axis labels silently misaligned).
+- `not_empty()` now names the offending argument in its default error message.
+- `remove_outliers_REI()` accepts `variables` as a character vector (e.g. `c("var1", "var2")`) in addition to the comma-separated string.
+- `add_pareto_emoa_column()` / `add_pareto_moocore_column()` verify that the objective columns exist and are numeric.
+
+## BUG FIXES
+
+- `?replace_values` works again: a malformed roxygen `@name` tag had redirected its documentation to a stray `data-the-data-frame` help page.
+- `reportArtCon()` now escapes the dependent variable and condition names for LaTeX and renders the IV via the same name-macro policy as `reportDunnTest()`; previously names with underscores produced uncompilable LaTeX.
+- The `reshape_data()` example was not runnable (`requireNamespace()` was called with a vector and a misspelled package name).
+- `latex_preamble()` no longer documents its `path` argument twice; `rFromNPAV()`'s documentation block is no longer split by a stray comment line.
+- `reportNPAV()` no longer refers to the non-existent `reportNPAVChi()` when the input lacks a `Pr(>F)` column.
+- README: removed the section documenting the non-existent `reportNPAVChi()`, refreshed the stale `reportNPAV()` deprecation date, fixed the double `anova()` call in the `reportART()` example, and documented the newer API (recommend_test, pipelines, Overleaf output) and all vignettes.
+
+## PERFORMANCE
+
+- `ggwithinstatsWithPriorNormalityCheck()` no longer runs an unused Levene test (the asterisk variant was already fixed in 0.1.0).
+
+# colleyRstats 0.1.2
+
+## NEW FEATURES
+
+- Principled model selection: `classify_outcome()` determines a variable's measurement scale (continuous, ordinal, binary, count, nominal) and `recommend_test()` turns scale x clustering x assumption checks into a concrete recommendation -- including mixed models -- with the matching reporter, a ready-to-edit fit call, a rationale, and an APA-style methods sentence.
+- Mixed-model reporters: `reportGLMM()` (lme4 / glmmTMB / lm / glm; odds and incidence-rate ratios are chosen automatically from the family) and `reportCLMM()` (ordinal::clmm / clm).
+- Overleaf-oriented output layer: `use_colleyrstats_sty()` ships the macro package, `emit_name_macros()` / `define_result_macro()` generate `\newcommand` stubs and single-source-of-truth result macros, `expand_latex_macros()` -- with `options(colleyRstats.macros = FALSE)` -- expands everything to plain math, and `emit_overleaf()` bundles a whole analysis into a compilable Overleaf project.
+- `latex_escape()` escapes LaTeX special characters in user-supplied names.
+- New vignettes: "Choosing the right test (and mixed models)" and "From R to Overleaf: publication-ready output".
+
+## DEPENDENCIES
+
+- Lowered several minimum version requirements for broader compatibility.
+
 # colleyRstats 0.1.1
 
 ## BUG FIXES

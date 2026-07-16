@@ -11,7 +11,9 @@ remove_outliers_REI(df, header = FALSE, variables = "", range = c(1, 5))
 
 \item{header}{Logical indicating if the data frame has a header. Defaults to FALSE.}
 
-\item{variables}{Character string specifying which variables to consider, separated by commas.}
+\item{variables}{Which variables to consider: either a single character
+string with names separated by commas (\code{"var1,var2"}) or a character
+vector (\code{c("var1", "var2")}).}
 
 \item{range}{Numeric vector of length 2 specifying the range of the Likert scale
 (used to sanity-check the responses). Defaults to c(1, 5).}

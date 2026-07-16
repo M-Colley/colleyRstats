@@ -37,17 +37,19 @@ Relevant if you receive data in wide-format but cannot use built-in functionalit
 }
 \examples{
 \donttest{
-if (requireNamespace(c("write_xlsx", "readxl"), quietly = TRUE)) {
+if (requireNamespace("writexl", quietly = TRUE) &&
+  requireNamespace("readxl", quietly = TRUE)) {
   tmp_in  <- tempfile(fileext = ".xlsx")
   tmp_out <- tempfile(fileext = ".xlsx")
 
-  # Minimal toy input that includes your required pieces:
-  # an ID column and something that contains the marker value.
+  # Two marker-delimited sections of equal width; each section is stacked
+  # under the first one, keyed by the ID column.
   toy <- data.frame(
-    ID = c(1, 1, 2, 2),
-    section = c("videoinfo", "videoinfo", "videoinfo", "videoinfo"),
-    key = c("fps", "duration_s", "fps", "duration_s"),
-    value = c(30, 12.3, 25, 9.8),
+    ID = c(1, 2),
+    videoinfo1 = c("marker", "marker"),
+    rating = c(10, 11),
+    videoinfo2 = c("marker", "marker"),
+    rating2 = c(20, 21),
     stringsAsFactors = FALSE
   )
 

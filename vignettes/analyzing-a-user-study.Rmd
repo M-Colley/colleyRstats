@@ -1,0 +1,191 @@
+---
+title: "Analyzing a typical user study"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Analyzing a typical user study}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+
+# The ART section needs ARTool and emmeans (both in Suggests). Guard those
+# chunks so the vignette still builds without them.
+has_art <- requireNamespace("ARTool", quietly = TRUE) &&
+  requireNamespace("emmeans", quietly = TRUE)
+```
+
+```{r}
+library(colleyRstats)
+```
+
+This vignette walks through the workflow `colleyRstats` was built for: a
+within-subjects user study, from raw data to the text and figures that go into
+the manuscript. Every number in the paper should come out of this script -- no
+retyping, no copy-paste drift.
+
+## The study data
+
+Twenty-four participants experienced three interface conditions and rated their
+mental demand (0--100, NASA-TLX style) and trust (1--7 Likert) after each. In
+your project this data frame comes from your logging or survey export; here we
+simulate it.
+
+```{r}
+set.seed(42)
+n <- 24
+
+main_df <- data.frame(
+  Participant = factor(rep(seq_len(n), each = 3)),
+  ConditionID = factor(rep(c("Baseline", "HUD", "LED"), times = n))
+)
+
+cond_effect <- c(Baseline = 55, HUD = 46, LED = 44)[as.character(main_df$ConditionID)]
+main_df$tlx_mental <- pmin(100, pmax(0, round(cond_effect + rnorm(nrow(main_df), sd = 10))))
+main_df$trust <- pmin(7, pmax(1, round(3.5 +
+  (main_df$ConditionID != "Baseline") * 0.9 + rnorm(nrow(main_df), sd = 1))))
+```
+
+Two things matter before any analysis:
+
+- the participant and condition columns must be **factors** (they are above);
+- decide up front whether the design is within- or between-subjects -- it
+  changes the tests, the plots, and the effect sizes.
+
+## The quick route: one call per dependent variable
+
+`analyze_and_report()` runs the whole per-DV pipeline: it checks the
+assumptions (and phrases the justification for the methods section), builds the
+matching `ggstatsplot` figure with automatic parametric/non-parametric
+selection, reports the omnibus test, and -- for three or more groups -- the
+significant post-hoc comparisons.
+
+```{r}
+res <- analyze_and_report(
+  main_df,
+  dv = "tlx_mental", iv = "ConditionID",
+  design = "within",
+  ylab = "Mental Demand (TLX)"
+)
+```
+
+The result carries everything separately, so you can place the pieces where
+they belong:
+
+```{r}
+res$plot
+```
+
+```{r}
+res$methods  # for the Methods section
+res$text     # the omnibus result
+res$posthoc  # significant pairwise comparisons (NULL for 2 groups)
+```
+
+For a whole questionnaire battery, `report_all()` does this for every scale and
+adds a Holm-corrected summary across the dependent variables:
+
+```{r}
+battery <- report_all(
+  main_df,
+  dvs = c("tlx_mental", "trust"),
+  iv = "ConditionID",
+  design = "within",
+  labels = c(tlx_mental = "Mental Demand", trust = "Trust")
+)
+battery$summary
+```
+
+## Step by step, if you prefer control
+
+### 1. Check the assumptions
+
+```{r}
+check_normality_by_group(main_df, "ConditionID", "tlx_mental")
+```
+
+`assumption_methods_text()` turns the same checks into the sentence reviewers
+expect next to the choice of test:
+
+```{r}
+assumption_methods_text(main_df, x = "ConditionID", y = "tlx_mental")
+```
+
+### 2. Plot with automatic test selection
+
+The `gg*WithPriorNormalityCheck*` wrappers run the normality check and pick the
+parametric or non-parametric variant for you. The `Asterisk` versions annotate
+significant pairwise comparisons with APA-style stars instead of p-values:
+
+```{r}
+plot_within_stats_asterisk(
+  data = main_df,
+  x = "ConditionID", y = "tlx_mental",
+  ylab = "Mental Demand (TLX)",
+  xlabels = c("Baseline", "HUD", "LED")
+)
+```
+
+(Every function also has a snake_case alias -- `plot_within_stats_asterisk()`
+is `ggwithinstatsWithPriorNormalityCheckAsterisk()`.)
+
+### 3. Factorial designs: the Aligned Rank Transform
+
+When there is more than one factor and normality is violated, the standard
+non-parametric route is the Aligned Rank Transform (ARTool). `reportART()`
+turns the ANOVA table into LaTeX sentences, and `reportArtCon()` reports the
+pairwise contrasts with rank-biserial effect sizes:
+
+```{r, eval = has_art}
+m <- ARTool::art(
+  tlx_mental ~ ConditionID + Error(Participant / ConditionID),
+  data = main_df
+)
+reportART(anova(m), dv = "mental demand")
+```
+
+```{r, eval = has_art}
+ac <- ARTool::art.con(m, ~ ConditionID, adjust = "holm")
+reportArtCon(
+  ac,
+  data = main_df, iv = "ConditionID", dv = "tlx_mental",
+  paired = TRUE, id = "Participant"
+)
+```
+
+### 4. Descriptives
+
+```{r}
+reportMeanAndSD(main_df, iv = "ConditionID", dv = "tlx_mental")
+```
+
+## Into the manuscript
+
+Every reporter accepts `sink_to = "results/tlx.tex"` to write its sentences to
+a file your manuscript can `\input{}` -- re-run the analysis and the paper
+updates itself. Figures go through `save_paper_figure()`, which uses
+publication presets (ACM-style single-column 3.33 in, full-width 7 in):
+
+```{r}
+fig_path <- file.path(tempdir(), "tlx-mental.pdf")
+save_paper_figure(res$plot, fig_path, columns = 2)
+```
+
+The LaTeX macros used by the reporters (`\F`, `\p`, `\m`, ...) are defined by
+`latex_preamble()` or the shipped `colleyRstats.sty`; see
+`vignette("overleaf")` for the full R-to-Overleaf pipeline, including
+`emit_overleaf()`, which bundles the entire analysis into a folder that
+compiles as-is.
+
+## Where to go next
+
+- `vignette("choosing-a-test")` -- how `recommend_test()` picks tests and mixed
+  models (GLMM/CLMM) from the data, and how to report them.
+- `vignette("overleaf")` -- macros vs. plain LaTeX, `.sty` handling, and the
+  one-call Overleaf bundle.

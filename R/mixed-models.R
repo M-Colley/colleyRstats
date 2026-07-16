@@ -163,9 +163,11 @@ recommend_test <- function(data, outcome, predictors = NULL, cluster = NULL,
   not_empty(outcome)
   design <- match.arg(design)
   outcome_type <- match.arg(outcome_type)
-  stopifnot(outcome %in% names(data))
-  if (!is.null(predictors)) stopifnot(all(predictors %in% names(data)))
-  if (!is.null(cluster)) stopifnot(length(cluster) == 1L, cluster %in% names(data))
+  .check_columns(data, c(outcome, predictors))
+  if (!is.null(cluster)) {
+    stopifnot(length(cluster) == 1L)
+    .check_columns(data, cluster)
+  }
 
   if (identical(outcome_type, "auto")) {
     outcome_type <- classify_outcome(data[[outcome]], ordinal_max_levels = ordinal_max_levels)

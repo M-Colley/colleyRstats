@@ -107,9 +107,9 @@ test_that("recommend_test honours an explicit outcome_type override", {
 
 test_that("recommend_test validates its inputs", {
   d <- make_mixed_df()
-  expect_error(recommend_test(d, outcome = "nope"), "outcome")
-  expect_error(recommend_test(d, outcome = "score", predictors = "nope"))
-  expect_error(recommend_test(d, outcome = "score", cluster = "nope"))
+  expect_error(recommend_test(d, outcome = "nope"), "'nope' not found")
+  expect_error(recommend_test(d, outcome = "score", predictors = "nope"), "'nope' not found")
+  expect_error(recommend_test(d, outcome = "score", cluster = "nope"), "'nope' not found")
 })
 
 test_that("print.colley_recommendation returns its input invisibly", {

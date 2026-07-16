@@ -36,7 +36,7 @@ analyze_and_report <- function(data, dv, iv, design = c("between", "within"), yl
   not_empty(dv)
   not_empty(iv)
   design <- match.arg(design)
-  stopifnot(dv %in% names(data), iv %in% names(data))
+  .check_columns(data, c(dv, iv))
 
   if (!is.factor(data[[iv]])) {
     data[[iv]] <- as.factor(data[[iv]])
@@ -119,7 +119,7 @@ report_all <- function(data, dvs, iv, design = c("between", "within"), labels = 
   not_empty(dvs)
   not_empty(iv)
   design <- match.arg(design)
-  stopifnot(all(dvs %in% names(data)))
+  .check_columns(data, c(dvs, iv))
 
   results <- lapply(dvs, function(dv) {
     ylab <- if (!is.null(labels) && dv %in% names(labels)) labels[[dv]] else dv

@@ -56,7 +56,7 @@ reportNPAV <- function(model, dv = "Testdependentvariable", write_to_clipboard =
   not_empty(dv)
 
   if ("Pr(>F)" %!in% colnames(model)) {
-    message(paste0("No column ``Pr(>F)'' was found. Most likely, you want to use the command reportNPAVChi."))
+    message(paste0("No column ``Pr(>F)'' was found. reportNPAV() expects the ANOVA table produced by np.anova(); consider reportART() with ARTool instead."))
   } else {
     if (!any(model$`Pr(>F)` < 0.05, na.rm = TRUE)) {
       no_effect_msg <- paste0("The NPAV found no significant effects on ", dv, ". ")
@@ -617,6 +617,7 @@ reportMeanAndSD <- function(data, iv = "testiv", dv = "testdv", sink_to = NULL) 
   not_empty(data)
   not_empty(iv)
   not_empty(dv)
+  .check_columns(data, c(iv, dv))
 
   test <- data |>
     tidyr::drop_na(!!rlang::sym(iv)) |>
@@ -768,6 +769,7 @@ reportggstatsplotPostHoc <- function(data, p, iv = "testiv", dv = "testdv", labe
   not_empty(p)
   not_empty(iv)
   not_empty(dv)
+  .check_columns(data, c(iv, dv))
 
   # Extract stats from the ggstatsplot object
   stats <- attr(p, "pairwise_comparisons_data")
@@ -899,6 +901,7 @@ reportDunnTest <- function(d, data, iv = "testiv", dv = "testdv", sink_to = NULL
   not_empty(d)
   not_empty(iv)
   not_empty(dv)
+  .check_columns(data, c(iv, dv))
   dv_tex <- latex_escape(dv)
 
   # Check for significance globally first
@@ -1085,6 +1088,7 @@ reportDunnTestTable <- function(d = NULL, data, iv = "testiv", dv = "testdv", or
   not_empty(data)
   not_empty(iv)
   not_empty(dv)
+  .check_columns(data, c(iv, dv))
   style <- match.arg(style)
 
   # If d is not provided, calculate it
@@ -1337,12 +1341,14 @@ reportArtCon <- function(ac, data, iv = "testiv", dv = "testdv", paired = FALSE,
   not_empty(data)
   not_empty(iv)
   not_empty(dv)
+  .check_columns(data, c(iv, dv))
+  dv_tex <- latex_escape(dv)
 
   tbl <- .art_con_to_df(ac)
 
   # Check for significance globally first
   if (!any(tbl$p.value < 0.05, na.rm = TRUE)) {
-    no_diff_msg <- paste0("A post-hoc test found no significant differences for ", dv, ". ")
+    no_diff_msg <- paste0("A post-hoc test found no significant differences for ", dv_tex, ". ")
     message(no_diff_msg)
     if (!is.null(sink_to)) {
       .write_tex(no_diff_msg, sink_to)
@@ -1393,18 +1399,20 @@ reportArtCon <- function(ac, data, iv = "testiv", dv = "testdv", paired = FALSE,
       strStatsB <- paste0("(\\m{", .fmt_num(statsB$m), "}, \\sd{", .fmt_num(statsB$sd), "})")
 
       # --- Determine Direction (Winner vs Loser) ---
+      # Condition names are escaped for display only; the raw condA/condB were
+      # used above to filter the data.
       if (statsA$m >= statsB$m) {
-        winner <- condA
+        winner <- latex_escape(condA)
         winnerStats <- strStatsA
         loserString <- paste0(
-          condB, " (\\m{", .fmt_num(statsB$m),
+          latex_escape(condB), " (\\m{", .fmt_num(statsB$m),
           "}, \\sd{", .fmt_num(statsB$sd), "}; ", pValueStr, esStr, ")"
         )
       } else {
-        winner <- condB
+        winner <- latex_escape(condB)
         winnerStats <- strStatsB
         loserString <- paste0(
-          condA, " (\\m{", .fmt_num(statsA$m),
+          latex_escape(condA), " (\\m{", .fmt_num(statsA$m),
           "}, \\sd{", .fmt_num(statsA$sd), "}; ", pValueStr, esStr, ")"
         )
       }
@@ -1439,10 +1447,12 @@ reportArtCon <- function(ac, data, iv = "testiv", dv = "testdv", paired = FALSE,
         joined_losers <- paste0(paste(losers[1:(n - 1)], collapse = ", "), ", and ", losers[n])
       }
 
-      iv_cmd <- paste0("\\", iv)
+      # Render the IV name (a macro like \scenario when it is a valid command
+      # name, escaped plain text otherwise) -- same policy as reportDunnTest().
+      iv_cmd <- .tex_name(iv)
 
       final_str <- paste0(
-        "A post-hoc test found that ", dv, " for the ", iv_cmd, " ", w,
+        "A post-hoc test found that ", dv_tex, " for the ", iv_cmd, " ", w,
         " was significantly higher ", subset_res$winnerStats[1],
         " than for ", joined_losers, ". "
       )
@@ -1512,6 +1522,7 @@ reportArtConTable <- function(ac, data, iv = "testiv", dv = "testdv", paired = F
   not_empty(data)
   not_empty(iv)
   not_empty(dv)
+  .check_columns(data, c(iv, dv))
   style <- match.arg(style)
 
   src <- .art_con_to_df(ac)

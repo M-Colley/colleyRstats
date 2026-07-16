@@ -7,8 +7,6 @@
 #' \code{\\usepackage}).
 #'
 #' @param path Optional path of a \code{.tex} file to write the definitions to.
-#'
-#' @param path Optional path of a \code{.tex} file to write the definitions to.
 #'   If the path ends in \code{.sty}, a \code{\\ProvidesPackage} header is added
 #'   so it can be uploaded to Overleaf and loaded with
 #'   \code{\\usepackage{colleyRstats}} (see also [use_colleyrstats_sty()]).

@@ -11,6 +11,11 @@
 
 ## BUG FIXES
 
+- `reportART()` reported no F statistic and no effect size for **mixed** ART models. `stats::anova()` names the F column `F value` for a between-only (`lm`) fit but plain `F` for a mixed (`lmer`) one, and only the former was read -- so every model containing a random term (`+ (1 | participant)`, i.e. any within-subjects design) produced `\F{3}{108}{}` with the statistic missing, silently dropped the partial eta-squared, and left the opening parenthesis unclosed. The F column is now resolved by whichever name it carries.
+- `reportART()` now always closes the statistics parenthesis. It was appended only when an effect size could be computed, so sentences without one shipped unbalanced parentheses into LaTeX.
+- `reportggstatsplotPostHoc()` emitted a stray `)` after the p-value: `... (\m{3.8}, \sd{1.6}); \padj{0.001}).` The mean/SD parenthetical closed too early, leaving the p-value outside the parentheses it belongs to and the sentence unbalanced. It now reads `... (\m{3.8}, \sd{1.6}; \padj{0.001}).`, matching `reportArtCon()`.
+- Degrees of freedom are formatted for display. Greenhouse-Geisser corrected, Kenward-Roger and Welch dfs are fractional and were pasted at full double precision, e.g. `\F{1.80875305770353}{66.9238631350305}{0.11}` and `F(2, 180.000000000002)`. Whole dfs stay whole; fractional ones are rounded to two decimals.
+- `reportggstatsplot()` chooses the indefinite article from the method name, so it reads "An ANOVA ..." rather than "A ANOVA ...".
 - `?replace_values` works again: a malformed roxygen `@name` tag had redirected its documentation to a stray `data-the-data-frame` help page.
 - `reportArtCon()` now escapes the dependent variable and condition names for LaTeX and renders the IV via the same name-macro policy as `reportDunnTest()`; previously names with underscores produced uncompilable LaTeX.
 - The `reshape_data()` example was not runnable (`requireNamespace()` was called with a vector and a misspelled package name).

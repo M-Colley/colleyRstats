@@ -100,6 +100,58 @@ test_that("reportART invisibly returns one sentence per significant effect", {
   expect_match(result[2], "gesture")
 })
 
+test_that("reportART reads the F statistic from a mixed-model anova table", {
+  # anova() on an ARTool model names this column "F value" for a between-only
+  # (lm) fit but plain "F" for a mixed (lmer) one. Reading only `F value` left
+  # the statistic and the effect size out of every mixed-model sentence.
+  model <- data.frame(
+    Term = "condition",
+    F = 7.5460634,
+    Df = 3,
+    Df.res = 108,
+    `Pr(>F)` = 0.0001247,
+    check.names = FALSE
+  )
+
+  result <- suppressMessages(reportART(model, dv = "TiA"))
+  expect_match(result, "\\\\F\\{3\\}\\{108\\}\\{7\\.55\\}") # F value present
+  expect_match(result, "eta_\\{p\\}\\^\\{2\\}") # effect size derived from it
+})
+
+test_that("reportART always closes the statistics parenthesis", {
+  # The ")" used to be appended only when an effect size could be computed, so
+  # sentences without one shipped unbalanced parentheses into LaTeX.
+  model <- data.frame(
+    Term = "condition",
+    F = 7.55,
+    Df = 3,
+    Df.res = NA_real_, # blocks F_to_eta2 -> no effect size text
+    `Pr(>F)` = 0.001,
+    check.names = FALSE
+  )
+
+  result <- suppressMessages(reportART(model, dv = "TiA"))
+  expect_equal(
+    lengths(regmatches(result, gregexpr("(", result, fixed = TRUE))),
+    lengths(regmatches(result, gregexpr(")", result, fixed = TRUE)))
+  )
+})
+
+test_that("reportART rounds fractional degrees of freedom", {
+  # Kenward-Roger dfs carry floating-point noise (180.000000000002)
+  model <- data.frame(
+    Term = "uncertainty",
+    F = 6.5375,
+    Df = 2,
+    Df.res = 180.000000000002,
+    `Pr(>F)` = 0.00182,
+    check.names = FALSE
+  )
+
+  result <- suppressMessages(reportART(model, dv = "TiA"))
+  expect_match(result, "\\\\F\\{2\\}\\{180\\}\\{6\\.54\\}")
+})
+
 test_that("reportggstatsplot recognizes the unpaired Wilcoxon rank sum test", {
   plt <- ggstatsplot::ggbetweenstats(mtcars, am, mpg, type = "np")
 
@@ -196,6 +248,50 @@ test_that("reportggstatsplotPostHoc tolerates NA in the dependent variable", {
     reportggstatsplotPostHoc(data = data_with_na, p = plt, iv = "cyl", dv = "mpg"),
     "significantly higher"
   )
+})
+
+test_that("reportggstatsplotPostHoc balances parentheses and keeps p inside them", {
+  # The second mean/SD parenthetical used to close before the p-value and then
+  # gain a second ")" afterwards, giving "...\\sd{1.62}); \\padj{0.001})." --
+  # unbalanced, with the p-value sitting outside its own parentheses.
+  pwc <- data.frame(
+    group1 = "A", group2 = "B",
+    p.value = 0.01, test = "Games-Howell",
+    stringsAsFactors = FALSE
+  )
+  fake_plot <- structure(list(dummy = TRUE), pairwise_comparisons_data = pwc)
+  df <- data.frame(grp = c("A", "A", "B", "B"), val = c(5, 6, 1, 2))
+
+  result <- suppressMessages(
+    reportggstatsplotPostHoc(df, fake_plot, iv = "grp", dv = "val")
+  )
+
+  expect_equal(
+    lengths(regmatches(result, gregexpr("(", result, fixed = TRUE))),
+    lengths(regmatches(result, gregexpr(")", result, fixed = TRUE)))
+  )
+  # p-value must be inside the trailing parenthetical, not after it
+  expect_match(result, "\\\\sd\\{[^}]*\\}; \\\\padj\\{[^}]*\\}\\)")
+  expect_false(grepl("\\}\\); \\\\padj", result))
+})
+
+test_that("reportggstatsplot rounds Greenhouse-Geisser degrees of freedom", {
+  # A within-subjects parametric ANOVA is GG-corrected, so its dfs are
+  # fractional. They used to be pasted at full double precision, e.g.
+  # \F{1.80875305770353}{66.9238631350305}{0.11}.
+  set.seed(42)
+  df <- data.frame(
+    id = factor(rep(1:20, times = 3)),
+    condition = factor(rep(c("A", "B", "C"), each = 20)),
+    score = c(stats::rnorm(20), stats::rnorm(20, 0.4), stats::rnorm(20, 0.8))
+  )
+  plt <- ggstatsplot::ggwithinstats(df, condition, score, type = "parametric")
+
+  result <- suppressMessages(reportggstatsplot(plt, iv = "condition", dv = "score"))
+
+  # whatever the dfs are, they must not be printed with runaway precision
+  dfs <- unlist(regmatches(result, gregexpr("[0-9]+\\.[0-9]+", result)))
+  expect_true(all(nchar(sub(".*\\.", "", dfs)) <= 3))
 })
 
 test_that("reportggstatsplotPostHoc falls back to raw levels for unmapped labels", {

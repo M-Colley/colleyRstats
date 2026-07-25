@@ -404,3 +404,38 @@ test_that("remove_outliers_REI tolerates missing responses", {
 
   expect_false(any(is.na(result$REI)))
 })
+
+test_that(".fmt_df keeps whole degrees of freedom whole and rounds fractional ones", {
+  # Integer dfs must not gain decimals...
+  expect_equal(.fmt_df(2), "2")
+  expect_equal(.fmt_df(108), "108")
+  # ...Kenward-Roger floating-point noise must not leak into the text...
+  expect_equal(.fmt_df(180.000000000002), "180")
+  # ...and Greenhouse-Geisser / Welch dfs are rounded for display.
+  expect_equal(.fmt_df(1.80875305770353), "1.81")
+  expect_equal(.fmt_df(66.9238631350305), "66.92")
+  # Non-numeric placeholders (e.g. "$\\infty$") pass through untouched.
+  expect_equal(.fmt_df("$\\infty$"), "$\\infty$")
+})
+
+test_that(".f_values finds the F column whatever anova() named it", {
+  # between-only (lm) ART fits name it "F value"...
+  lm_tbl <- data.frame(`F value` = c(6.12, 5.01), check.names = FALSE)
+  expect_equal(.f_values(lm_tbl), c(6.12, 5.01))
+  # ...mixed (lmer) fits name it "F"
+  lmer_tbl <- data.frame(F = c(7.55, 0.32), check.names = FALSE)
+  expect_equal(.f_values(lmer_tbl), c(7.55, 0.32))
+  # a table with neither yields NULL rather than erroring
+  expect_null(.f_values(data.frame(Df = 1)))
+})
+
+test_that(".indefinite_article matches how the following word is read", {
+  expect_equal(.indefinite_article("ANOVA"), "An")
+  expect_equal(.indefinite_article("RM-ANOVA"), "An")
+  expect_equal(.indefinite_article("MANOVA"), "An")
+  expect_equal(.indefinite_article("F test"), "An") # spoken "eff"
+  expect_equal(.indefinite_article("Friedman rank sum test"), "A")
+  expect_equal(.indefinite_article("Wilcoxon signed rank test"), "A")
+  expect_equal(.indefinite_article("Games-Howell"), "A")
+  expect_equal(.indefinite_article(""), "A")
+})

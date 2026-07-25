@@ -241,11 +241,15 @@ reportART <- function(model, dv = "Testdependentvariable", write_to_clipboard = 
       # end so multiple effects do not overwrite each other.
       sentences <- character(0)
 
+      # anova() names the F column "F value" for a between-only (lm) ART fit but
+      # "F" for a mixed (lmer) one, so resolve it once instead of assuming.
+      Fvalues <- .f_values(model)
+
       for (i in seq_along(model$`Pr(>F)`)) {
         if (!is.na(model$`Pr(>F)`[i]) && model$`Pr(>F)`[i] < 0.05) {
           # Raw values; rounding happens only at display time so the effect
           # size below is computed from the unrounded F statistic.
-          Fvalue <- model$`F value`[i]
+          Fvalue <- if (is.null(Fvalues)) NA_real_ else Fvalues[i]
           numeratordf <- model$Df[i]
           denominatordf <- model$Df.res[i]
           pValue <- .fmt_p_macro(model$`Pr(>F)`[i])
@@ -297,20 +301,19 @@ reportART <- function(model, dv = "Testdependentvariable", write_to_clipboard = 
             " on ",
             dv_tex,
             " (\\F{",
-            numeratordf,
+            .fmt_df(numeratordf),
             "}{",
-            denominatordf,
+            .fmt_df(denominatordf),
             "}{",
             .fmt_num(Fvalue),
             "}, ",
             pValue
           )
 
-          if (nzchar(effect_size_text)) {
-            stringtowrite <- paste0(stringtowrite, effect_size_text, ")")
-          }
-
-          stringtowrite <- paste0(stringtowrite, ". ")
+          # The parenthetical must always be closed -- previously the ")" was
+          # only appended when an effect size was available, so a sentence
+          # without one shipped unbalanced parentheses.
+          stringtowrite <- paste0(stringtowrite, effect_size_text, "). ")
 
           # Replace "X" with LaTeX code if preceded by a space
           stringtowrite <- gsub("(?<=\\s)X", "$\\\\times$ \\\\", stringtowrite, perl = TRUE)
@@ -678,17 +681,27 @@ reportggstatsplot <- function(p, iv = "independent", dv = "Testdependentvariable
   # stats::*.test naming ("Wilcoxon rank sum test" for unpaired data, statistic
   # W; "Wilcoxon signed rank test" for paired data, statistic V) - match on
   # substrings so the "exact test" variants are covered as well.
+  # Degrees of freedom are formatted for display: Greenhouse-Geisser corrected
+  # and Welch-approximated dfs are fractional and would otherwise be printed at
+  # full double precision (e.g. "F(1.80875305770353, 66.9238631350305)").
+  # Rank-based tests carry no df column at all, so read it only if it is there
+  # (a bare stats$df would warn about an uninitialised column).
+  stat_col <- function(nm) if (nm %in% names(stats)) stats[[nm]] else NULL
+  df_raw <- stat_col("df")
+  df_disp <- .fmt_df(df_raw)
+  df_error_disp <- .fmt_df(stat_col("df.error"))
+
   if (stats$method %in% c("Kruskal-Wallis rank sum test", "Friedman rank sum test")) {
-    resultString <- paste0("(\\chisq(", stats$df.error, ")=", statistic, ", ", pValue, ", r=", effectSize, ")")
+    resultString <- paste0("(\\chisq(", df_error_disp, ")=", statistic, ", ", pValue, ", r=", effectSize, ")")
   } else if (stats$method %in% c("Paired t-test", "Welch Two Sample t-test", "Student's t-test")) {
-    resultString <- paste0("(t(", stats$df.error, ")=", statistic, ", ", pValue, ", r=", effectSize, ")")
+    resultString <- paste0("(t(", df_error_disp, ")=", statistic, ", ", pValue, ", r=", effectSize, ")")
   } else if (grepl("signed rank", stats$method, fixed = TRUE)) {
     resultString <- paste0("(V=", statistic, ", ", pValue, ", r=", effectSize, ")")
   } else if (grepl("rank sum test", stats$method, fixed = TRUE) || stats$method == "Mann-Whitney U test") {
     resultString <- paste0("(W=", statistic, ", ", pValue, ", r=", effectSize, ")")
-  } else if (!is.null(stats$df) && !is.na(stats$df)) {
+  } else if (!is.null(df_raw) && !is.na(df_raw)) {
     # ANOVA and similar tests with both df and df.error
-    resultString <- paste0("(\\F{", stats$df, "}{", stats$df.error, "}{", statistic, "}, ", pValue, ", r=", effectSize, ")")
+    resultString <- paste0("(\\F{", df_disp, "}{", df_error_disp, "}{", statistic, "}, ", pValue, ", r=", effectSize, ")")
   } else {
     # Fallback for other methods
     resultString <- paste0("(statistic=", statistic, ", ", pValue, ", effect size=", effectSize, ")")
@@ -697,10 +710,11 @@ reportggstatsplot <- function(p, iv = "independent", dv = "Testdependentvariable
 
   dv_tex <- latex_escape(dv)
   method_tex <- latex_escape(stats$method)
+  article <- .indefinite_article(method_tex)
   if (!stats$p.value < 0.05) {
-    msg <- paste0("A ", method_tex, " found no significant effects on ", dv_tex, " ", resultString, ". ")
+    msg <- paste0(article, " ", method_tex, " found no significant effects on ", dv_tex, " ", resultString, ". ")
   } else {
-    msg <- paste0("A ", method_tex, " found a significant effect of ", .tex_name(iv), " on ", dv_tex, " ", resultString, ". ")
+    msg <- paste0(article, " ", method_tex, " found a significant effect of ", .tex_name(iv), " on ", dv_tex, " ", resultString, ". ")
   }
 
   message(msg)
@@ -837,16 +851,21 @@ reportggstatsplotPostHoc <- function(data, p, iv = "testiv", dv = "testdv", labe
           list(mean = \(v) mean(v, na.rm = TRUE), sd = \(v) stats::sd(v, na.rm = TRUE))
         ))
 
-      # Format statistics
-      firstStatsStr <- paste0(" (\\m{", .fmt_num(as.numeric(valueOne[1, 1])), "}, \\sd{", .fmt_num(as.numeric(valueOne[1, 2])), "})")
-      secondStatsStr <- paste0(" (\\m{", .fmt_num(as.numeric(valueTwo[1, 1])), "}, \\sd{", .fmt_num(as.numeric(valueTwo[1, 2])), "})")
+      # Format statistics. These are built WITHOUT the closing parenthesis so
+      # each use site can decide what goes inside it: the first parenthetical
+      # closes immediately, while the second also carries the p-value. (It used
+      # to close here and have a second ")" appended after the p-value, which
+      # produced "...\sd{1.62}); \padj{0.001})." -- unbalanced, and the p-value
+      # sat outside the parentheses it belonged to.)
+      firstStats <- paste0(" (\\m{", .fmt_num(as.numeric(valueOne[1, 1])), "}, \\sd{", .fmt_num(as.numeric(valueOne[1, 2])), "}")
+      secondStats <- paste0(" (\\m{", .fmt_num(as.numeric(valueTwo[1, 1])), "}, \\sd{", .fmt_num(as.numeric(valueTwo[1, 2])), "}")
 
       # Construct and print output string
       dv_tex <- .tex_name(dv)
       sentence <- if (as.numeric(valueOne[1, 1]) > as.numeric(valueTwo[1, 1])) {
-        paste0(testName, firstLabel, " was significantly higher", firstStatsStr, " in terms of ", dv_tex, " compared to ", secondLabel, secondStatsStr, "; ", pValue, "). ")
+        paste0(testName, firstLabel, " was significantly higher", firstStats, ")", " in terms of ", dv_tex, " compared to ", secondLabel, secondStats, "; ", pValue, "). ")
       } else {
-        paste0(testName, secondLabel, " was significantly higher", secondStatsStr, " in terms of ", dv_tex, " compared to ", firstLabel, firstStatsStr, "; ", pValue, "). ")
+        paste0(testName, secondLabel, " was significantly higher", secondStats, ")", " in terms of ", dv_tex, " compared to ", firstLabel, firstStats, "; ", pValue, "). ")
       }
       message(sentence)
       sentences <- c(sentences, sentence)

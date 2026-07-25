@@ -298,6 +298,59 @@ expand_latex_macros <- function(x) {
   sprintf(paste0("%.", digits, "f"), x)
 }
 
+# Internal: degrees of freedom for display. Integer dfs stay integers; the
+# fractional ones produced by Greenhouse-Geisser corrections or Kenward-Roger /
+# Welch approximations are rounded, so a sentence reads "F(1.81, 66.92)"
+# instead of "F(1.80875305770353, 66.9238631350305)".
+.fmt_df <- function(x, digits = 2) {
+  if (is.null(x) || length(x) == 0) {
+    return(x)
+  }
+  num <- suppressWarnings(as.numeric(x))
+  ifelse(is.na(num), as.character(x),
+    ifelse(num == round(num),
+      format(round(num), trim = TRUE, scientific = FALSE),
+      format(round(num, digits), trim = TRUE, scientific = FALSE)
+    )
+  )
+}
+
+# Internal: "An" before a word that is read starting with a vowel sound, "A"
+# otherwise, so method names flow ("An ANOVA ...", "A Friedman rank sum test
+# ..."). Acronyms are read letter-by-letter, hence the extra letter set.
+.indefinite_article <- function(word) {
+  w <- sub("^[^[:alnum:]]*", "", as.character(word)[1])
+  if (is.na(w) || !nzchar(w)) {
+    return("A")
+  }
+  first <- substr(w, 1, 1)
+  # Read as an acronym when the opening upper-case run is not followed by a
+  # lower-case letter ("ANOVA", "RM-ANOVA", "F test"): such letters are spoken
+  # individually, and A, E, F, H, I, L, M, N, O, R, S, X begin with a vowel
+  # sound ("an ANOVA", "an F test", "a Games-Howell test").
+  if (grepl("^[A-Z]{2,}", w) || grepl("^[A-Z]([^A-Za-z]|$)", w)) {
+    if (grepl(first, "AEFHILMNORSX", fixed = TRUE)) {
+      return("An")
+    }
+    return("A")
+  }
+  if (grepl("^[aeiouAEIOU]", w)) "An" else "A"
+}
+
+# Internal: the F statistics of an ANOVA-style table, whichever way the column
+# is named. `stats::anova()` on an ARTool model names it "F value" for a
+# between-only (lm) fit, but plain "F" for a mixed (lmer) fit -- reading only
+# `F value` silently yields NULL for every mixed model, which drops the F
+# statistic and the effect size from the reported sentence.
+.f_values <- function(model) {
+  for (nm in c("F value", "F", "F.value", "statistic")) {
+    if (nm %in% colnames(model)) {
+      return(model[[nm]])
+    }
+  }
+  NULL
+}
+
 # Internal: like .fmt_num, but for statistics bounded within [-1, 1] by
 # definition (p-values, r, eta^2). APA style omits their leading zero; opt in
 # via options(colleyRstats.leading_zero = FALSE).

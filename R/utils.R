@@ -775,7 +775,7 @@ checkAssumptionsForAnova <- function(data, y, factors) {
     return(emit_guidance("You must take the non-parametric ANOVA as Levene's test is significant (p < 0.05)."))
   }
 
-  emit_guidance("You may take parametric ANOVA (function anova_test). See https://www.datanovia.com/en/lessons/anova-in-r/#check-assumptions-1 for more information.")
+  emit_guidance("You may take parametric ANOVA (function anova_test). See https://www.datanovia.com/learn/biostatistics/anova/anova-in-r#check-assumptions-1 for more information.")
 }
 
 

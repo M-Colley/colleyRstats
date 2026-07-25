@@ -63,7 +63,7 @@ result$sentences  # methods sentence + omnibus result + post-hoc comparisons
 
 
 ### `checkAssumptionsForAnova`
-This function suite checks normality and homogeneity of variance assumptions for ANOVA models. Takes a vector of factors. For details on assumptions checking, refer to [Datanovia](https://www.datanovia.com/en/lessons/anova-in-r/#check-assumptions-1).
+This function suite checks normality and homogeneity of variance assumptions for ANOVA models. Takes a vector of factors. For details on assumptions checking, refer to [Datanovia](https://www.datanovia.com/learn/biostatistics/anova/anova-in-r#check-assumptions-1).
 
 **Example:**
 ```r

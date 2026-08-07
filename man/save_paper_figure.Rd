@@ -10,6 +10,7 @@ save_paper_figure(
   columns = 1,
   width = NULL,
   height = NULL,
+  base_size = NULL,
   dpi = 300,
   device = NULL
 )
@@ -26,6 +27,14 @@ Ignored when \code{width} is given.}
 \item{width}{Figure width in inches; overrides \code{columns}.}
 
 \item{height}{Figure height in inches. Defaults to 2/3 of the width.}
+
+\item{base_size}{Base font size in points for the saved figure, applied via
+\code{\link[=colley_theme]{colley_theme()}} sizing on top of whatever theme the plot carries. The
+default \code{NULL} derives it from \code{width}, so a 3.33 in figure gets
+about 7 pt and a 7 in figure about 9 pt -- close to the body text of a
+typical two-column paper, which is what makes a figure legible at 100\\%
+rather than only when zoomed. Pass a number to choose it yourself, or
+\code{NA} to leave the plot's own text sizes untouched.}
 
 \item{dpi}{Resolution for raster output. Default 300.}
 

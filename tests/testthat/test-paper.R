@@ -86,6 +86,111 @@ test_that("save_paper_figure writes a file with column presets", {
   expect_error(save_paper_figure(p, "x.pdf", columns = 3), "must be 1")
 })
 
+test_that("figure_base_size ties type size to the physical width", {
+  # The two widths save_paper_figure() presets must land on paper-legible sizes.
+  expect_equal(figure_base_size(3.33), 7)
+  expect_equal(figure_base_size(7), 9)
+
+  # Monotone in width, and bounded so extreme widths stay usable.
+  expect_lt(figure_base_size(2), figure_base_size(5))
+  expect_equal(figure_base_size(0.5), 6)
+  expect_equal(figure_base_size(40), 12)
+
+  expect_error(figure_base_size(0), "positive")
+  expect_error(figure_base_size(c(3, 7)), "single")
+})
+
+test_that("save_paper_figure sizes text from the width, and base_size overrides", {
+  skip_if_not_installed("see")
+
+  old <- ggplot2::theme_get()
+  on.exit(ggplot2::theme_set(old), add = TRUE)
+  ggplot2::theme_set(colley_theme(base_size = 17))
+
+  p <- ggplot2::ggplot(mtcars, ggplot2::aes(factor(cyl), mpg)) +
+    ggplot2::geom_boxplot()
+  dir <- file.path(tempdir(), "fig-size-test")
+  on.exit(unlink(dir, recursive = TRUE), add = TRUE)
+
+  # The regression this guards: a 3.33 in figure used to inherit 17 pt axis text
+  # from the session theme, which does not fit on that canvas.
+  msg <- capture_messages(
+    save_paper_figure(p, file.path(dir, "auto.pdf"), columns = 1)
+  )
+  expect_match(paste(msg, collapse = " "), "base font 7 pt")
+
+  msg2 <- capture_messages(
+    save_paper_figure(p, file.path(dir, "wide.pdf"), columns = 2)
+  )
+  expect_match(paste(msg2, collapse = " "), "base font 9 pt")
+
+  # An explicit value wins over the width-derived one.
+  msg3 <- capture_messages(
+    save_paper_figure(p, file.path(dir, "explicit.pdf"), columns = 1, base_size = 10)
+  )
+  expect_match(paste(msg3, collapse = " "), "base font 10 pt")
+
+  expect_true(all(file.exists(file.path(dir, c("auto.pdf", "wide.pdf", "explicit.pdf")))))
+})
+
+test_that("resizing scales legend and margin geometry, not only text", {
+  # Text-only resizing leaves legend keys and margins at the size the session
+  # theme chose, so a small figure gets correct type inside a legend still built
+  # for 17 pt -- which then runs off the panel.
+  small <- colleyRstats:::.resize_theme(7)
+  large <- colleyRstats:::.resize_theme(14)
+
+  expect_lt(
+    as.numeric(grid::convertUnit(small$legend.key.size, "pt")),
+    as.numeric(grid::convertUnit(large$legend.key.size, "pt"))
+  )
+  expect_lt(
+    as.numeric(grid::convertUnit(small$legend.box.spacing, "pt")),
+    as.numeric(grid::convertUnit(large$legend.box.spacing, "pt"))
+  )
+  expect_lt(sum(as.numeric(small$plot.margin)), sum(as.numeric(large$plot.margin)))
+  expect_equal(as.numeric(grid::convertUnit(small$legend.key.size, "pt")), 8.4)
+})
+
+test_that("save_paper_figure with base_size = NA leaves the plot's text alone", {
+  p <- ggplot2::ggplot(mtcars, ggplot2::aes(factor(cyl), mpg)) +
+    ggplot2::geom_boxplot() +
+    ggplot2::theme(axis.text = ggplot2::element_text(size = 31))
+
+  dir <- file.path(tempdir(), "fig-na-test")
+  on.exit(unlink(dir, recursive = TRUE), add = TRUE)
+
+  msg <- capture_messages(
+    save_paper_figure(p, file.path(dir, "untouched.pdf"), columns = 1, base_size = NA)
+  )
+  expect_false(grepl("base font", paste(msg, collapse = " ")))
+  expect_true(file.exists(file.path(dir, "untouched.pdf")))
+})
+
+test_that("save_paper_figure does not resurrect blanked legend titles", {
+  skip_if_not_installed("see")
+
+  old <- ggplot2::theme_get()
+  on.exit(ggplot2::theme_set(old), add = TRUE)
+  ggplot2::theme_set(colley_theme(base_size = 17))
+
+  # colley_theme() blanks legend titles; resizing text must not undo that, or
+  # every legend gains a title sitting on top of the axis labels.
+  p <- ggplot2::ggplot(mtcars, ggplot2::aes(mpg, wt, colour = factor(cyl))) +
+    ggplot2::geom_point()
+  resized <- p + colleyRstats:::.resize_theme(7)
+  expect_null(resized$theme$legend.title)
+  expect_s3_class(
+    colleyRstats:::.plot_theme_element(resized, "legend.title"), "element_blank"
+  )
+
+  # A plot that does ask for a title keeps it.
+  titled <- p + ggplot2::theme(legend.title = ggplot2::element_text(size = 20))
+  expect_s3_class(
+    colleyRstats:::.plot_theme_element(titled, "legend.title"), "element_text"
+  )
+})
+
 test_that("assumption_methods_text justifies parametric and non-parametric choices", {
   # Deterministically normal data (normal quantiles)
   d_normal <- data.frame(

@@ -94,7 +94,12 @@ generateEffectPlot <- function(data,
     ggplot2::theme(
       legend.position = "inside",
       legend.position.inside = legendPos,
-      legend.title = ggplot2::element_text(face = "bold", color = "black", size = 14)
+      # rel(), not an absolute size: an absolute value here would survive the
+      # rescaling save_paper_figure() applies and land a 14 pt title on a
+      # 3.33 in figure.
+      legend.title = ggplot2::element_text(
+        face = "bold", color = "black", size = ggplot2::rel(0.9)
+      )
     ) +
 
     # Points for each group
@@ -534,11 +539,16 @@ ggwithinstatsWithPriorNormalityCheck <- function(data, x, y, ylab, xlabels = NUL
     p.adjust.method = "holm",
     ggplot.component = list(
       ggplot2::theme(
-        text = ggplot2::element_text(size = 16),
-        plot.subtitle = ggplot2::element_text(size = 17, face = "bold")
+        # No absolute `text` size here: it would override whatever base_size
+        # the caller set for the figure, which is the one thing that has to
+        # follow the output width. Only the emphasis is stated.
+        plot.subtitle = ggplot2::element_text(size = ggplot2::rel(1), face = "bold")
       )
     ),
-    ggsignif.args = list(textsize = 4, tip_length = 0.01)
+    # Derived from the active theme rather than fixed: ggsignif measures text in
+    # millimetres, so a constant here is a constant physical size no matter how
+    # small the figure is drawn.
+    ggsignif.args = list(textsize = .signif_text_mm(), tip_length = 0.01)
   )
 
   # Only apply custom xlabels if they are provided
@@ -608,11 +618,16 @@ ggbetweenstatsWithPriorNormalityCheck <- function(data, x, y, ylab, xlabels = NU
     p.adjust.method = "holm",
     ggplot.component = list(
       ggplot2::theme(
-        text = ggplot2::element_text(size = 16),
-        plot.subtitle = ggplot2::element_text(size = 17, face = "bold")
+        # No absolute `text` size here: it would override whatever base_size
+        # the caller set for the figure, which is the one thing that has to
+        # follow the output width. Only the emphasis is stated.
+        plot.subtitle = ggplot2::element_text(size = ggplot2::rel(1), face = "bold")
       )
     ),
-    ggsignif.args = list(textsize = 4, tip_length = 0.01)
+    # Derived from the active theme rather than fixed: ggsignif measures text in
+    # millimetres, so a constant here is a constant physical size no matter how
+    # small the figure is drawn.
+    ggsignif.args = list(textsize = .signif_text_mm(), tip_length = 0.01)
   )
 
   if (!is.null(xlabels) && length(xlabels) > 0) {
@@ -686,11 +701,16 @@ ggbetweenstatsWithPriorNormalityCheckAsterisk <- function(data, x, y, ylab, xlab
     p.adjust.method = "holm",
     ggplot.component = list(
       ggplot2::theme(
-        text = ggplot2::element_text(size = 16),
-        plot.subtitle = ggplot2::element_text(size = 17, face = "bold")
+        # No absolute `text` size here: it would override whatever base_size
+        # the caller set for the figure, which is the one thing that has to
+        # follow the output width. Only the emphasis is stated.
+        plot.subtitle = ggplot2::element_text(size = ggplot2::rel(1), face = "bold")
       )
     ),
-    ggsignif.args = list(textsize = 4, tip_length = 0.01)
+    # Derived from the active theme rather than fixed: ggsignif measures text in
+    # millimetres, so a constant here is a constant physical size no matter how
+    # small the figure is drawn.
+    ggsignif.args = list(textsize = .signif_text_mm(), tip_length = 0.01)
   ) + ggplot2::scale_x_discrete(labels = xlabels)
 
   # Only add asterisks if there are significant differences
@@ -710,7 +730,7 @@ ggbetweenstatsWithPriorNormalityCheckAsterisk <- function(data, x, y, ylab, xlab
       annotations = df$asterisk_label,
       y_position = y_positions_asterisks,
       size = 0.45, # 0.5 is default
-      textsize = 3.90, # 3.88 is default
+      textsize = .signif_text_mm(), # follows the theme; 3.88 mm is the default
       fontface = "bold",
       test = NULL,
       na.rm = TRUE
@@ -782,11 +802,16 @@ ggwithinstatsWithPriorNormalityCheckAsterisk <- function(data, x, y, ylab, xlabe
     p.adjust.method = "holm",
     ggplot.component = list(
       ggplot2::theme(
-        text = ggplot2::element_text(size = 16),
-        plot.subtitle = ggplot2::element_text(size = 17, face = "bold")
+        # No absolute `text` size here: it would override whatever base_size
+        # the caller set for the figure, which is the one thing that has to
+        # follow the output width. Only the emphasis is stated.
+        plot.subtitle = ggplot2::element_text(size = ggplot2::rel(1), face = "bold")
       )
     ),
-    ggsignif.args = list(textsize = 4, tip_length = 0.01)
+    # Derived from the active theme rather than fixed: ggsignif measures text in
+    # millimetres, so a constant here is a constant physical size no matter how
+    # small the figure is drawn.
+    ggsignif.args = list(textsize = .signif_text_mm(), tip_length = 0.01)
   ) + ggplot2::scale_x_discrete(labels = xlabels)
 
   # Only add asterisks if there are significant differences
@@ -806,7 +831,7 @@ ggwithinstatsWithPriorNormalityCheckAsterisk <- function(data, x, y, ylab, xlabe
       annotations = df$asterisk_label,
       y_position = y_positions_asterisks,
       size = 0.45, # 0.5 is default
-      textsize = 3.90, # 3.88 is default
+      textsize = .signif_text_mm(), # follows the theme; 3.88 mm is the default
       fontface = "bold",
       test = NULL,
       na.rm = TRUE

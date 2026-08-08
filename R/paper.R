@@ -87,6 +87,13 @@ latex_preamble <- function(path = NULL) {
 #'   Ignored when \code{width} is given.
 #' @param width Figure width in inches; overrides \code{columns}.
 #' @param height Figure height in inches. Defaults to 2/3 of the width.
+#' @param base_size Base font size in points for the saved figure, applied via
+#'   [colley_theme()] sizing on top of whatever theme the plot carries. The
+#'   default \code{NULL} derives it from \code{width}, so a 3.33 in figure gets
+#'   about 7 pt and a 7 in figure about 9 pt -- close to the body text of a
+#'   typical two-column paper, which is what makes a figure legible at 100\%
+#'   rather than only when zoomed. Pass a number to choose it yourself, or
+#'   \code{NA} to leave the plot's own text sizes untouched.
 #' @param dpi Resolution for raster output. Default 300.
 #' @param device Graphics device passed to [ggplot2::ggsave()]. The default
 #'   \code{NULL} selects it automatically as described above; pass e.g.
@@ -101,7 +108,7 @@ latex_preamble <- function(path = NULL) {
 #'   ggplot2::geom_boxplot()
 #' save_paper_figure(p, file.path(tempdir(), "cyl-mpg.pdf"), columns = 1)
 #' }
-save_paper_figure <- function(plot = ggplot2::last_plot(), filename, columns = 1, width = NULL, height = NULL, dpi = 300, device = NULL) {
+save_paper_figure <- function(plot = ggplot2::last_plot(), filename, columns = 1, width = NULL, height = NULL, base_size = NULL, dpi = 300, device = NULL) {
   not_empty(filename)
   if (!columns %in% c(1, 2)) {
     stop("`columns` must be 1 (single column) or 2 (full width).")
@@ -112,6 +119,28 @@ save_paper_figure <- function(plot = ggplot2::last_plot(), filename, columns = 1
   }
   if (is.null(height)) {
     height <- width * 2 / 3
+  }
+
+  # Type size is decided HERE, together with the width, because this is the only
+  # place that knows how large the figure will physically be. A theme carrying
+  # absolute point sizes cannot know, so it produces text that is correct on one
+  # canvas and unreadable on another.
+  if (is.null(base_size)) {
+    base_size <- figure_base_size(width)
+  }
+  if (!all(is.na(base_size))) {
+    plot <- plot + .resize_theme(base_size)
+    # .resize_theme() leaves legend.title alone so that it cannot undo the
+    # element_blank() colley_theme() sets. Where a plot does ask for a legend
+    # title, it still has to be scaled, or it keeps whatever absolute size the
+    # plotting wrapper gave it.
+    if (!inherits(.plot_theme_element(plot, "legend.title"), "element_blank")) {
+      plot <- plot + ggplot2::theme(
+        legend.title = ggplot2::element_text(
+          size = base_size * .COLLEY_TEXT_RATIOS[["axis.text"]]
+        )
+      )
+    }
   }
 
   dir <- dirname(filename)
@@ -144,8 +173,41 @@ save_paper_figure <- function(plot = ggplot2::last_plot(), filename, columns = 1
     )
   }
 
-  message("Saved figure to '", filename, "' (", width, " x ", height, " in).")
+  message(
+    "Saved figure to '", filename, "' (", width, " x ", height, " in",
+    if (!all(is.na(base_size))) paste0(", base font ", base_size, " pt") else "",
+    ")."
+  )
   invisible(filename)
+}
+
+
+#' Base font size for a figure of a given width
+#'
+#' The rule [save_paper_figure()] uses to pick a type size from a figure width.
+#' Text in a figure should read at roughly the body-text size of the document
+#' the figure is placed in; since a figure is usually placed at 100\%, that
+#' means the type size has to follow the physical width. The rule is calibrated
+#' so that the two standard widths land on sensible values: 3.33 in (a
+#' two-column journal column) gives 7 pt and 7 in (full text width) gives 9 pt,
+#' with linear interpolation between and clamping outside.
+#'
+#' @param width Figure width in inches.
+#' @param min_size,max_size Bounds, so that very small or very large figures
+#'   still get a usable size. Defaults 6 and 12 points.
+#'
+#' @return A single number: the base font size in points.
+#' @export
+#'
+#' @examples
+#' figure_base_size(3.33)  # 7
+#' figure_base_size(7)     # 9
+figure_base_size <- function(width, min_size = 6, max_size = 12) {
+  if (!is.numeric(width) || length(width) != 1L || is.na(width) || width <= 0) {
+    stop("`width` must be a single positive number (inches).")
+  }
+  size <- 5.19 + 0.545 * width
+  max(min_size, min(max_size, round(size, 1)))
 }
 
 

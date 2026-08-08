@@ -7,6 +7,7 @@
 colleyRstats_setup(
   set_options = FALSE,
   set_theme = TRUE,
+  base_size = 17,
   set_conflicts = TRUE,
   print_citation = TRUE,
   verbose = TRUE
@@ -18,6 +19,13 @@ options are no longer changed automatically. Default is \code{FALSE}.}
 
 \item{set_theme}{Logical. If \code{TRUE}, sets the default \code{ggplot2} theme
 to \code{see::theme_lucid} with custom modifications. Default is \code{TRUE}.}
+
+\item{base_size}{Base font size in points for the theme. Every text element
+is sized relative to it (see \code{\link[=colley_theme]{colley_theme()}}), so a figure destined for a
+3.33 in column and one destined for a slide can share the same theme and
+differ only in this number. Default 17 reproduces the sizes used before
+this argument existed. \code{\link[=save_paper_figure]{save_paper_figure()}} overrides it per figure to
+match the width actually being written.}
 
 \item{set_conflicts}{Logical. If \code{TRUE}, sets \code{conflicted} preferences
 to favor \code{dplyr} and other tidyverse packages. Default is \code{TRUE}.}

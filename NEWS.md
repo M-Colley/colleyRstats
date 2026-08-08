@@ -1,3 +1,24 @@
+# colleyRstats 0.1.5 (development)
+
+## BUG FIXES
+
+- Figures saved at the column presets came out unreadable. `colleyRstats_setup()` set text sizes in **absolute** points (axis text 17 pt, axis titles 20 pt, plot titles 28 pt, strip text 22 pt) while `save_paper_figure(columns = 1)` writes a **3.33 x 2.22 in** PDF. Points do not shrink with the canvas, so on a single-column figure the type came out about three times what fits: axis titles ran off the page entirely, and three-level factor labels such as `demonstration`/`language`/`reward` overprinted into an unreadable smear. Type size is now derived from the width the figure is actually written at.
+- `generateEffectPlot()` fixed its legend title at 14 pt, and the four `ggstatsplot` wrappers fixed `text` at 16 pt and `plot.subtitle` at 17 pt. These absolute values overrode whatever theme the caller had chosen, so they survived any attempt to scale a figure down. They are now relative to the theme.
+- Significance-bracket labels were fixed at 4 mm (about 11 pt). `ggsignif` measures text in millimetres while themes measure it in points, so the label kept its physical size no matter how small the figure was drawn and ended up larger than the axis text beside it. Bracket text now follows the active theme; at the historical 17 pt base it is still 4 mm, so existing figures do not shift.
+
+## NEW FEATURES
+
+- New `colley_theme(base_size, base_family)`, the package theme as a function. Every text element is a multiple of `base_size` rather than an absolute point size, so one theme serves a journal column, a full-width figure and a slide -- only the number changes. The multipliers are axis titles 1.15, axis text 1.0, plot title 1.65, subtitle 1.0, caption 0.8, legend text 0.9, strip text 1.3.
+- New `figure_base_size(width)`, the rule that turns a figure width into a type size: 3.33 in gives 7 pt and 7 in gives 9 pt, interpolated between and clamped outside. Exported so the choice is inspectable rather than buried.
+- `save_paper_figure()` gains `base_size`. The default `NULL` derives it from the width, which is the fix above; pass a number to choose it, or `NA` to leave the plot's own text sizes untouched. The confirmation message now names the size used.
+- `colleyRstats_setup()` gains `base_size` (default 17), passed through to `colley_theme()`.
+
+## BACKWARD COMPATIBILITY
+
+- `colleyRstats_setup()` with no arguments produces the same text sizes as before: the default `base_size = 17` reproduces the previous absolute values exactly (17 / 19.55 / 28.05 / 15.3 / 22.1 pt), and there is a regression test pinning them.
+- Figures written through `save_paper_figure()` **do** change, which is the point of the fix -- they become legible at the size they are placed at. To keep a figure exactly as it was, pass `base_size = NA`.
+- Because the theme is now built as `see::theme_lucid(base_size = ...)` rather than `theme_lucid()` with sizes overridden on top, margins and spacing scale with the text instead of staying at the 11 pt defaults. This is part of why elements used to collide.
+
 # colleyRstats 0.1.4
 
 ## BUG FIXES

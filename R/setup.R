@@ -1,7 +1,7 @@
 #' Configure Global R Environment for colleyRstats
 #'
-#' Sets ggplot2 themes and conflict preferences to match the
-#' standards used in the colleyRstats workflow.
+#' Sets the ggplot2 theme, and on request the \code{conflicted} preferences, to
+#' match the standards used in the colleyRstats workflow.
 #'
 #' @param set_options Logical. If \code{TRUE}, prints a notice that global
 #'   options are no longer changed automatically. Default is \code{FALSE}.
@@ -13,12 +13,52 @@
 #'   differ only in this number. Default 17 reproduces the sizes used before
 #'   this argument existed. [save_paper_figure()] overrides it per figure to
 #'   match the width actually being written.
-#' @param set_conflicts Logical. If \code{TRUE}, sets \code{conflicted} preferences
-#'   to favor \code{dplyr} and other tidyverse packages. Default is \code{TRUE}.
+#' @param set_conflicts Logical. If \code{TRUE}, registers this package's
+#'   \code{conflicted} preferences, which favor \code{dplyr} and other tidyverse
+#'   packages. Default is \code{FALSE}. Registering them activates
+#'   \code{conflicted}, which takes over \code{library()} for the rest of the
+#'   session, so it is opt-in and belongs after your \code{library()} calls --
+#'   see Details.
 #' @param print_citation Logical. If \code{TRUE}, prints the citation information
 #'   for this package. Default is \code{TRUE}.
 #' @param verbose Logical. If \code{TRUE}, emit informational messages.
 #'   Default is \code{TRUE}.
+#'
+#' @details
+#' \strong{\code{set_conflicts} changes what \code{library()} does, so call it
+#' last.} \code{conflicted::conflict_prefer()} does not merely record a
+#' preference: it activates \code{conflicted}, which attaches a
+#' \code{.conflicts} environment carrying its own \code{library()} and
+#' \code{require()} shims. Every later attach in the session goes through them,
+#' and they forward \code{quietly} and \code{verbose} into \code{base::library()}
+#' as unevaluated symbols. A package whose \code{.onAttach} inspects the calling
+#' \code{library()} frame -- meta-packages that attach their own constituents do
+#' this to decide whether to print a banner -- then evaluates those symbols in a
+#' frame that does not bind them, and the attach fails outright:
+#'
+#' \preformatted{
+#' colleyRstats_setup(set_conflicts = TRUE)
+#' library(easystats)
+#' #> Error: .onAttach failed in attachNamespace() for 'easystats':
+#' #>   object 'quietly' not found
+#' }
+#'
+#' The two mechanisms do not compose, and \code{colleyRstats_setup()} cannot
+#' know whether more \code{library()} calls are coming. The preferences are
+#' therefore opt-in, and the contract when you opt in is that
+#' \code{colleyRstats_setup()} runs \emph{after} everything else is attached:
+#'
+#' \preformatted{
+#' library(colleyRstats)
+#' library(easystats)
+#' library(dplyr)
+#' colleyRstats_setup(set_conflicts = TRUE)   # last
+#' }
+#'
+#' That is also the ordering in which the preferences are worth most:
+#' \code{conflicted} resolves only those names that are ambiguous among the
+#' packages attached at the time, so a call made before the rest of the script's
+#' \code{library()} calls has less to work with.
 #'
 #' @return Invisibly returns \code{NULL}.
 #' @export
@@ -43,7 +83,7 @@
 #'
 #'     colleyRstats::colleyRstats_setup(
 #'       set_options = FALSE,
-#'       set_conflicts = FALSE,   # avoid persisting conflict prefs in checks
+#'       set_conflicts = FALSE,   # the default; see Details
 #'       print_citation = FALSE,
 #'       verbose = TRUE
 #'     )
@@ -56,7 +96,7 @@
 colleyRstats_setup <- function(set_options = FALSE,
                         set_theme = TRUE,
                         base_size = 17,
-                        set_conflicts = TRUE,
+                        set_conflicts = FALSE,
                         print_citation = TRUE,
                         verbose = TRUE) {
 
@@ -71,6 +111,17 @@ colleyRstats_setup <- function(set_options = FALSE,
   }
 
   # 2. Set conflict preferences
+  #
+  # Off by default, and that default is load-bearing. conflict_prefer() records
+  # a preference AND activates conflicted, which attaches `.conflicts` with its
+  # own library()/require() shims; from then on every attach in the session goes
+  # through them. The shims forward `quietly`/`verbose` into base::library() as
+  # unevaluated symbols, and a package whose .onAttach reads the calling
+  # library() frame -- easystats does, to decide whether to print its banner --
+  # evaluates them in a frame that does not bind them, so the attach dies with
+  # "object 'quietly' not found". The two mechanisms cannot be composed and this
+  # function cannot know whether more library() calls are coming, so the caller
+  # opts in at the point where it is correct: after everything is attached.
   if (isTRUE(set_conflicts)) {
     if (!requireNamespace("conflicted", quietly = TRUE)) {
       if (isTRUE(verbose)) {
@@ -125,14 +176,35 @@ colleyRstats_setup <- function(set_options = FALSE,
         c("test", "devtools")
       )
 
+      # try() keeps one unsettable preference (a package that has since renamed
+      # or dropped the function) from aborting the rest, but a preference that
+      # silently fails to register is still a preference the caller does not
+      # have, so collect the failures rather than discarding them.
+      failed <- character()
       suppressMessages({
         for (p in preferences) {
-          try(conflicted::conflict_prefer(p[1L], p[2L], quiet = TRUE), silent = TRUE)
+          set <- try(
+            conflicted::conflict_prefer(p[1L], p[2L], quiet = TRUE),
+            silent = TRUE
+          )
+          if (inherits(set, "try-error")) {
+            failed <- c(failed, paste0(p[2L], "::", p[1L]))
+          }
         }
       })
 
       if (isTRUE(verbose)) {
-        message("Conflict preferences set (favoring dplyr, ggplot2, etc.).")
+        message(
+          "Conflict preferences set (favoring dplyr, ggplot2, etc.).\n",
+          "'conflicted' now manages library() for this session: attach any ",
+          "further packages before calling colleyRstats_setup(), not after."
+        )
+        if (length(failed) > 0L) {
+          message(
+            "Could not set ", length(failed), " preference(s): ",
+            paste(failed, collapse = ", ")
+          )
+        }
       }
     }
   }

@@ -35,6 +35,96 @@ test_that("colleyRstats_setup emits messages for options and citation", {
 })
 
 
+test_that("conflict preferences are opt-in", {
+  # The default is the fix: switching conflicted on rewires library() for the
+  # whole session, which is not something a setup helper may do behind the
+  # caller's back.
+  expect_false(formals(colleyRstats_setup)$set_conflicts)
+})
+
+
+test_that("colleyRstats_setup() leaves library() alone by default", {
+  skip_if_not_installed("conflicted")
+
+  # This one can run in-process precisely because of the fix: with the default,
+  # the call must not activate conflicted. Should that ever regress, these
+  # expectations fail -- and the on.exit puts the search path back, so the rest
+  # of the suite is not left running under conflicted's library() shims.
+  on.exit(
+    if (".conflicts" %in% search()) detach(".conflicts", character.only = TRUE),
+    add = TRUE
+  )
+
+  colleyRstats_setup(set_theme = FALSE, print_citation = FALSE, verbose = FALSE)
+
+  expect_false(".conflicts" %in% search())
+  expect_true(identical(library, base::library))
+  expect_true(identical(require, base::require))
+})
+
+
+test_that("a meta-package still attaches after colleyRstats_setup()", {
+  # The reported defect: `library(colleyRstats); colleyRstats_setup();
+  # library(easystats)` died on the third line because conflicted's library()
+  # shim feeds `quietly` to easystats' .onAttach as an unevaluable symbol.
+  # Meta-packages attach their constituents from .onAttach, so this is the
+  # shape that breaks; easystats is the case that was reported.
+  skip_on_cran()
+  skip_if_not_installed("easystats")
+
+  res <- run_in_fresh_r(c(
+    "suppressPackageStartupMessages(library(colleyRstats))",
+    "colleyRstats_setup(set_theme = FALSE, print_citation = FALSE, verbose = FALSE)",
+    "ok <- tryCatch({",
+    "  suppressPackageStartupMessages(library(easystats))",
+    '  "yes"',
+    '}, error = function(e) paste("no -", conditionMessage(e)))',
+    'cat("attached:", ok, "\\n")',
+    'cat("easystats_on_path:", "package:easystats" %in% search(), "\\n")'
+  ))
+  skip_unless_subprocess(res)
+
+  expect_equal(res$status, 0L)
+  expect_match(res$output, "attached: yes", fixed = TRUE)
+  expect_match(res$output, "easystats_on_path: TRUE", fixed = TRUE)
+  # The historical failure signature, so a regression cannot hide behind a
+  # differently worded pass.
+  expect_false(grepl("object 'quietly' not found", res$output, fixed = TRUE))
+})
+
+
+test_that("set_conflicts = TRUE still installs the documented preferences", {
+  # The other half of the fix: making the hazard opt-in must not quietly turn
+  # the feature off for the people who opt in.
+  skip_on_cran()
+  skip_if_not_installed("conflicted")
+  skip_if_not_installed("dplyr")
+
+  res <- run_in_fresh_r(c(
+    "suppressPackageStartupMessages(library(colleyRstats))",
+    "suppressPackageStartupMessages(library(dplyr))",
+    "colleyRstats_setup(set_conflicts = TRUE, set_theme = FALSE,",
+    "                   print_citation = FALSE, verbose = FALSE)",
+    'cat("conflicts_attached:", ".conflicts" %in% search(), "\\n")',
+    'cat("conflicts_in_front:", identical(search()[2], ".conflicts"), "\\n")',
+    'e <- as.environment(".conflicts")',
+    # filter and lag are both in the preference list and both genuinely
+    # ambiguous here (dplyr vs stats), so conflicted has to resolve them.
+    'cat("filter_is_dplyr:",',
+    '    identical(get0("filter", envir = e, inherits = FALSE), dplyr::filter), "\\n")',
+    'cat("lag_is_dplyr:",',
+    '    identical(get0("lag", envir = e, inherits = FALSE), dplyr::lag), "\\n")'
+  ))
+  skip_unless_subprocess(res)
+
+  expect_equal(res$status, 0L)
+  expect_match(res$output, "conflicts_attached: TRUE", fixed = TRUE)
+  expect_match(res$output, "conflicts_in_front: TRUE", fixed = TRUE)
+  expect_match(res$output, "filter_is_dplyr: TRUE", fixed = TRUE)
+  expect_match(res$output, "lag_is_dplyr: TRUE", fixed = TRUE)
+})
+
+
 test_that("colley_theme scales every text element with base_size", {
   skip_if_not_installed("see")
 

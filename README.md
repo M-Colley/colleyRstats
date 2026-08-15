@@ -120,7 +120,7 @@ These functions include APA-compliant asterisks (e.g., *** for p < 0.001) on you
 
 Note: Avoid using these functions if your data has more than two groups, as geom_signif does not support more than two groups.
 
-![plot_within_stats_asterisk Plot Example](figures/ggwithinstatsWithPriorNormalityCheckAsterisk.png)
+![plot_within_stats_asterisk Plot Example](man/figures/ggwithinstatsWithPriorNormalityCheckAsterisk.png)
 
 
 ### `plot_effect`
@@ -132,7 +132,7 @@ Generates a plot that emphasizes either main effects or interaction effects, wit
 plot_effect(df = main_df, x = "factor1", y = "dependent_var", fillColourGroup = "group", ytext = "Y Label", xtext = "X Label", legendPos = c(0.1, 0.2), shownEffect = "interaction")
 ```
 
-![Effect Plot Example](figures/effect_plot.png)
+![Effect Plot Example](man/figures/effect_plot.png)
 
 
 ### `reportNPAV`
@@ -235,7 +235,7 @@ plot_mobo2(data = main_df, x = "Iteration", y = "objective1", fillColourGroup = 
 ```
 
 Example Plot:
-![MOBO Plot Example](figures/mobo.png)
+![MOBO Plot Example](man/figures/mobo.png)
 
 
 ### `remove_outliers_REI`

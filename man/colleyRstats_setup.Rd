@@ -14,8 +14,9 @@ colleyRstats_setup(
 )
 }
 \arguments{
-\item{set_options}{Logical. If \code{TRUE}, prints a notice that global
-options are no longer changed automatically. Default is \code{FALSE}.}
+\item{set_options}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Ignored.
+colleyRstats no longer changes global \code{options()}; passing
+\code{TRUE} warns and does nothing. Default is \code{FALSE}.}
 
 \item{set_theme}{Logical. If \code{TRUE}, sets the default \code{ggplot2} theme
 to \code{see::theme_lucid} with custom modifications. Default is \code{TRUE}.}

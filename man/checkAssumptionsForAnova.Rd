@@ -22,6 +22,18 @@ A message indicating whether to use parametric or non-parametric ANOVA
 \description{
 Check the assumptions for an ANOVA with a variable number of factors: Normality and Homogeneity of variance assumption.
 }
+\section{Naming}{
+
+\code{check_assumptions_anova()} is the spelling used throughout the documentation and
+the one to prefer in new code: the \verb{report_*} / \verb{plot_*} / \verb{check_*} prefixes
+make the API discoverable through autocomplete.
+
+\code{checkAssumptionsForAnova()} \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#superseded}{\figure{lifecycle-superseded.svg}{options: alt='[Superseded]'}}}{\strong{[Superseded]}} is the original
+name. Both names refer to the same function object, so they are entirely
+interchangeable; the original remains fully supported and is not scheduled
+for removal, and existing scripts keep working unchanged.
+}
+
 \examples{
 \donttest{
 set.seed(123)

@@ -19,15 +19,34 @@ check assumptions, create a plot, and generate manuscript-ready text.
 
 ## Session setup
 
+Attach the packages you need first, then configure the session.
+`colleyRstats_setup()` sets the package's `ggplot2` theme, so every figure below
+comes out with consistent typography.
+
 ```{r}
-colleyRstats::colleyRstats_setup(
-  set_options = FALSE,
-  set_theme = FALSE,
-  set_conflicts = FALSE,
-  print_citation = FALSE,
-  verbose = FALSE
-)
+library(colleyRstats)
+
+colleyRstats_setup(print_citation = FALSE, verbose = FALSE)
 ```
+
+If you also want the package's `conflicted` preferences -- `dplyr::filter()`
+over `stats::filter()`, `psych::describe()` over `Hmisc::describe()`, and so on
+-- pass `set_conflicts = TRUE`, and put that call **after** every `library()`
+call in the script:
+
+```r
+library(colleyRstats)
+library(easystats)
+library(dplyr)
+
+colleyRstats_setup(set_conflicts = TRUE)   # last
+```
+
+The ordering matters in both directions. Activating `conflicted` replaces
+`library()` for the rest of the session, and meta-packages such as `easystats`
+cannot be attached once it has; and `conflicted` resolves only those names that
+are ambiguous among the packages attached at the time, so a call made before the
+rest of your `library()` calls has less to work with.
 
 ## Example data
 
@@ -44,14 +63,14 @@ main_df <- data.frame(
 ## Check assumptions
 
 ```{r}
-colleyRstats::check_normality_by_group(main_df, "ConditionID", "score")
-colleyRstats::check_homogeneity_by_group(main_df, "ConditionID", "score")
+check_normality_by_group(main_df, "ConditionID", "score")
+check_homogeneity_by_group(main_df, "ConditionID", "score")
 ```
 
 ## Create a plot
 
 ```{r}
-colleyRstats::generateEffectPlot(
+plot_effect(
   data = transform(main_df, Group = ConditionID),
   x = "ConditionID",
   y = "score",
@@ -73,7 +92,7 @@ art_summary <- data.frame(
   check.names = FALSE
 )
 
-colleyRstats::reportART(art_summary, dv = "score")
+report_art(art_summary, dv = "score")
 ```
 
 ## Next steps

@@ -69,6 +69,18 @@ report Dunn test as a table. Customizable with sensible defaults. Required comma
 \code{\\newcommand{\\padj}{\\textit{p$_{adj}$=}}}
 \code{\\newcommand{\\rankbiserial}[1]{$r_{rb} = #1$}}
 }
+\section{Naming}{
+
+\code{report_dunn_test_table()} is the spelling used throughout the documentation and
+the one to prefer in new code: the \verb{report_*} / \verb{plot_*} / \verb{check_*} prefixes
+make the API discoverable through autocomplete.
+
+\code{reportDunnTestTable()} \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#superseded}{\figure{lifecycle-superseded.svg}{options: alt='[Superseded]'}}}{\strong{[Superseded]}} is the original
+name. Both names refer to the same function object, so they are entirely
+interchangeable; the original remains fully supported and is not scheduled
+for removal, and existing scripts keep working unchanged.
+}
+
 \examples{
 \donttest{
 if (requireNamespace("FSA", quietly = TRUE)) {

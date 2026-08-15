@@ -28,6 +28,18 @@ the text is also emitted via \code{message()}.
 \code{\\newcommand{\\m}{\\textit{M=}}}
 \code{\\newcommand{\\sd}{\\textit{SD=}}}
 }
+\section{Naming}{
+
+\code{report_mean_sd()} is the spelling used throughout the documentation and
+the one to prefer in new code: the \verb{report_*} / \verb{plot_*} / \verb{check_*} prefixes
+make the API discoverable through autocomplete.
+
+\code{reportMeanAndSD()} \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#superseded}{\figure{lifecycle-superseded.svg}{options: alt='[Superseded]'}}}{\strong{[Superseded]}} is the original
+name. Both names refer to the same function object, so they are entirely
+interchangeable; the original remains fully supported and is not scheduled
+for removal, and existing scripts keep working unchanged.
+}
+
 \examples{
 \donttest{
 

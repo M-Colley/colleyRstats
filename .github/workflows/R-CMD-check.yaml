@@ -73,3 +73,7 @@ jobs:
           _R_CHECK_CRAN_INCOMING_: false
           _R_CHECK_FORCE_SUGGESTS_: false
           _R_CHECK_STOP_ON_INVALID_NUMERIC_VERSION_INPUTS_: true
+          # Pinned rather than inherited: the tests that guard against
+          # colleyRstats_setup() taking over library() are skip_on_cran(), and
+          # they are the ones most worth running here.
+          NOT_CRAN: true

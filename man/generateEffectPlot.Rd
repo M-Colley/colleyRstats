@@ -74,6 +74,18 @@ a plot
 \description{
 Function to define a plot, either showing the main or interaction effect in bold.
 }
+\section{Naming}{
+
+\code{plot_effect()} is the spelling used throughout the documentation and
+the one to prefer in new code: the \verb{report_*} / \verb{plot_*} / \verb{check_*} prefixes
+make the API discoverable through autocomplete.
+
+\code{generateEffectPlot()} \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#superseded}{\figure{lifecycle-superseded.svg}{options: alt='[Superseded]'}}}{\strong{[Superseded]}} is the original
+name. Both names refer to the same function object, so they are entirely
+interchangeable; the original remains fully supported and is not scheduled
+for removal, and existing scripts keep working unchanged.
+}
+
 \examples{
 \donttest{
 set.seed(123)

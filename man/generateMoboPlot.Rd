@@ -54,6 +54,18 @@ A \code{ggplot} object representing the multi-objective optimization plot, ready
 \description{
 This function generates a multi-objective optimization plot using \code{ggplot2}. The plot visualizes the relationship between the \code{x} and \code{y} variables, grouping and coloring by a fill variable, with the option to customize legend position, labels, and annotation of sampling and optimization phases.
 }
+\section{Naming}{
+
+\code{plot_mobo()} is the spelling used throughout the documentation and
+the one to prefer in new code: the \verb{report_*} / \verb{plot_*} / \verb{check_*} prefixes
+make the API discoverable through autocomplete.
+
+\code{generateMoboPlot()} \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#superseded}{\figure{lifecycle-superseded.svg}{options: alt='[Superseded]'}}}{\strong{[Superseded]}} is the original
+name. Both names refer to the same function object, so they are entirely
+interchangeable; the original remains fully supported and is not scheduled
+for removal, and existing scripts keep working unchanged.
+}
+
 \examples{
 library(ggplot2)
 library(ggpmisc)

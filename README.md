@@ -51,6 +51,37 @@ result$plot       # ggstatsplot figure (parametric/non-parametric auto-selected)
 result$sentences  # methods sentence + omnibus result + post-hoc comparisons
 ```
 
+### Session setup
+
+`colleyRstats_setup()` applies the package's `ggplot2` theme so your figures
+come out with consistent typography:
+
+```r
+library(colleyRstats)
+
+colleyRstats_setup()
+```
+
+It can also register the package's `conflicted` preferences -- `dplyr::filter()`
+over `stats::filter()`, `psych::describe()` over `Hmisc::describe()`, and so on.
+That part is opt-in, and **the call belongs after every `library()` call in your
+script**:
+
+```r
+library(colleyRstats)
+library(easystats)
+library(dplyr)
+
+colleyRstats_setup(set_conflicts = TRUE)   # last
+```
+
+The ordering matters in both directions. Activating `conflicted` replaces
+`library()` for the rest of the session, and meta-packages such as `easystats`
+cannot be attached once it has. And `conflicted` resolves only those names that
+are ambiguous among the packages attached at the time, so a call made before the
+rest of your `library()` calls has less to work with. See
+`?colleyRstats_setup`.
+
 ## Summary of Benefits 
 - **Code Reduction**: Automates common tasks in data analysis, such as assumption checks and reporting.
 - **Copy-Paste Ready Outputs**: Streamlines report generation with LaTeX-ready text outputs.
@@ -61,13 +92,21 @@ result$sentences  # methods sentence + omnibus result + post-hoc comparisons
 
 ## Primary Functions
 
+> **Naming.** Every function below has a `snake_case` name with a
+> `report_*` / `plot_*` / `check_*` prefix, which is the spelling this
+> documentation uses and the one to reach for in new code -- the prefixes make
+> the API discoverable through autocomplete. The original `camelCase` spellings
+> -- `reportART()`, `generateEffectPlot()`, `checkAssumptionsForAnova()` and the
+> rest -- are superseded but remain fully supported and are not going away, so
+> existing scripts keep working unchanged.
+> Both names refer to the same function object and share one help page.
 
-### `checkAssumptionsForAnova`
+### `check_assumptions_anova`
 This function suite checks normality and homogeneity of variance assumptions for ANOVA models. Takes a vector of factors. For details on assumptions checking, refer to [Datanovia](https://www.datanovia.com/learn/biostatistics/anova/anova-in-r#check-assumptions-1).
 
 **Example:**
 ```r
-checkAssumptionsForAnova(data = main_df, y = "dependent_var", factors = c("factor1", "factor2"))
+check_assumptions_anova(data = main_df, y = "dependent_var", factors = c("factor1", "factor2"))
 ```
 
 
@@ -76,21 +115,21 @@ checkAssumptionsForAnova(data = main_df, y = "dependent_var", factors = c("facto
 
 
 
-### `ggwithinstatsWithPriorNormalityCheckAsterisk` and `ggbetweenstatsWithPriorNormalityCheckAsterisk`
+### `plot_within_stats_asterisk` and `plot_between_stats_asterisk`
 These functions include APA-compliant asterisks (e.g., *** for p < 0.001) on your ggwithinstats or ggbetweenstats plots. They automatically adjust for the appropriate test based on the data's normality.
 
 Note: Avoid using these functions if your data has more than two groups, as geom_signif does not support more than two groups.
 
-![ggwithinstatsWithPriorNormalityCheckAsterisk Plot Example](figures/ggwithinstatsWithPriorNormalityCheckAsterisk.png)
+![plot_within_stats_asterisk Plot Example](figures/ggwithinstatsWithPriorNormalityCheckAsterisk.png)
 
 
-### `generateEffectPlot`
+### `plot_effect`
 Generates a plot that emphasizes either main effects or interaction effects, with clear formatting and options for publication-ready visuals. This function supports customizing group colors, axis labels, and plot size.
 
 **Example:**
 
 ```r
-generateEffectPlot(df = main_df, x = "factor1", y = "dependent_var", fillColourGroup = "group", ytext = "Y Label", xtext = "X Label", legendPos = c(0.1, 0.2), shownEffect = "interaction")
+plot_effect(df = main_df, x = "factor1", y = "dependent_var", fillColourGroup = "group", ytext = "Y Label", xtext = "X Label", legendPos = c(0.1, 0.2), shownEffect = "interaction")
 ```
 
 ![Effect Plot Example](figures/effect_plot.png)
@@ -105,7 +144,7 @@ Generates APA-compliant LaTeX output for within-subject designs analyzed using n
 \newcommand{\pminor}{\textit{p$<$}}
 ```
 
-**Deprecated:** `reportNPAV()` is deprecated and will be removed in a future release. Use `reportART()` with ARTool instead.
+**Deprecated:** `reportNPAV()` is deprecated and will be removed in a future release. Use `report_art()` with ARTool instead.
 
 **Example:**
 
@@ -114,10 +153,10 @@ model <- np.anova(tlx_mental ~ factor1 * factor2 + Error(Subject / factor1), dat
 reportNPAV(model, "Dependent Variable")
 ```
 
-### `reportNparLD`
-Reports the model produced by nparLD in APA-compliant format. For factorial non-parametric designs, the Aligned Rank Transform (`reportART()` with ARTool) is usually the more general choice.
+### `report_nparld`
+Reports the model produced by nparLD in APA-compliant format. For factorial non-parametric designs, the Aligned Rank Transform (`report_art()` with ARTool) is usually the more general choice.
 
-### `reportMeanAndSD`
+### `report_mean_sd`
 For each level of an independent variable, this function calculates the mean and standard deviation of a dependent variable and returns them in APA-compliant LaTeX format:
 
 ```latex
@@ -128,10 +167,10 @@ For each level of an independent variable, this function calculates the mean and
 **Example:**
 
 ```r
-reportMeanAndSD(main_df, iv = "factor1", dv = "dependent_var")
+report_mean_sd(main_df, iv = "factor1", dv = "dependent_var")
 ```
 
-### `reportDunnTest` and `reportDunnTestTable`
+### `report_dunn_test` and `report_dunn_test_table`
 This function summarizes the results of FSA::dunnTest objects in text or table form. Both versions output LaTeX-ready results:
 
 ```latex
@@ -143,10 +182,10 @@ This function summarizes the results of FSA::dunnTest objects in text or table f
 
 ```r
 d <- dunnTest(dependent_var ~ factor1, data = main_df, method = "holm")
-reportDunnTest(main_df, d, iv = "factor1", dv = "dependent_var")
+report_dunn_test(main_df, d, iv = "factor1", dv = "dependent_var")
 ```
 
-### `reportART`
+### `report_art`
 Generates LaTeX-formatted results from art models for factorial designs. The necessary LaTeX commands are:
 
 ```latex
@@ -160,10 +199,10 @@ Generates LaTeX-formatted results from art models for factorial designs. The nec
 
 ```r
 model <- art(formula = dependent_var ~ factor1 * factor2 + Error(Subject / (factor1 * factor2)), data = main_df)
-reportART(anova(model), "Dependent Variable")
+report_art(anova(model), "Dependent Variable")
 ```
 
-Follow up significant effects with `reportArtCon()` / `reportArtConTable()`, which report the pairwise `art.con()` contrasts as sentences or a LaTeX table (including rank-biserial effect sizes).
+Follow up significant effects with `report_art_con()` / `report_art_con_table()`, which report the pairwise `art.con()` contrasts as sentences or a LaTeX table (including rank-biserial effect sizes).
 
 ### `add_pareto_emoa_column`
 This function adds a Pareto front classification column to a dataset, useful in multi-objective optimization scenarios. `add_pareto_moocore_column()` is the equivalent based on the `moocore` package (adds a `PARETO_MOOCORE` column).
@@ -186,13 +225,13 @@ main_df <- main_df |>
 
 ```
 
-### `generateMoboPlot` and `generateMoboPlot2`
+### `plot_mobo` and `plot_mobo2`
 Creates a multi-objective optimization plot, visualizing sampling and optimization phases. This is particularly useful for visualizing iterations in optimization problems.
-`generateMoboPlot2` is appropriate when using https://github.com/Pascal-Jansen/Bayesian-Optimization-for-Unity/releases starting version 1.1.0.
+`plot_mobo2` is appropriate when using https://github.com/Pascal-Jansen/Bayesian-Optimization-for-Unity/releases starting version 1.1.0.
 
 **Example:**
 ```r
-generateMoboPlot2(data = main_df, x = "Iteration", y = "objective1", fillColourGroup = "group", ytext = "Y Axis Label")
+plot_mobo2(data = main_df, x = "Iteration", y = "objective1", fillColourGroup = "group", ytext = "Y Axis Label")
 ```
 
 Example Plot:
@@ -220,7 +259,7 @@ new_df <- replace_values(main_df, to_replace = c("bad_val1", "bad_val2"), replac
 
 ## Using NPAV (Lüpsen) with this package
 
-`reportNPAV()` formats results from Lüpsen’s nonparametric ANOVA (`np.anova`) output. **Deprecated:** `reportNPAV()` is deprecated and will be removed in a future release; use `reportART()` with ARTool instead. NPAV is not shipped with this package, and it is loaded manually by the user from Lüpsen’s site: `https://www.uni-koeln.de/~luepsen/R/`.
+`reportNPAV()` formats results from Lüpsen’s nonparametric ANOVA (`np.anova`) output. **Deprecated:** `reportNPAV()` is deprecated and will be removed in a future release; use `report_art()` with ARTool instead. NPAV is not shipped with this package, and it is loaded manually by the user from Lüpsen’s site: `https://www.uni-koeln.de/~luepsen/R/`.
 
 This step requires internet access, so it is documented here (not in `@examples`, which should run offline during package checks).
 

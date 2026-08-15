@@ -15,9 +15,17 @@
 - New `figure_base_size(width)`, the rule that turns a figure width into a type size: 3.33 in gives 7 pt and 7 in gives 9 pt, interpolated between and clamped outside. Exported so the choice is inspectable rather than buried.
 - `save_paper_figure()` gains `base_size`. The default `NULL` derives it from the width, which is the fix above; pass a number to choose it, or `NA` to leave the plot's own text sizes untouched. The confirmation message now names the size used.
 - `colleyRstats_setup()` gains `base_size` (default 17), passed through to `colley_theme()`.
+- A `pkgdown` site (`_pkgdown.yml` plus a deploy workflow) puts the 56 help topics into a grouped reference index -- session setup, pipelines, test selection, assumptions, plots, reporting, effect sizes, LaTeX output, data preparation -- instead of one alphabetical wall.
+
+## DOCUMENTATION
+
+- The README and `vignette("getting-started")` now show the session-setup pattern, including where `colleyRstats_setup()` belongs relative to your `library()` calls and what happens if it goes first. Neither had covered this, which is how the `conflicted` defect above reached three downstream analysis repositories.
+- The `snake_case` spellings (`report_art()`, `plot_effect()`, `check_assumptions_anova()`, ...) are now stated to be the canonical ones, and the documentation uses them throughout: README, vignettes, and the `pkgdown` reference index. Every affected help page gained a **Naming** section saying which spelling to prefer and that the other is not going away. Previously the aliases file described `snake_case` as the discoverable API while the README taught `camelCase` exclusively, and nothing told a reader which to use.
 
 ## BACKWARD COMPATIBILITY
 
+- The `camelCase` function names (`reportART()`, `generateEffectPlot()`, and the rest) are now marked **superseded**. Nothing changes at runtime: they are the same function objects, they emit no warnings, and they are not scheduled for removal. Only the documentation's recommendation has changed.
+- `colleyRstats_setup(set_options = TRUE)` now emits a deprecation warning instead of an easily missed message, and the warning is no longer suppressed by `verbose = FALSE`. The argument has had no effect since global `options()` handling was removed for CRAN compliance; `set_options = FALSE` is unaffected.
 - `colleyRstats_setup()` no longer sets `conflicted` preferences by default. Pass `set_conflicts = TRUE` for them, and place that call **after** every `library()` call in the script rather than before. That ordering is a requirement -- once `conflicted` is active, attaching a meta-package fails -- and it is also where the preferences do most good, since `conflicted` resolves only those names that are ambiguous among the packages attached at the time.
 - `colleyRstats_setup()` with no arguments produces the same text sizes as before: the default `base_size = 17` reproduces the previous absolute values exactly (17 / 19.55 / 28.05 / 15.3 / 22.1 pt), and there is a regression test pinning them.
 - Figures written through `save_paper_figure()` **do** change, which is the point of the fix -- they become legible at the size they are placed at. To keep a figure exactly as it was, pass `base_size = NA`.

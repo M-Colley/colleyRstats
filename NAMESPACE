@@ -80,34 +80,44 @@ export(stat_sum_df)
 export(use_colleyrstats_sty)
 import(ggplot2)
 import(ggpmisc)
-importFrom(dplyr,across)
-importFrom(dplyr,all_of)
-importFrom(dplyr,arrange)
-importFrom(dplyr,bind_cols)
-importFrom(dplyr,bind_rows)
-importFrom(dplyr,case_when)
-importFrom(dplyr,filter)
-importFrom(dplyr,group_by)
-importFrom(dplyr,mutate)
-importFrom(dplyr,select)
-importFrom(dplyr,summarise)
-importFrom(ggstatsplot,extract_stats)
-importFrom(ggstatsplot,ggbetweenstats)
-importFrom(ggstatsplot,ggwithinstats)
+importFrom(dplyr,
+  across,
+  all_of,
+  arrange,
+  bind_cols,
+  bind_rows,
+  case_when,
+  filter,
+  group_by,
+  mutate,
+  select,
+  summarise
+)
+importFrom(ggstatsplot,
+  extract_stats,
+  ggbetweenstats,
+  ggwithinstats
+)
 importFrom(rlang,sym)
-importFrom(see,scale_color_see)
-importFrom(see,scale_colour_see)
-importFrom(see,scale_fill_see)
-importFrom(stats,as.formula)
-importFrom(stats,lm)
-importFrom(stats,median)
-importFrom(stats,pnorm)
-importFrom(stats,qnorm)
-importFrom(stats,residuals)
-importFrom(stats,sd)
-importFrom(stats,setNames)
-importFrom(stats,shapiro.test)
-importFrom(stringr,str_detect)
-importFrom(stringr,str_split)
+importFrom(see,
+  scale_color_see,
+  scale_colour_see,
+  scale_fill_see
+)
+importFrom(stats,
+  as.formula,
+  lm,
+  median,
+  pnorm,
+  qnorm,
+  residuals,
+  sd,
+  setNames,
+  shapiro.test
+)
+importFrom(stringr,
+  str_detect,
+  str_split
+)
 importFrom(tidyr,drop_na)
 importFrom(utils,globalVariables)

@@ -24,6 +24,9 @@
 vignettes/*.html
 vignettes/*.pdf
 
+# default graphics device output, if a plot ever escapes the null device
+Rplots.pdf
+
 # OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
 .httr-oauth
 
@@ -39,3 +42,6 @@ vignettes/*.pdf
 .Renviron
 .Rproj.user
 .positai
+
+# pkgdown site, built locally
+docs/

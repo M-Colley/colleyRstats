@@ -1,0 +1,122 @@
+# pkgdown requires `url:` here and the same address in DESCRIPTION's URL field.
+# Until GitHub Pages is serving this address, `R CMD check --as-cran` reports it
+# as a 404 under "CRAN incoming feasibility". Enable Pages once (Settings ->
+# Pages -> deploy from branch -> gh-pages, which .github/workflows/pkgdown.yaml
+# creates on the first push to main) and the note goes away.
+url: https://m-colley.github.io/colleyRstats/
+
+template:
+  bootstrap: 5
+
+# The reference index deliberately lists the canonical snake_case spelling of
+# every dual-named function. The superseded camelCase name shares the same help
+# topic and still shows up on the topic page as an alias, so nothing is hidden --
+# but the index reads as one coherent API rather than two of everything.
+reference:
+
+- title: Session setup
+  desc: >
+    Configure a session once, at the top of a script. See
+    `vignette("getting-started")` for where the call belongs.
+  contents:
+  - colleyRstats_setup
+  - colley_theme
+
+- title: One-call pipelines
+  desc: >
+    Go from a data frame to a figure and manuscript-ready sentences in a single
+    call, for one dependent variable or many.
+  contents:
+  - analyze_and_report
+  - report_all
+  - emit_overleaf
+
+- title: Choosing a test
+  desc: >
+    Inspect the data and get the matching model, with a fit call and a methods
+    sentence you can edit.
+  contents:
+  - recommend_test
+  - classify_outcome
+  - assumption_methods_text
+  - cite_methods
+
+- title: Checking assumptions
+  contents:
+  - check_assumptions_anova
+  - check_normality_by_group
+  - check_homogeneity_by_group
+  - debug_contr_error
+
+- title: Plots
+  desc: >
+    `ggstatsplot` wrappers that pick the parametric or non-parametric test for
+    you, effect plots, and multi-objective optimisation plots.
+  contents:
+  - plot_between_stats
+  - plot_between_stats_asterisk
+  - plot_within_stats
+  - plot_within_stats_asterisk
+  - plot_effect
+  - plot_mobo
+  - plot_mobo2
+  - stat_sum_df
+  - n_fun
+
+- title: Saving figures
+  desc: >
+    Publication presets that size a figure's type to the width it is written at.
+  contents:
+  - save_paper_figure
+  - figure_base_size
+
+- title: Reporting results
+  desc: >
+    APA-compliant, LaTeX-ready sentences and tables for each model family.
+  contents:
+  - report_art
+  - report_art_con
+  - report_art_con_table
+  - report_clmm
+  - report_glmm
+  - report_dunn_test
+  - report_dunn_test_table
+  - report_ggstatsplot
+  - report_ggstatsplot_posthoc
+  - report_mean_sd
+  - report_nparld
+  - reportNPAV
+
+- title: Effect sizes
+  contents:
+  - rFromWilcox
+  - rFromWilcoxAdjusted
+  - rFromNPAV
+
+- title: LaTeX and Overleaf output
+  desc: >
+    Getting the generated text into a document that compiles immediately.
+  contents:
+  - latex_preamble
+  - latex_escape
+  - latexify_report
+  - expand_latex_macros
+  - define_result_macro
+  - emit_name_macros
+  - use_colleyrstats_sty
+
+- title: Data preparation
+  contents:
+  - reshape_data
+  - replace_values
+  - remove_outliers_REI
+  - normalize
+  - na.zero
+  - add_pareto_emoa_column
+  - add_pareto_moocore_column
+
+- title: Small utilities
+  contents:
+  - not_in
+  - not_empty
+  - pathPrep

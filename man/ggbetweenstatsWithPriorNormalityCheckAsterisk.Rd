@@ -38,6 +38,18 @@ with additional significance annotations, which can be printed or modified.
 Check the data's distribution. If non-normal, take the non-parametric variant of \emph{ggbetweenstats}.
 x and y have to be in parentheses, e.g., "ConditionID".
 }
+\section{Naming}{
+
+\code{plot_between_stats_asterisk()} is the spelling used throughout the documentation and
+the one to prefer in new code: the \verb{report_*} / \verb{plot_*} / \verb{check_*} prefixes
+make the API discoverable through autocomplete.
+
+\code{ggbetweenstatsWithPriorNormalityCheckAsterisk()} \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#superseded}{\figure{lifecycle-superseded.svg}{options: alt='[Superseded]'}}}{\strong{[Superseded]}} is the original
+name. Both names refer to the same function object, so they are entirely
+interchangeable; the original remains fully supported and is not scheduled
+for removal, and existing scripts keep working unchanged.
+}
+
 \examples{
 \donttest{
 

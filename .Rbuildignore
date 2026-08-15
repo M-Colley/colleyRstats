@@ -7,3 +7,7 @@
 ^codecov\.yaml$
 ^\.positai$
 ^\.claude$
+^man-roxygen$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$

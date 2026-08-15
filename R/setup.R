@@ -3,8 +3,9 @@
 #' Sets the ggplot2 theme, and on request the \code{conflicted} preferences, to
 #' match the standards used in the colleyRstats workflow.
 #'
-#' @param set_options Logical. If \code{TRUE}, prints a notice that global
-#'   options are no longer changed automatically. Default is \code{FALSE}.
+#' @param set_options `r lifecycle::badge("deprecated")` Ignored.
+#'   colleyRstats no longer changes global \code{options()}; passing
+#'   \code{TRUE} warns and does nothing. Default is \code{FALSE}.
 #' @param set_theme Logical. If \code{TRUE}, sets the default \code{ggplot2} theme
 #'   to \code{see::theme_lucid} with custom modifications. Default is \code{TRUE}.
 #' @param base_size Base font size in points for the theme. Every text element
@@ -100,13 +101,21 @@ colleyRstats_setup <- function(set_options = FALSE,
                         print_citation = TRUE,
                         verbose = TRUE) {
 
-  # 1. Global options: do not change them, just notify if requested
-  if (isTRUE(set_options) && isTRUE(verbose)) {
-    message(
-      "Argument 'set_options' is deprecated and has no effect; ",
-      "colleyRstats no longer changes global options() for CRAN compliance.\n",
-      "If you want these settings, call for example:\n",
-      "  options(scipen = 999, digits = 10, digits.secs = 3)"
+  # 1. Global options are never changed. `set_options` is kept only so that
+  #    older scripts still parse. Passing TRUE now warns instead of quietly
+  #    doing nothing; the warning is deliberately not gated on `verbose`, which
+  #    governs informational chatter rather than deprecation notices.
+  if (isTRUE(set_options)) {
+    lifecycle::deprecate_warn(
+      when = "0.1.5",
+      what = "colleyRstats_setup(set_options)",
+      details = c(
+        "colleyRstats no longer changes global options() for CRAN compliance.",
+        i = paste(
+          "Set them yourself if you want them, e.g.",
+          "options(scipen = 999, digits = 10, digits.secs = 3)."
+        )
+      )
     )
   }
 

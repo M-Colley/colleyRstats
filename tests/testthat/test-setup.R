@@ -10,8 +10,8 @@ test_that("colleyRstats_setup runs without side effects when disabled", {
   )
 })
 
-test_that("colleyRstats_setup emits messages for options and citation", {
-  expect_message(
+test_that("set_options is deprecated and warns rather than doing nothing quietly", {
+  expect_warning(
     colleyRstats_setup(
       set_options = TRUE,
       set_theme = FALSE,
@@ -22,6 +22,22 @@ test_that("colleyRstats_setup emits messages for options and citation", {
     "deprecated"
   )
 
+  # The warning is not gated on `verbose`: that argument governs informational
+  # chatter, not deprecation notices.
+  expect_warning(
+    colleyRstats_setup(
+      set_options = TRUE,
+      set_theme = FALSE,
+      set_conflicts = FALSE,
+      print_citation = FALSE,
+      verbose = FALSE
+    ),
+    "deprecated"
+  )
+})
+
+
+test_that("colleyRstats_setup prints the citation on request", {
   expect_message(
     colleyRstats_setup(
       set_options = FALSE,

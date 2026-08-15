@@ -80,6 +80,12 @@ counterparts -- linear mixed models (LMM), generalized linear mixed models
 (GLMM, \code{lme4}/\code{glmmTMB}) and cumulative link mixed models (CLMM,
 \code{ordinal}).
 }
+\section{Naming}{
+
+\code{recommend_test()} is the canonical name. \code{recommend_analysis()} is an alias
+for the same function object, kept for backward compatibility.
+}
+
 \examples{
 set.seed(1)
 d <- data.frame(

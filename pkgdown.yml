@@ -1,0 +1,12 @@
+pandoc: 3.8.3
+pkgdown: 2.2.1
+pkgdown_sha: ~
+articles:
+  analyzing-a-user-study: analyzing-a-user-study.html
+  choosing-a-test: choosing-a-test.html
+  getting-started: getting-started.html
+  overleaf: overleaf.html
+last_built: 2026-08-15T12:42Z
+urls:
+  reference: https://m-colley.github.io/colleyRstats/reference
+  article: https://m-colley.github.io/colleyRstats/articles

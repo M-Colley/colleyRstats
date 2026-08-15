@@ -176,7 +176,7 @@ Note: Avoid using these functions if your data has more than two groups,
 as geom_signif does not support more than two groups.
 
 ![plot_within_stats_asterisk Plot
-Example](figures/ggwithinstatsWithPriorNormalityCheckAsterisk.png)
+Example](reference/figures/ggwithinstatsWithPriorNormalityCheckAsterisk.png)
 
 plot_within_stats_asterisk Plot Example
 
@@ -194,7 +194,7 @@ and plot size.
 plot_effect(df = main_df, x = "factor1", y = "dependent_var", fillColourGroup = "group", ytext = "Y Label", xtext = "X Label", legendPos = c(0.1, 0.2), shownEffect = "interaction")
 ```
 
-![Effect Plot Example](figures/effect_plot.png)
+![Effect Plot Example](reference/figures/effect_plot.png)
 
 Effect Plot Example
 
@@ -335,7 +335,7 @@ starting version 1.1.0.
 plot_mobo2(data = main_df, x = "Iteration", y = "objective1", fillColourGroup = "group", ytext = "Y Axis Label")
 ```
 
-Example Plot: ![MOBO Plot Example](figures/mobo.png)
+Example Plot: ![MOBO Plot Example](reference/figures/mobo.png)
 
 ### `remove_outliers_REI`
 

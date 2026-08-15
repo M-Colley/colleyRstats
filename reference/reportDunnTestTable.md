@@ -140,7 +140,7 @@ if (requireNamespace("FSA", quietly = TRUE)) {
 #> FWER = 0.05
 #> Reject Ho if adjusted p ≤ FWER with stopping rule, where (unadjusted) p = Pr(|Z| ≥ |z|)
 #> % latex table generated in R 4.6.1 by xtable 1.8-8 package
-#> % Sat Aug 15 12:42:37 2026
+#> % Sat Aug 15 12:53:11 2026
 #> \begin{table}[ht]
 #> \centering
 #> \caption{Post-hoc comparisons for independent variable \Species and dependent variable Sepal.Length. Positive Z-values mean that the first-named level is sig. higher than the second-named. For negative Z-values, the opposite is true. Effect size reported as rank-biserial correlation (r).} 

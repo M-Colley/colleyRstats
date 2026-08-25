@@ -65,19 +65,15 @@ if (requireNamespace("nparLD", quietly = TRUE)) {
   example_data <- data.frame(
     Subject = factor(rep(1:10, each = 3)),
     Time    = factor(rep(c("T1", "T2", "T3"), times = 10)),
-    TLX1    = stats::rnorm(30, mean = 50, sd = 10)
+    # a rising trend over time, so there is something to report
+    TLX1    = rep(c(45, 52, 61), times = 10) + stats::rnorm(30, sd = 4)
   )
 
   # Fit nparLD model
-  model <- nparLD::nparLD(
-    TLX1 ~ Time,
-    data        = example_data,
-    subject     = "Subject",
-    description = FALSE
-  )
+  model <- nparLD::nparLD(TLX1 ~ Time, data = example_data, subject = "Subject")
 
   # Report the nparLD result
   reportNparLD(model, dv = "TLX1")
-  }
+}
 }
 }

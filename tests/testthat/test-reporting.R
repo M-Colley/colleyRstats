@@ -83,6 +83,51 @@ test_that("reportNparLD reports significant effects", {
   )
 })
 
+test_that("reportNparLD reads the ANOVA-type statistic from an nparLD 2.3.0 fit", {
+  # nparLD 2.3.0 moved the table from `$ANOVA.test` to `$ATS`. Reading only the
+  # old name turned every fit from that version into "no significant effects",
+  # however large the statistic was.
+  ats <- matrix(
+    c(92.78, 1.69, 1e-08),
+    nrow = 1,
+    dimnames = list("Time", c("Statistic", "df", "p-value"))
+  )
+  model <- structure(list(ATS = ats, WTS = ats), class = "nparld_fit")
+
+  expect_message(
+    reportNparLD(model, dv = "TLX1"),
+    "nparLD analysis found a significant main effect of .*Time on TLX1"
+  )
+})
+
+test_that("reportNparLD rejects an object carrying no nparLD result table", {
+  expect_error(
+    reportNparLD(list(something = 1), dv = "TLX1"),
+    "does not look like an nparLD model"
+  )
+})
+
+test_that("reportNparLD reports a real nparLD fit", {
+  skip_if_not_installed("nparLD")
+
+  set.seed(123)
+  d <- data.frame(
+    Subject = factor(rep(1:10, each = 3)),
+    Time    = factor(rep(c("T1", "T2", "T3"), times = 10)),
+    TLX1    = rep(c(45, 52, 61), times = 10) + stats::rnorm(30, sd = 4)
+  )
+
+  # `nparLD()` describes the design on stdout in versions before 2.3.0.
+  utils::capture.output(
+    model <- nparLD::nparLD(TLX1 ~ Time, data = d, subject = "Subject")
+  )
+
+  expect_message(
+    suppressWarnings(reportNparLD(model, dv = "TLX1")),
+    "nparLD analysis found a significant main effect of .*Time on TLX1"
+  )
+})
+
 test_that("reportART invisibly returns one sentence per significant effect", {
   model <- data.frame(
     Effect = c("Video", "gesture:eHMI"),

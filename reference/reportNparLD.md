@@ -77,26 +77,16 @@ if (requireNamespace("nparLD", quietly = TRUE)) {
   example_data <- data.frame(
     Subject = factor(rep(1:10, each = 3)),
     Time    = factor(rep(c("T1", "T2", "T3"), times = 10)),
-    TLX1    = stats::rnorm(30, mean = 50, sd = 10)
+    # a rising trend over time, so there is something to report
+    TLX1    = rep(c(45, 52, 61), times = 10) + stats::rnorm(30, sd = 4)
   )
 
   # Fit nparLD model
-  model <- nparLD::nparLD(
-    TLX1 ~ Time,
-    data        = example_data,
-    subject     = "Subject",
-    description = FALSE
-  )
+  model <- nparLD::nparLD(TLX1 ~ Time, data = example_data, subject = "Subject")
 
   # Report the nparLD result
   reportNparLD(model, dv = "TLX1")
-  }
-#>  LD F1 Model 
-#>  ----------------------- 
-#>  Check that the order of the time level is correct.
-#>  Time level:   T1 T2 T3 
-#>  If the order is not correct, specify the correct order in time.order.
-#> 
-#> The nparLD analysis found no significant effects on TLX1. 
+}
+#> The nparLD analysis found a significant main effect of \Time on TLX1 (\F{2}{$\infty$}{37.78}, \pminor{0.001}). 
 # }
 ```

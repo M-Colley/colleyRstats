@@ -1,6 +1,35 @@
 # Changelog
 
-## colleyRstats 0.1.5 (development)
+## colleyRstats 0.1.6 (development)
+
+### BUG FIXES
+
+- [`reportNparLD()`](https://m-colley.github.io/colleyRstats/reference/reportNparLD.md)
+  announced “no significant effects” for every model fitted with
+  ‘nparLD’ 2.3.0, however strong the effect actually was. That release
+  rewrote the object
+  [`nparLD::nparLD()`](https://rdrr.io/pkg/nparLD/man/nparLD.html)
+  returns: it now has class `nparld_fit` and carries the ANOVA-type
+  statistic in `$ATS`, where earlier versions used `$ANOVA.test`. Asking
+  for the old name yielded `NULL`, and `as.data.frame(NULL)` is a table
+  with no rows – which the code that followed could not tell apart from
+  a table in which nothing crossed p \< .05. A toy fit with ATS = 92.8
+  and p \< 1e-10 was reported as effect-free. Both layouts are now
+  recognised, and an object carrying neither raises an error instead of
+  silently reporting nothing.
+- The example on
+  [`?reportNparLD`](https://m-colley.github.io/colleyRstats/reference/reportNparLD.md)
+  passed `description = FALSE` to
+  [`nparLD::nparLD()`](https://rdrr.io/pkg/nparLD/man/nparLD.html).
+  ‘nparLD’ 2.3.0 dropped that argument, so `R CMD check --run-donttest`
+  failed on CRAN with `unused argument (description = FALSE)`. The call
+  now uses only arguments both versions accept, and the toy data carries
+  a trend over time so the example demonstrates a reported sentence
+  rather than the no-effect message.
+
+## colleyRstats 0.1.5
+
+CRAN release: 2026-08-19
 
 ### BUG FIXES
 

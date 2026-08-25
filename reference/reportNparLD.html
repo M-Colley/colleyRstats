@@ -11,7 +11,7 @@ Attention: the independent variables of the formula and the term specifying the 
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -123,27 +123,17 @@ for removal, and existing scripts keep working unchanged.</p>
 <span class="r-in"><span>  <span class="va">example_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>    Subject <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span>, each <span class="op">=</span> <span class="fl">3</span><span class="op">)</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>    Time    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"T1"</span>, <span class="st">"T2"</span>, <span class="st">"T3"</span><span class="op">)</span>, times <span class="op">=</span> <span class="fl">10</span><span class="op">)</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    TLX1    <span class="op">=</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">30</span>, mean <span class="op">=</span> <span class="fl">50</span>, sd <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
+<span class="r-in"><span>    <span class="co"># a rising trend over time, so there is something to report</span></span></span>
+<span class="r-in"><span>    TLX1    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">45</span>, <span class="fl">52</span>, <span class="fl">61</span><span class="op">)</span>, times <span class="op">=</span> <span class="fl">10</span><span class="op">)</span> <span class="op">+</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">30</span>, sd <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span>  <span class="co"># Fit nparLD model</span></span></span>
-<span class="r-in"><span>  <span class="va">model</span> <span class="op">&lt;-</span> <span class="fu">nparLD</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/nparLD/man/nparLD.html" class="external-link">nparLD</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    <span class="va">TLX1</span> <span class="op">~</span> <span class="va">Time</span>,</span></span>
-<span class="r-in"><span>    data        <span class="op">=</span> <span class="va">example_data</span>,</span></span>
-<span class="r-in"><span>    subject     <span class="op">=</span> <span class="st">"Subject"</span>,</span></span>
-<span class="r-in"><span>    description <span class="op">=</span> <span class="cn">FALSE</span></span></span>
-<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="va">model</span> <span class="op">&lt;-</span> <span class="fu">nparLD</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/nparLD/man/nparLD.html" class="external-link">nparLD</a></span><span class="op">(</span><span class="va">TLX1</span> <span class="op">~</span> <span class="va">Time</span>, data <span class="op">=</span> <span class="va">example_data</span>, subject <span class="op">=</span> <span class="st">"Subject"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span>  <span class="co"># Report the nparLD result</span></span></span>
 <span class="r-in"><span>  <span class="fu">reportNparLD</span><span class="op">(</span><span class="va">model</span>, dv <span class="op">=</span> <span class="st">"TLX1"</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="op">}</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  LD F1 Model </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  ----------------------- </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Check that the order of the time level is correct.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Time level:   T1 T2 T3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  If the order is not correct, specify the correct order in time.order.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> The nparLD analysis found no significant effects on TLX1. </span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> The nparLD analysis found a significant main effect of \Time on TLX1 (\F{2}{$\infty$}{37.78}, \pminor{0.001}). </span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

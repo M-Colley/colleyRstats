@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,7 +40,16 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.1.5" id="colleyrstats-015-development">colleyRstats 0.1.5 (development)<a class="anchor" aria-label="anchor" href="#colleyrstats-015-development"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.1.6" id="colleyrstats-016-development">colleyRstats 0.1.6 (development)<a class="anchor" aria-label="anchor" href="#colleyrstats-016-development"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-0-1-6">BUG FIXES<a class="anchor" aria-label="anchor" href="#bug-fixes-0-1-6"></a></h3>
+<ul><li>
+<code><a href="../reference/reportNparLD.html">reportNparLD()</a></code> announced “no significant effects” for every model fitted with ‘nparLD’ 2.3.0, however strong the effect actually was. That release rewrote the object <code><a href="https://rdrr.io/pkg/nparLD/man/nparLD.html" class="external-link">nparLD::nparLD()</a></code> returns: it now has class <code>nparld_fit</code> and carries the ANOVA-type statistic in <code>$ATS</code>, where earlier versions used <code>$ANOVA.test</code>. Asking for the old name yielded <code>NULL</code>, and <code>as.data.frame(NULL)</code> is a table with no rows – which the code that followed could not tell apart from a table in which nothing crossed p &lt; .05. A toy fit with ATS = 92.8 and p &lt; 1e-10 was reported as effect-free. Both layouts are now recognised, and an object carrying neither raises an error instead of silently reporting nothing.</li>
+<li>The example on <code><a href="../reference/reportNparLD.html">?reportNparLD</a></code> passed <code>description = FALSE</code> to <code><a href="https://rdrr.io/pkg/nparLD/man/nparLD.html" class="external-link">nparLD::nparLD()</a></code>. ‘nparLD’ 2.3.0 dropped that argument, so <code>R CMD check --run-donttest</code> failed on CRAN with <code>unused argument (description = FALSE)</code>. The call now uses only arguments both versions accept, and the toy data carries a trend over time so the example demonstrates a reported sentence rather than the no-effect message.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.1.5" id="colleyrstats-015">colleyRstats 0.1.5<a class="anchor" aria-label="anchor" href="#colleyrstats-015"></a></h2><p class="text-muted">CRAN release: 2026-08-19</p>
 <div class="section level3">
 <h3 id="bug-fixes-0-1-5">BUG FIXES<a class="anchor" aria-label="anchor" href="#bug-fixes-0-1-5"></a></h3>
 <ul><li><p><code><a href="../reference/colleyRstats_setup.html">colleyRstats_setup()</a></code> made it impossible to attach a meta-package afterwards. <code><a href="https://github.com/M-Colley/colleyRstats" class="external-link">library(colleyRstats)</a></code>, <code><a href="../reference/colleyRstats_setup.html">colleyRstats_setup()</a></code>, <code><a href="https://easystats.github.io/easystats/" class="external-link">library(easystats)</a></code> died on the third line with <code>.onAttach failed in attachNamespace() for 'easystats': object 'quietly' not found</code>, which broke every downstream analysis script that opens that way. The cause was the <code>set_conflicts = TRUE</code> default: <code><a href="https://conflicted.r-lib.org/reference/conflict_prefer.html" class="external-link">conflicted::conflict_prefer()</a></code> does not merely record a preference, it <em>activates</em> <code>conflicted</code>, which attaches a <code>.conflicts</code> environment carrying its own <code><a href="https://rdrr.io/r/base/library.html" class="external-link">library()</a></code> and <code><a href="https://rdrr.io/r/base/library.html" class="external-link">require()</a></code> shims. Every later attach in the session then went through those shims, which forward <code>quietly</code> and <code>verbose</code> into <code><a href="https://rdrr.io/r/base/library.html" class="external-link">base::library()</a></code> as unevaluated symbols; a package whose <code>.onAttach</code> inspects the calling <code><a href="https://rdrr.io/r/base/library.html" class="external-link">library()</a></code> frame – meta-packages do this to decide whether to print their banner – evaluated those symbols in a frame that does not bind them, and the attach failed outright. <code>set_conflicts</code> now defaults to <code>FALSE</code>, so nothing takes over <code><a href="https://rdrr.io/r/base/library.html" class="external-link">library()</a></code> unless it is asked to. The preference list is unchanged and still takes effect when you opt in.</p></li>

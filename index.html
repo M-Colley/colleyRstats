@@ -309,12 +309,21 @@
 <p>Example Plot: <img src="reference/figures/mobo.png" alt="MOBO Plot Example"></p>
 </div>
 <div class="section level3">
+<h3 id="animate_mobo2">
+<code>animate_mobo2</code><a class="anchor" aria-label="anchor" href="#animate_mobo2"></a>
+</h3>
+<p>Writes the same plot as a video, one frame per iteration, so a talk or a supplement can show the run building up instead of only its end state. The axes, phase guides and legend are taken from the complete data, so only the points, intervals and fitted line move. Requires the <code>av</code> package; the file extension picks the container (<code>.mp4</code>, <code>.gif</code>, …).</p>
+<p><strong>Example:</strong></p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/animate_mobo2.html">animate_mobo2</a></span><span class="op">(</span><span class="va">main_df</span>, x <span class="op">=</span> <span class="st">"Iteration"</span>, y <span class="op">=</span> <span class="st">"objective1"</span>, filename <span class="op">=</span> <span class="st">"mobo.mp4"</span>, ytext <span class="op">=</span> <span class="st">"Y Axis Label"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
 <h3 id="remove_outliers_rei">
 <code>remove_outliers_REI</code><a class="anchor" aria-label="anchor" href="#remove_outliers_rei"></a>
 </h3>
 <p>Calculates the Response Entropy Index (REI) and flags suspicious entries based on their REI percentile. This function is useful for identifying outliers in Likert scale data.</p>
 <p><strong>Example:</strong></p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/remove_outliers_REI.html">remove_outliers_REI</a></span><span class="op">(</span><span class="va">main_df</span>, header <span class="op">=</span> <span class="cn">TRUE</span>, variables <span class="op">=</span> <span class="st">"var1,var2,var3"</span>, range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">5</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -323,7 +332,7 @@
 </h3>
 <p>Replaces specified values in a data frame with custom replacements. This can be used to clean or preprocess your data.</p>
 <p><strong>Example:</strong></p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">new_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/replace_values.html">replace_values</a></span><span class="op">(</span><span class="va">main_df</span>, to_replace <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"bad_val1"</span>, <span class="st">"bad_val2"</span><span class="op">)</span>, replace_with <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"good_val1"</span>, <span class="st">"good_val2"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
@@ -332,7 +341,7 @@
 </h2>
 <p><code><a href="reference/reportNPAV.html">reportNPAV()</a></code> formats results from Lüpsen’s nonparametric ANOVA (<code>np.anova</code>) output. <strong>Deprecated:</strong> <code><a href="reference/reportNPAV.html">reportNPAV()</a></code> is deprecated and will be removed in a future release; use <code><a href="reference/reportART.html">report_art()</a></code> with ARTool instead. NPAV is not shipped with this package, and it is loaded manually by the user from Lüpsen’s site: <code>https://www.uni-koeln.de/~luepsen/R/</code>.</p>
 <p>This step requires internet access, so it is documented here (not in <code>@examples</code>, which should run offline during package checks).</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Download Lüpsen's NPAV bundle (anova.lib) and load it into a dedicated environment</span></span>
 <span><span class="va">npav_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>fileext <span class="op">=</span> <span class="st">".lib"</span><span class="op">)</span></span>
 <span><span class="fu">utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/utils/download.file.html" class="external-link">download.file</a></span><span class="op">(</span></span>
@@ -371,15 +380,15 @@
 <div class="section level2">
 <h2 id="citations">Citations<a class="anchor" aria-label="anchor" href="#citations"></a>
 </h2>
-<div class="sourceCode" id="cb19"><pre class="sourceCode bibtex"><code class="sourceCode bibtex"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="va">@misc</span>{<span class="ot">colley2025rstats</span>,</span>
-<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a>  <span class="dt">author</span>       = {Mark Colley},</span>
-<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a>  <span class="dt">title</span>        = {colleyRstats: Functions to Streamline Statistical Analysis and Reporting},</span>
-<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a>  <span class="dt">year</span>         = {2025},</span>
-<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a>  <span class="dt">howpublished</span> = {<span class="ch">\url</span>{https://github.com/M-Colley/colleyRstats}},</span>
-<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a>  <span class="dt">note</span>         = {A collection of custom R functions for streamlining statistical analysis, visualizations, and APA-compliant reporting.},</span>
-<span id="cb19-7"><a href="#cb19-7" tabindex="-1"></a>  <span class="dt">doi</span>          = {10.5281/zenodo.18046754},</span>
-<span id="cb19-8"><a href="#cb19-8" tabindex="-1"></a>  <span class="dt">url</span>          = {https://doi.org/10.5281/zenodo.18046754},</span>
-<span id="cb19-9"><a href="#cb19-9" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode bibtex"><code class="sourceCode bibtex"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="va">@misc</span>{<span class="ot">colley2025rstats</span>,</span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a>  <span class="dt">author</span>       = {Mark Colley},</span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a>  <span class="dt">title</span>        = {colleyRstats: Functions to Streamline Statistical Analysis and Reporting},</span>
+<span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a>  <span class="dt">year</span>         = {2025},</span>
+<span id="cb20-5"><a href="#cb20-5" tabindex="-1"></a>  <span class="dt">howpublished</span> = {<span class="ch">\url</span>{https://github.com/M-Colley/colleyRstats}},</span>
+<span id="cb20-6"><a href="#cb20-6" tabindex="-1"></a>  <span class="dt">note</span>         = {A collection of custom R functions for streamlining statistical analysis, visualizations, and APA-compliant reporting.},</span>
+<span id="cb20-7"><a href="#cb20-7" tabindex="-1"></a>  <span class="dt">doi</span>          = {10.5281/zenodo.18046754},</span>
+<span id="cb20-8"><a href="#cb20-8" tabindex="-1"></a>  <span class="dt">url</span>          = {https://doi.org/10.5281/zenodo.18046754},</span>
+<span id="cb20-9"><a href="#cb20-9" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="contributing">Contributing<a class="anchor" aria-label="anchor" href="#contributing"></a>

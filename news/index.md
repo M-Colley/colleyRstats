@@ -2,6 +2,8 @@
 
 ## colleyRstats 0.1.6 (development)
 
+CRAN release: 2026-08-25
+
 ### BUG FIXES
 
 - [`reportNparLD()`](https://m-colley.github.io/colleyRstats/reference/reportNparLD.md)
@@ -26,6 +28,25 @@
   now uses only arguments both versions accept, and the toy data carries
   a trend over time so the example demonstrates a reported sentence
   rather than the no-effect message.
+
+### NEW FEATURES
+
+- New
+  [`animate_mobo2()`](https://m-colley.github.io/colleyRstats/reference/animate_mobo2.md),
+  the video counterpart of
+  [`generateMoboPlot2()`](https://m-colley.github.io/colleyRstats/reference/generateMoboPlot2.md).
+  It draws one frame per iteration and encodes them with `av`, so an
+  optimisation run can be shown building up rather than only in its
+  finished state; the file extension picks the container (`.mp4`,
+  `.gif`, `.mov`, …). The plot is built once from the complete data and
+  each frame only hides rows, which is what keeps the axes, the
+  sampling/optimisation guides and the legend still while the points,
+  intervals, fitted line and its equation move. It is also the only way
+  the early frames can be drawn:
+  [`generateMoboPlot2()`](https://m-colley.github.io/colleyRstats/reference/generateMoboPlot2.md)
+  requires both phases to be present, and the first iterations are all
+  sampling. `av` is a `Suggests`, so nothing changes for installations
+  that do not want it.
 
 ## colleyRstats 0.1.5
 

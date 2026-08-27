@@ -101,6 +101,9 @@ for you, effect plots, and multi-objective optimisation plots.
   [`plot_mobo2()`](https://m-colley.github.io/colleyRstats/reference/generateMoboPlot2.md)
   : Generate a Multi-objective Optimization Plot
 
+- [`animate_mobo2()`](https://m-colley.github.io/colleyRstats/reference/animate_mobo2.md)
+  : Animate a Multi-objective Optimization Plot
+
 - [`stat_sum_df()`](https://m-colley.github.io/colleyRstats/reference/stat_sum_df.md)
   : Generating the sum and adding a crossbar.
 

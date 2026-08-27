@@ -40,12 +40,16 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.1.6" id="colleyrstats-016-development">colleyRstats 0.1.6 (development)<a class="anchor" aria-label="anchor" href="#colleyrstats-016-development"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.1.6" id="colleyrstats-016-development">colleyRstats 0.1.6 (development)<a class="anchor" aria-label="anchor" href="#colleyrstats-016-development"></a></h2><p class="text-muted">CRAN release: 2026-08-25</p>
 <div class="section level3">
 <h3 id="bug-fixes-0-1-6">BUG FIXES<a class="anchor" aria-label="anchor" href="#bug-fixes-0-1-6"></a></h3>
 <ul><li>
 <code><a href="../reference/reportNparLD.html">reportNparLD()</a></code> announced “no significant effects” for every model fitted with ‘nparLD’ 2.3.0, however strong the effect actually was. That release rewrote the object <code><a href="https://rdrr.io/pkg/nparLD/man/nparLD.html" class="external-link">nparLD::nparLD()</a></code> returns: it now has class <code>nparld_fit</code> and carries the ANOVA-type statistic in <code>$ATS</code>, where earlier versions used <code>$ANOVA.test</code>. Asking for the old name yielded <code>NULL</code>, and <code>as.data.frame(NULL)</code> is a table with no rows – which the code that followed could not tell apart from a table in which nothing crossed p &lt; .05. A toy fit with ATS = 92.8 and p &lt; 1e-10 was reported as effect-free. Both layouts are now recognised, and an object carrying neither raises an error instead of silently reporting nothing.</li>
 <li>The example on <code><a href="../reference/reportNparLD.html">?reportNparLD</a></code> passed <code>description = FALSE</code> to <code><a href="https://rdrr.io/pkg/nparLD/man/nparLD.html" class="external-link">nparLD::nparLD()</a></code>. ‘nparLD’ 2.3.0 dropped that argument, so <code>R CMD check --run-donttest</code> failed on CRAN with <code>unused argument (description = FALSE)</code>. The call now uses only arguments both versions accept, and the toy data carries a trend over time so the example demonstrates a reported sentence rather than the no-effect message.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="new-features-0-1-6">NEW FEATURES<a class="anchor" aria-label="anchor" href="#new-features-0-1-6"></a></h3>
+<ul><li>New <code><a href="../reference/animate_mobo2.html">animate_mobo2()</a></code>, the video counterpart of <code><a href="../reference/generateMoboPlot2.html">generateMoboPlot2()</a></code>. It draws one frame per iteration and encodes them with <code>av</code>, so an optimisation run can be shown building up rather than only in its finished state; the file extension picks the container (<code>.mp4</code>, <code>.gif</code>, <code>.mov</code>, …). The plot is built once from the complete data and each frame only hides rows, which is what keeps the axes, the sampling/optimisation guides and the legend still while the points, intervals, fitted line and its equation move. It is also the only way the early frames can be drawn: <code><a href="../reference/generateMoboPlot2.html">generateMoboPlot2()</a></code> requires both phases to be present, and the first iterations are all sampling. <code>av</code> is a <code>Suggests</code>, so nothing changes for installations that do not want it.</li>
 </ul></div>
 </div>
     <div class="section level2">

@@ -5,6 +5,10 @@
 - `reportNparLD()` announced "no significant effects" for every model fitted with 'nparLD' 2.3.0, however strong the effect actually was. That release rewrote the object `nparLD::nparLD()` returns: it now has class `nparld_fit` and carries the ANOVA-type statistic in `$ATS`, where earlier versions used `$ANOVA.test`. Asking for the old name yielded `NULL`, and `as.data.frame(NULL)` is a table with no rows -- which the code that followed could not tell apart from a table in which nothing crossed p < .05. A toy fit with ATS = 92.8 and p < 1e-10 was reported as effect-free. Both layouts are now recognised, and an object carrying neither raises an error instead of silently reporting nothing.
 - The example on `?reportNparLD` passed `description = FALSE` to `nparLD::nparLD()`. 'nparLD' 2.3.0 dropped that argument, so `R CMD check --run-donttest` failed on CRAN with `unused argument (description = FALSE)`. The call now uses only arguments both versions accept, and the toy data carries a trend over time so the example demonstrates a reported sentence rather than the no-effect message.
 
+## NEW FEATURES
+
+- New `animate_mobo2()`, the video counterpart of `generateMoboPlot2()`. It draws one frame per iteration and encodes them with `av`, so an optimisation run can be shown building up rather than only in its finished state; the file extension picks the container (`.mp4`, `.gif`, `.mov`, ...). The plot is built once from the complete data and each frame only hides rows, which is what keeps the axes, the sampling/optimisation guides and the legend still while the points, intervals, fitted line and its equation move. It is also the only way the early frames can be drawn: `generateMoboPlot2()` requires both phases to be present, and the first iterations are all sampling. `av` is a `Suggests`, so nothing changes for installations that do not want it.
+
 # colleyRstats 0.1.5
 
 ## BUG FIXES

@@ -481,6 +481,151 @@ generateMoboPlot <- function(data, x, y, fillColourGroup = "ConditionID", ytext,
 }
 
 
+#' Animate a Multi-objective Optimization Plot
+#'
+#' Renders [generateMoboPlot2()] one iteration at a time and encodes the frames
+#' into a video, so a talk or a supplement can show an optimisation run building
+#' up rather than only its end state. Frame *i* is the same plot restricted to
+#' the data up to iteration *i*: the mean points, their bootstrapped intervals,
+#' the fitted line and its equation all move as the run proceeds.
+#'
+#' The plot is built once from the complete data, and a frame only ever hides
+#' rows. That is what keeps the axes, the sampling/optimisation guides and the
+#' legend still while the data grows -- and it is also the only way the early
+#' frames can be drawn at all, since [generateMoboPlot2()] requires both phases
+#' to be present and the first iterations are all sampling.
+#'
+#' @param data A data frame holding the run, as for [generateMoboPlot2()].
+#' @param x A string naming the iteration column in `data`. Default
+#'   `"Iteration"`.
+#' @param y A string naming the objective column in `data`.
+#' @param filename Path of the video to write. Its extension chooses the container:
+#'   `.mp4`, `.gif`, `.mov`, `.webm` -- whatever the `av` package's FFmpeg build
+#'   can encode.
+#' @param ... Further arguments for [generateMoboPlot2()], e.g. `phaseCol`,
+#'   `fillColourGroup`, `ytext`, `legendPos`, `fillLabels`.
+#' @param fps Frames per second. One frame is drawn per iteration, so this is
+#'   equally the number of iterations shown per second. Default 5.
+#' @param end_pause Seconds to hold the final frame, so the finished plot can be
+#'   read before the video ends or loops. Default 2; use 0 for no hold.
+#' @param width,height Frame size in inches. Default 8 x 5.
+#' @param dpi Resolution. Default 150, so the default frame is 1200 x 750 px.
+#' @param label_iterations Whether to caption each frame with the iteration it
+#'   shows. Default `TRUE`, which writes the plot's subtitle.
+#'
+#' @return Invisibly returns `filename`.
+#' @seealso [generateMoboPlot2()] for the static plot.
+#' @export
+#'
+#' @examples \donttest{
+#' # Kept deliberately tiny: every frame is a full ggplot render, so the cost
+#' # of the example is set by the number of iterations, not by the frame size.
+#' if (requireNamespace("av", quietly = TRUE)) {
+#'   set.seed(42)
+#'   df <- data.frame(
+#'     Iteration   = rep(1:3, each = 4),
+#'     ConditionID = rep(rep(c("A", "B"), each = 2), 3),
+#'     Phase       = rep(c("Sampling", "Optimization"), times = c(2 * 4, 4))
+#'   )
+#'   df$score <- 0.3 + 0.05 * df$Iteration + stats::rnorm(nrow(df), sd = 0.05)
+#'
+#'   animate_mobo2(
+#'     df,
+#'     y = "score", ytext = "Score",
+#'     filename = file.path(tempdir(), "mobo.mp4"),
+#'     width = 4, height = 2.5, dpi = 96, end_pause = 0
+#'   )
+#' }
+#' }
+animate_mobo2 <- function(data, x = "Iteration", y, filename, ..., fps = 5, end_pause = 2,
+                          width = 8, height = 5, dpi = 150, label_iterations = TRUE) {
+  not_empty(data)
+  not_empty(x)
+  not_empty(y)
+  not_empty(filename)
+
+  if (!requireNamespace("av", quietly = TRUE)) {
+    stop("Package 'av' is required to encode the video. Please install it.", call. = FALSE)
+  }
+  for (arg in c("fps", "width", "height", "dpi")) {
+    value <- get(arg)
+    if (!is.numeric(value) || length(value) != 1L || is.na(value) || value <= 0) {
+      stop("`", arg, "` must be a single positive number.", call. = FALSE)
+    }
+  }
+  if (!is.numeric(end_pause) || length(end_pause) != 1L || is.na(end_pause) || end_pause < 0) {
+    stop("`end_pause` must be a single non-negative number (seconds).", call. = FALSE)
+  }
+
+  # Built from the COMPLETE data: this is what fixes the scales, the phase
+  # guides and the legend for every frame. See the details in the help page.
+  p <- generateMoboPlot2(data = data, x = x, y = y, ...)
+
+  # The ranges are read back off the built plot rather than off the data, so
+  # that the errorbar whiskers and the annotations stay inside the frame.
+  panel <- ggplot2::ggplot_build(p)$layout$panel_params[[1]]
+  p <- p + ggplot2::coord_cartesian(
+    xlim = panel$x.range, ylim = panel$y.range, expand = FALSE
+  )
+
+  x_numeric <- if (is.factor(data[[x]])) as.numeric(as.character(data[[x]])) else as.numeric(data[[x]])
+  iterations <- sort(unique(x_numeric[!is.na(x_numeric)]))
+  if (length(iterations) < 2L) {
+    stop("`data` must cover at least two iterations to animate.", call. = FALSE)
+  }
+
+  # H.264 refuses odd pixel dimensions, so the frame is rounded to an even
+  # number of pixels. The rounding has to happen in pixels and the device has to
+  # be opened in pixels: handing ggsave() the equivalent size in inches leaves
+  # the count to a floating-point multiplication, and 316/150 in at 150 dpi
+  # comes back as 315 px, which FFmpeg then refuses to encode.
+  width_px <- 2 * round(width * dpi / 2)
+  height_px <- 2 * round(height * dpi / 2)
+
+  frame_dir <- tempfile("colleyRstats-mobo-")
+  dir.create(frame_dir)
+  on.exit(unlink(frame_dir, recursive = TRUE), add = TRUE)
+
+  message("Rendering ", length(iterations), " frames ...")
+
+  last <- iterations[length(iterations)]
+  frames <- vapply(seq_along(iterations), function(i) {
+    frame <- p
+    frame$data <- data[!is.na(x_numeric) & x_numeric <= iterations[i], , drop = FALSE]
+    if (isTRUE(label_iterations)) {
+      frame <- frame + ggplot2::labs(
+        subtitle = paste0("Iteration ", iterations[i], " / ", last)
+      )
+    }
+    path <- file.path(frame_dir, sprintf("frame-%05d.png", i))
+    grDevices::png(path, width = width_px, height = height_px, res = dpi, bg = "white")
+    on.exit(grDevices::dev.off(), add = TRUE)
+    # The first frames hold too few points for the fit and for the bootstrapped
+    # interval, and ggplot2 says so once per frame. That is noise here, not news.
+    suppressWarnings(suppressMessages(print(frame)))
+    path
+  }, character(1))
+
+  # Repeating the last frame is what holds it on screen: the video is encoded at
+  # a fixed frame rate, so there is no per-frame duration to lengthen instead.
+  if (end_pause > 0) {
+    frames <- c(frames, rep(frames[length(frames)], max(1L, round(end_pause * fps))))
+  }
+
+  out_dir <- dirname(filename)
+  if (!dir.exists(out_dir)) {
+    dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+  }
+  av::av_encode_video(frames, output = filename, framerate = fps, verbose = FALSE)
+
+  message(
+    "Saved animation to '", filename, "' (", length(iterations), " iterations at ",
+    fps, " fps, ", width_px, " x ", height_px, " px)."
+  )
+  invisible(filename)
+}
+
+
 #' Check the data's distribution. If non-normal, take the non-parametric variant of *ggwithinstats*.
 #' x and y have to be in parentheses, e.g., "ConditionID".
 #'

@@ -60,6 +60,7 @@ reference:
   - plot_effect
   - plot_mobo
   - plot_mobo2
+  - animate_mobo2
   - stat_sum_df
   - n_fun
 

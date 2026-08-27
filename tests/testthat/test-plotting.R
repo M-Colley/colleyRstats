@@ -104,6 +104,46 @@ test_that("generateMoboPlot2 uses documented default grouping and labels", {
   expect_true(any(vapply(p$scales$scales, inherits, logical(1), what = "ScaleDiscrete")))
 })
 
+test_that("animate_mobo2 needs more than one iteration", {
+  df <- data.frame(
+    Iteration = rep(1, 10),
+    score = rnorm(10),
+    ConditionID = rep(c("A", "B"), each = 5),
+    Phase = rep(c("sampling", "optimization"), each = 5)
+  )
+
+  expect_error(
+    animate_mobo2(df, y = "score", filename = tempfile(fileext = ".mp4")),
+    "at least two iterations"
+  )
+})
+
+test_that("animate_mobo2 writes a video of the run", {
+  skip_on_cran()
+  skip_if_not_installed("av")
+  skip_if_not_installed("Hmisc")
+
+  set.seed(1)
+  df <- data.frame(
+    Iteration   = rep(1:4, each = 4),
+    ConditionID = rep(rep(c("A", "B"), each = 2), 4),
+    Phase       = rep(c("sampling", "optimization"), each = 8),
+    score       = 0.3 + 0.05 * rep(1:4, each = 4) + rnorm(16, sd = 0.05)
+  )
+  out <- tempfile(fileext = ".mp4")
+
+  expect_message(
+    animate_mobo2(
+      df,
+      y = "score", filename = out,
+      width = 3, height = 2, dpi = 100, end_pause = 0
+    ),
+    "Saved animation"
+  )
+  expect_true(file.exists(out))
+  expect_gt(file.size(out), 0)
+})
+
 test_that("generateEffectPlot applies custom axis and legend labels", {
   df <- data.frame(
     strat = rep(c("A", "B"), each = 10),

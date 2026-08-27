@@ -237,6 +237,14 @@ plot_mobo2(data = main_df, x = "Iteration", y = "objective1", fillColourGroup = 
 Example Plot:
 ![MOBO Plot Example](man/figures/mobo.png)
 
+### `animate_mobo2`
+Writes the same plot as a video, one frame per iteration, so a talk or a supplement can show the run building up instead of only its end state. The axes, phase guides and legend are taken from the complete data, so only the points, intervals and fitted line move. Requires the `av` package; the file extension picks the container (`.mp4`, `.gif`, ...).
+
+**Example:**
+```r
+animate_mobo2(main_df, x = "Iteration", y = "objective1", filename = "mobo.mp4", ytext = "Y Axis Label")
+```
+
 
 ### `remove_outliers_REI`
 Calculates the Response Entropy Index (REI) and flags suspicious entries based on their REI percentile. This function is useful for identifying outliers in Likert scale data.

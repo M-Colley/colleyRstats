@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -22,6 +22,7 @@
     <li><a class="dropdown-item" href="../articles/choosing-a-test.html">Choosing the right test (and mixed models)</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with colleyRstats</a></li>
     <li><a class="dropdown-item" href="../articles/overleaf.html">From R to Overleaf: publication-ready output</a></li>
+    <li><a class="dropdown-item" href="../articles/scoring-questionnaires.html">Scoring questionnaires</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -40,7 +41,53 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.1.6" id="colleyrstats-016-development">colleyRstats 0.1.6 (development)<a class="anchor" aria-label="anchor" href="#colleyrstats-016-development"></a></h2><p class="text-muted">CRAN release: 2026-08-25</p>
+<h2 class="pkg-version" data-toc-text="0.2.0" id="colleyrstats-020">colleyRstats 0.2.0<a class="anchor" aria-label="anchor" href="#colleyrstats-020"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-2-0">NEW FEATURES<a class="anchor" aria-label="anchor" href="#new-features-0-2-0"></a></h3>
+<div class="section level4">
+<h4 id="questionnaire-scoring-0-2-0">Questionnaire scoring<a class="anchor" aria-label="anchor" href="#questionnaire-scoring-0-2-0"></a></h4>
+<ul><li>New <code><a href="../reference/score_questionnaire.html">score_questionnaire()</a></code> applies a published instrument’s own scoring key to raw item columns: reverse-coding, the recoding it prescribes (centring a semantic differential to -3..+3, zero-basing the SUS), its subscale structure, and its published weights or multipliers. Ten instruments ship: <strong>NASA-TLX</strong> (raw/RTLX), <strong>SUS</strong> with the Lewis &amp; Sauro usability/learnability subscales, <strong>UEQ-S</strong>, the full 26-item <strong>UEQ</strong>, <strong>TiA</strong> (Körber), <strong>AttrakDiff 2</strong>, <strong>IPQ</strong>, <strong>SSQ</strong> (with the Kennedy et al. weights and its overlapping subscales), <strong>FMS</strong> and <strong>MISC</strong>. The scoring is checked against published reference values in the test suite: the SUS anchors (100/0/50), the SSQ weighting (21 raw on each subscale gives 200.34/159.18/292.32, total 235.62), the TLX rescale from any sheet onto 0-100, and the UEQ’s balanced polarity, where answering the positive pole of all 26 pairs must give +3 on all six scales.</li>
+<li>
+<code>scale =</code> declares the response range a survey actually used, so a 21-point TLX sheet, a 20-point slider and a 0-100 slider all score onto the conventional 0-100. Responses outside the declared range are an error, not a silent rescale.</li>
+<li>
+<code>min_valid =</code> governs incomplete responses. The default scores only complete subscales and returns <code>NA</code> otherwise – no silent imputation. Relaxing it scales a sum-scored instrument up proportionally so it stays on its published range.</li>
+<li>A standing <strong>caution prints in the console</strong>, not only in the help pages: item numbers, order and polarity depend on how a questionnaire was administered, this package applies the <em>published</em> key, and a mismatch produces plausible numbers rather than an error – so any figure must be double-checked before it goes into a paper. It appears from <code><a href="../reference/score_questionnaire.html">score_questionnaire()</a></code> (once per distinct mapping per session, alongside the mapping itself), and from <code><a href="../reference/check_questionnaire.html">check_questionnaire()</a></code>, <code><a href="../reference/questionnaire_items.html">questionnaire_items()</a></code> and <code><a href="../reference/score_reliability.html">score_reliability()</a></code> every time. The wording lives in one place, so the console text and the help pages cannot drift apart. Silence the repeated note in a pipeline with <code>options(colleyRstats.quiet_questionnaires = TRUE)</code>; that quiets the note, not the errors.</li>
+<li>New <code><a href="../reference/check_questionnaire.html">check_questionnaire()</a></code> prints the mapping that will be used – which column supplies which item, its subscale, whether it is reverse-coded, and the observed range of each column – along with the instrument’s scoring notes. This is the guard against the failure mode that motivates the whole feature: item order and polarity belong to the sheet a study actually administered, so a shifted or re-ordered survey export scores silently, plausibly, and wrongly. <code><a href="../reference/score_questionnaire.html">score_questionnaire()</a></code> also attaches the mapping as an attribute and announces it once per session.</li>
+<li>New <code><a href="../reference/score_reliability.html">score_reliability()</a></code> gives Cronbach’s alpha (and McDonald’s omega where ‘psych’ is installed) per subscale, computed on the same recoded matrix that is aggregated – so a negative alpha means a real problem rather than a forgotten reversal, and it warns when one appears.</li>
+<li>New <code><a href="../reference/define_questionnaire.html">define_questionnaire()</a></code> registers a lab-specific, translated or shortened instrument, which then behaves exactly like a built-in one. Put it in a project’s setup script and every analysis in that project scores it identically.</li>
+<li>New <code>reverse_code(x, min, max)</code> flips a response scale using the <em>possible</em> range rather than the observed one, and warns about out-of-range values. Taking the endpoints from the data is the classic reverse-coding bug: if nobody picked the lowest option, every flipped response is off by a point.</li>
+<li>New <code><a href="../reference/summarize_sickness.html">summarize_sickness()</a></code> reduces a repeated single-item sickness rating (FMS, MISC) to the measures those studies actually analyse: peak, mean, final value, trapezoidal area under the curve, the time-weighted mean, and time to a threshold.</li>
+<li>New <code><a href="../reference/list_questionnaires.html">list_questionnaires()</a></code> and <code><a href="../reference/questionnaire_items.html">questionnaire_items()</a></code> describe the registry and one instrument’s items.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="fitting-the-recommended-model-0-2-0">Fitting the recommended model<a class="anchor" aria-label="anchor" href="#fitting-the-recommended-model-0-2-0"></a></h4>
+<ul><li>New <code><a href="../reference/fit_recommended.html">fit_recommended()</a></code> carries <code><a href="../reference/recommend_test.html">recommend_test()</a></code> through to a fitted model. It coerces the outcome and predictors into the classes the model family needs (announcing each coercion, since turning a numeric rating into an ordered factor changes what is estimated), builds the random-effect term for a clustered design, fits, computes pairwise post-hoc contrasts with the machinery that matches the fit, and produces the manuscript sentence via this package’s reporter for that family. It covers cumulative link models with and without random effects, linear and generalized linear mixed models, GLMs, the aligned rank transform, nparLD, multinomial regression, and the classical ANOVA / Welch / Kruskal-Wallis / Wilcoxon tests.</li>
+<li>The point is that the test justified in the methods section and the model actually run come from one call on one data frame, so they cannot drift apart – the failure mode of a workflow where <code><a href="../reference/recommend_test.html">recommend_test()</a></code> prints advice that is then re-typed by hand.</li>
+<li>
+<code>outcome_type =</code> overrides the automatic classification. This matters more than it sounds: an outcome whose scores stay whole numbers is taken for a count and fitted with a Poisson model. That catches the six raw NASA-TLX subscales, a single MISC rating, and item-level ratings; SUS and RTLX escape it only because their multipliers and means make them fractional.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="pareto-fronts-in-the-direction-you-actually-optimise-0-2-0">Pareto fronts in the direction you actually optimise<a class="anchor" aria-label="anchor" href="#pareto-fronts-in-the-direction-you-actually-optimise-0-2-0"></a></h4>
+<ul><li>
+<code><a href="../reference/add_pareto_moocore_column.html">add_pareto_moocore_column()</a></code> and <code><a href="../reference/add_pareto_emoa_column.html">add_pareto_emoa_column()</a></code> gain <code>maximise</code>. Both minimised unconditionally: <code><a href="https://multi-objective.github.io/moocore/r/reference/nondominated.html" class="external-link">moocore::is_nondominated()</a></code> was called with its <code>maximise = FALSE</code> default and <code><a href="https://rdrr.io/pkg/emoa/man/dom_op.html" class="external-link">emoa::is_dominated()</a></code> has no direction argument at all. Since trust, acceptance, perceived safety and most other rating-scale objectives are <em>maximised</em>, using them meant passing negated copies of your own columns and remembering to negate them everywhere else too. Pass <code>maximise = TRUE</code>, or a logical vector with one entry per objective for a mixed problem (<code>c(TRUE, TRUE, FALSE)</code> to maximise two and minimise a workload score). The default stays <code>FALSE</code>, so existing results are unchanged.</li>
+<li>The length of <code>maximise</code> is validated. <code><a href="https://multi-objective.github.io/moocore/r/reference/nondominated.html" class="external-link">moocore::is_nondominated()</a></code> accepts three flags for two objectives and quietly uses the first two, which would produce a plausible, wrong front; passing the wrong number here is an error naming the objectives instead.</li>
+<li>A test asserts the two backends agree on the same front under every direction setting, and that <code>maximise = TRUE</code> matches the negate-your-columns workaround it replaces.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="starting-a-study-0-2-0">Starting a study<a class="anchor" aria-label="anchor" href="#starting-a-study-0-2-0"></a></h4>
+<ul><li>New <code><a href="../reference/use_study_project.html">use_study_project()</a></code> scaffolds a study analysis as a reproducible pipeline: a ‘targets’ pipeline that recomputes only what changed, R scripts split along the stages every user study goes through (read, clean, score, model, plot), a Quarto report, a directory the generated LaTeX lands in so a manuscript <code>\input{}</code>s the numbers instead of having them re-typed, <code>renv</code> for version pinning, and a <code>.gitignore</code> that keeps generated output out of the repository.</li>
+<li>It ships synthetic example data with a column per item of every instrument named, so a freshly scaffolded project runs end to end before any real data exists. The generated <code>OUTCOMES</code> and <code>OUTCOME_TYPES</code> vectors are derived by scoring a dummy row through the real code path, so the scaffold cannot name a column that <code><a href="../reference/score_questionnaire.html">score_questionnaire()</a></code> does not produce.</li>
+<li>It never overwrites an existing file unless asked, so it can be re-run on a live project to pick up new pieces.</li>
+</ul></div>
+</div>
+<div class="section level3">
+<h3 id="documentation-0-2-0">DOCUMENTATION<a class="anchor" aria-label="anchor" href="#documentation-0-2-0"></a></h3>
+<ul><li>New <code><a href="../articles/scoring-questionnaires.html">vignette("scoring-questionnaires")</a></code> covers the scoring key, verifying a mapping before trusting it, incomplete responses, reliability, registering your own instrument, and the sickness time course.</li>
+<li>The <code>pkgdown</code> reference index gains <strong>Questionnaires</strong> and <strong>Starting a study</strong> sections.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.1.6" id="colleyrstats-016">colleyRstats 0.1.6<a class="anchor" aria-label="anchor" href="#colleyrstats-016"></a></h2><p class="text-muted">CRAN release: 2026-08-25</p>
 <div class="section level3">
 <h3 id="bug-fixes-0-1-6">BUG FIXES<a class="anchor" aria-label="anchor" href="#bug-fixes-0-1-6"></a></h3>
 <ul><li>

@@ -10,3 +10,5 @@
   colleyRstats](https://m-colley.github.io/colleyRstats/articles/getting-started.md):
 - [From R to Overleaf: publication-ready
   output](https://m-colley.github.io/colleyRstats/articles/overleaf.md):
+- [Scoring
+  questionnaires](https://m-colley.github.io/colleyRstats/articles/scoring-questionnaires.md):

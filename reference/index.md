@@ -20,8 +20,33 @@ single call, for one dependent variable or many.
   : Analyze one dependent variable and produce everything a paper needs
 - [`report_all()`](https://m-colley.github.io/colleyRstats/reference/report_all.md)
   : Analyze and report several dependent variables at once
+- [`fit_recommended()`](https://m-colley.github.io/colleyRstats/reference/fit_recommended.md)
+  : Fit the model that the data call for, and report it
 - [`emit_overleaf()`](https://m-colley.github.io/colleyRstats/reference/emit_overleaf.md)
   : Bundle an analysis into an Overleaf-ready folder
+
+## Questionnaires
+
+Score the standardised instruments a user study runs on, with each
+instrument’s own published key, and check the mapping before you trust
+it.
+
+- [`score_questionnaire()`](https://m-colley.github.io/colleyRstats/reference/score_questionnaire.md)
+  : Score a standardised questionnaire
+- [`check_questionnaire()`](https://m-colley.github.io/colleyRstats/reference/check_questionnaire.md)
+  : Show how a questionnaire will be scored, before scoring it
+- [`list_questionnaires()`](https://m-colley.github.io/colleyRstats/reference/list_questionnaires.md)
+  : List the questionnaires this package can score
+- [`questionnaire_items()`](https://m-colley.github.io/colleyRstats/reference/questionnaire_items.md)
+  : The items of one questionnaire
+- [`define_questionnaire()`](https://m-colley.github.io/colleyRstats/reference/define_questionnaire.md)
+  : Register your own questionnaire
+- [`score_reliability()`](https://m-colley.github.io/colleyRstats/reference/score_reliability.md)
+  : Internal consistency of a questionnaire's subscales
+- [`reverse_code()`](https://m-colley.github.io/colleyRstats/reference/reverse_code.md)
+  : Reverse-code responses
+- [`summarize_sickness()`](https://m-colley.github.io/colleyRstats/reference/summarize_sickness.md)
+  : Summarise a motion-sickness time course
 
 ## Choosing a test
 
@@ -298,3 +323,12 @@ Getting the generated text into a document that compiles immediately.
 
 - [`pathPrep()`](https://m-colley.github.io/colleyRstats/reference/pathPrep.md)
   : Convert Windows paths to R-friendly format
+
+## Starting a study
+
+Scaffold the analysis as a reproducible pipeline, so every study in the
+group has the same shape and re-runs from raw data to manuscript in one
+call.
+
+- [`use_study_project()`](https://m-colley.github.io/colleyRstats/reference/use_study_project.md)
+  : Scaffold a reproducible study analysis

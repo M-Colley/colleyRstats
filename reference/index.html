@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -22,6 +22,7 @@
     <li><a class="dropdown-item" href="../articles/choosing-a-test.html">Choosing the right test (and mixed models)</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with colleyRstats</a></li>
     <li><a class="dropdown-item" href="../articles/overleaf.html">From R to Overleaf: publication-ready output</a></li>
+    <li><a class="dropdown-item" href="../articles/scoring-questionnaires.html">Scoring questionnaires</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -87,10 +88,82 @@
 
         <dt>
 
+          <code><a href="fit_recommended.html">fit_recommended()</a></code>
+
+        </dt>
+        <dd>Fit the model that the data call for, and report it</dd>
+
+        <dt>
+
           <code><a href="emit_overleaf.html">emit_overleaf()</a></code>
 
         </dt>
         <dd>Bundle an analysis into an Overleaf-ready folder</dd>
+      </dl></div><div class="section level2">
+      <h2 id="questionnaires">Questionnaires<a class="anchor" aria-label="anchor" href="#questionnaires"></a></h2>
+
+      <div class="section-desc"><p>Score the standardised instruments a user study runs on, with each instrument’s own published key, and check the mapping before you trust it.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="score_questionnaire.html">score_questionnaire()</a></code>
+
+        </dt>
+        <dd>Score a standardised questionnaire</dd>
+
+        <dt>
+
+          <code><a href="check_questionnaire.html">check_questionnaire()</a></code>
+
+        </dt>
+        <dd>Show how a questionnaire will be scored, before scoring it</dd>
+
+        <dt>
+
+          <code><a href="list_questionnaires.html">list_questionnaires()</a></code>
+
+        </dt>
+        <dd>List the questionnaires this package can score</dd>
+
+        <dt>
+
+          <code><a href="questionnaire_items.html">questionnaire_items()</a></code>
+
+        </dt>
+        <dd>The items of one questionnaire</dd>
+
+        <dt>
+
+          <code><a href="define_questionnaire.html">define_questionnaire()</a></code>
+
+        </dt>
+        <dd>Register your own questionnaire</dd>
+
+        <dt>
+
+          <code><a href="score_reliability.html">score_reliability()</a></code>
+
+        </dt>
+        <dd>Internal consistency of a questionnaire's subscales</dd>
+
+        <dt>
+
+          <code><a href="reverse_code.html">reverse_code()</a></code>
+
+        </dt>
+        <dd>Reverse-code responses</dd>
+
+        <dt>
+
+          <code><a href="summarize_sickness.html">summarize_sickness()</a></code>
+
+        </dt>
+        <dd>Summarise a motion-sickness time course</dd>
       </dl></div><div class="section level2">
       <h2 id="choosing-a-test">Choosing a test<a class="anchor" aria-label="anchor" href="#choosing-a-test"></a></h2>
 
@@ -536,6 +609,22 @@
 
         </dt>
         <dd>Convert Windows paths to R-friendly format</dd>
+      </dl></div><div class="section level2">
+      <h2 id="starting-a-study">Starting a study<a class="anchor" aria-label="anchor" href="#starting-a-study"></a></h2>
+
+      <div class="section-desc"><p>Scaffold the analysis as a reproducible pipeline, so every study in the group has the same shape and re-runs from raw data to manuscript in one call.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="use_study_project.html">use_study_project()</a></code>
+
+        </dt>
+        <dd>Scaffold a reproducible study analysis</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

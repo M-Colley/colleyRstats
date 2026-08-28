@@ -8,7 +8,7 @@ front.
 ## Usage
 
 ``` r
-add_pareto_moocore_column(data, objectives)
+add_pareto_moocore_column(data, objectives, maximise = FALSE)
 ```
 
 ## Arguments
@@ -23,11 +23,29 @@ add_pareto_moocore_column(data, objectives)
   `data`. These columns should be numeric and will be used to calculate
   the Pareto front.
 
+- maximise:
+
+  Direction of optimisation, passed through to
+  [`moocore::is_nondominated()`](https://multi-objective.github.io/moocore/r/reference/nondominated.html).
+  `FALSE` (the default) treats every objective as one to be *minimised*.
+  Pass `TRUE` when larger is better for every objective – as it is for
+  trust, acceptance, perceived safety and most other rating-scale
+  outcomes – or a logical vector with one entry per objective for a
+  mixed problem, e.g. `c(TRUE, TRUE, FALSE)` to maximise the first two
+  and minimise the third. This removes the need to pass negated copies
+  of your own columns.
+
 ## Value
 
 A data frame with the same columns as `data`, along with an additional
 column, `PARETO_MOOCORE`, which is `TRUE` for rows that are on the
 Pareto front and `FALSE` otherwise.
+
+## See also
+
+[`add_pareto_emoa_column()`](https://m-colley.github.io/colleyRstats/reference/add_pareto_emoa_column.md),
+which answers the same question via emoa and accepts the same `maximise`
+argument.
 
 ## Examples
 
@@ -43,7 +61,7 @@ main_df <- data.frame(
   Comfort = runif(10)
 )
 
-# Add the Pareto front column
+# Add the Pareto front column (minimising, the default)
 main_df <- add_pareto_moocore_column(data = main_df, objectives)
 head(main_df)
 #>        trust predictability perceivedSafety    Comfort PARETO_MOOCORE
@@ -53,4 +71,15 @@ head(main_df)
 #> 4 0.66028435      0.5315735       0.3357191 0.46598719          FALSE
 #> 5 0.09602416      0.4936370       0.5962628 0.39003139           TRUE
 #> 6 0.76560016      0.7793086       0.1915180 0.02006522           TRUE
+
+# All four objectives are ratings where higher is better
+main_df <- add_pareto_moocore_column(main_df, objectives, maximise = TRUE)
+
+# Mixed: maximise the ratings, minimise a workload score
+main_df$workload <- runif(10)
+main_df <- add_pareto_moocore_column(
+  main_df,
+  c(objectives, "workload"),
+  maximise = c(TRUE, TRUE, TRUE, TRUE, FALSE)
+)
 ```

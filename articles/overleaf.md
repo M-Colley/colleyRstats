@@ -54,9 +54,9 @@ so the vignette leaves nothing behind.
 ``` r
 
 sty_path <- use_colleyrstats_sty(tempdir(), overwrite = TRUE)
-#> Wrote '/tmp/Rtmpk3UV9I/colleyRstats.sty'. Add \usepackage{colleyRstats} to your document.
+#> Wrote '/tmp/RtmpWBAFMq/colleyRstats.sty'. Add \usepackage{colleyRstats} to your document.
 sty_path
-#> [1] "/tmp/Rtmpk3UV9I/colleyRstats.sty"
+#> [1] "/tmp/RtmpWBAFMq/colleyRstats.sty"
 ```
 
 If you would rather not carry a preamble at all, set
@@ -131,7 +131,7 @@ reportDunnTestTable(
 #> FWER = 0.05
 #> Reject Ho if adjusted p ≤ FWER with stopping rule, where (unadjusted) p = Pr(|Z| ≥ |z|)
 #> % latex table generated in R 4.6.1 by xtable 1.8-8 package
-#> % Thu Aug 27 17:11:52 2026
+#> % Fri Aug 28 07:57:51 2026
 #> \begin{table}[ht]
 #> \centering
 #> \caption{Post-hoc comparisons for independent variable \group and dependent variable \score. Positive Z-values mean that the first-named level is sig. higher than the second-named. For negative Z-values, the opposite is true. Effect size reported as rank-biserial correlation (r).} 
@@ -211,7 +211,7 @@ study <- list(results = list(
 ))
 
 out <- emit_overleaf(study, dir = file.path(tempdir(), "paper"), overwrite = TRUE)
-#> Wrote an Overleaf-ready project to '/tmp/Rtmpk3UV9I/paper' (2 sections; \usepackage{colleyRstats}).
+#> Wrote an Overleaf-ready project to '/tmp/RtmpWBAFMq/paper' (2 sections; \usepackage{colleyRstats}).
 list.files(out$dir, recursive = TRUE)
 #> [1] "colleyRstats.sty"      "main.tex"              "names.tex"            
 #> [4] "references.bib"        "results.tex"           "sections/trust.tex"   
@@ -227,7 +227,7 @@ the macros inline and omits the `.sty`.
 
 old <- options(colleyRstats.macros = FALSE)
 plain <- emit_overleaf(study, dir = file.path(tempdir(), "paper-plain"), overwrite = TRUE)
-#> Wrote an Overleaf-ready project to '/tmp/Rtmpk3UV9I/paper-plain' (2 sections; macros expanded inline).
+#> Wrote an Overleaf-ready project to '/tmp/RtmpWBAFMq/paper-plain' (2 sections; macros expanded inline).
 options(old)
 
 list.files(plain$dir, recursive = TRUE)

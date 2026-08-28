@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -22,6 +22,7 @@
     <li><a class="dropdown-item" href="../articles/choosing-a-test.html">Choosing the right test (and mixed models)</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with colleyRstats</a></li>
     <li><a class="dropdown-item" href="../articles/overleaf.html">From R to Overleaf: publication-ready output</a></li>
+    <li><a class="dropdown-item" href="../articles/scoring-questionnaires.html">Scoring questionnaires</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -46,7 +47,7 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">add_pareto_emoa_column</span><span class="op">(</span><span class="va">data</span>, <span class="va">objectives</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">add_pareto_emoa_column</span><span class="op">(</span><span class="va">data</span>, <span class="va">objectives</span>, maximise <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -60,10 +61,27 @@
 <dt id="arg-objectives">objectives<a class="anchor" aria-label="anchor" href="#arg-objectives"></a></dt>
 <dd><p>A character vector specifying the names of the objective columns in <code>data</code>. These columns should be numeric and will be used to calculate the Pareto front.</p></dd>
 
+
+<dt id="arg-maximise">maximise<a class="anchor" aria-label="anchor" href="#arg-maximise"></a></dt>
+<dd><p>Direction of optimisation. <code>FALSE</code> (the default) treats
+every objective as one to be <em>minimised</em>, which is what
+<span class="pkg">emoa</span> does natively. Pass <code>TRUE</code> when larger is better for every
+objective – as it is for trust, acceptance, perceived safety and most
+other rating-scale outcomes – or a logical vector with one entry per
+objective for a mixed problem, e.g.
+<code>c(TRUE, TRUE, FALSE)</code> to maximise the first two and minimise the
+third. Objectives flagged <code>TRUE</code> are negated internally, so you no
+longer need to pass negated copies of your own columns.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame with the same columns as <code>data</code>, along with an additional column, <code>PARETO_EMOA</code>, which is <code>TRUE</code> for rows that are on the Pareto front and <code>FALSE</code> otherwise.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="add_pareto_moocore_column.html">add_pareto_moocore_column()</a></code>, which answers the same question via
+<span class="pkg">moocore</span> and accepts the same <code>maximise</code> argument.</p></div>
     </div>
 
     <div class="section level2">
@@ -79,7 +97,7 @@
 <span class="r-in"><span>  Comfort <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Add the Pareto front column</span></span></span>
+<span class="r-in"><span><span class="co"># Add the Pareto front column (minimising, the default)</span></span></span>
 <span class="r-in"><span><span class="va">main_df</span> <span class="op">&lt;-</span> <span class="fu">add_pareto_emoa_column</span><span class="op">(</span>data <span class="op">=</span> <span class="va">main_df</span>, <span class="va">objectives</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">main_df</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         trust predictability perceivedSafety    Comfort PARETO_EMOA</span>
@@ -89,6 +107,9 @@
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4 0.157208442     0.32038573       0.1959567 0.63646561        TRUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5 0.007399441     0.40232824       0.9805397 0.47902455        TRUE</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 6 0.466393497     0.19566983       0.7415215 0.43217126        TRUE</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># All four objectives are ratings where higher is better</span></span></span>
+<span class="r-in"><span><span class="va">main_df</span> <span class="op">&lt;-</span> <span class="fu">add_pareto_emoa_column</span><span class="op">(</span><span class="va">main_df</span>, <span class="va">objectives</span>, maximise <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

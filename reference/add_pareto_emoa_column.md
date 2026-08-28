@@ -8,7 +8,7 @@ front.
 ## Usage
 
 ``` r
-add_pareto_emoa_column(data, objectives)
+add_pareto_emoa_column(data, objectives, maximise = FALSE)
 ```
 
 ## Arguments
@@ -23,11 +23,29 @@ add_pareto_emoa_column(data, objectives)
   `data`. These columns should be numeric and will be used to calculate
   the Pareto front.
 
+- maximise:
+
+  Direction of optimisation. `FALSE` (the default) treats every
+  objective as one to be *minimised*, which is what emoa does natively.
+  Pass `TRUE` when larger is better for every objective – as it is for
+  trust, acceptance, perceived safety and most other rating-scale
+  outcomes – or a logical vector with one entry per objective for a
+  mixed problem, e.g. `c(TRUE, TRUE, FALSE)` to maximise the first two
+  and minimise the third. Objectives flagged `TRUE` are negated
+  internally, so you no longer need to pass negated copies of your own
+  columns.
+
 ## Value
 
 A data frame with the same columns as `data`, along with an additional
 column, `PARETO_EMOA`, which is `TRUE` for rows that are on the Pareto
 front and `FALSE` otherwise.
+
+## See also
+
+[`add_pareto_moocore_column()`](https://m-colley.github.io/colleyRstats/reference/add_pareto_moocore_column.md),
+which answers the same question via moocore and accepts the same
+`maximise` argument.
 
 ## Examples
 
@@ -43,7 +61,7 @@ main_df <- data.frame(
   Comfort = runif(10)
 )
 
-# Add the Pareto front column
+# Add the Pareto front column (minimising, the default)
 main_df <- add_pareto_emoa_column(data = main_df, objectives)
 head(main_df)
 #>         trust predictability perceivedSafety    Comfort PARETO_EMOA
@@ -53,4 +71,7 @@ head(main_df)
 #> 4 0.157208442     0.32038573       0.1959567 0.63646561        TRUE
 #> 5 0.007399441     0.40232824       0.9805397 0.47902455        TRUE
 #> 6 0.466393497     0.19566983       0.7415215 0.43217126        TRUE
+
+# All four objectives are ratings where higher is better
+main_df <- add_pareto_emoa_column(main_df, objectives, maximise = TRUE)
 ```

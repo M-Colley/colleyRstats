@@ -7,6 +7,7 @@
 <url><loc>https://m-colley.github.io/colleyRstats/articles/getting-started.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/articles/index.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/articles/overleaf.html</loc></url>
+<url><loc>https://m-colley.github.io/colleyRstats/articles/scoring-questionnaires.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/authors.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/index.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/news/index.html</loc></url>
@@ -18,16 +19,19 @@
 <url><loc>https://m-colley.github.io/colleyRstats/reference/checkAssumptionsForAnova.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/check_homogeneity_by_group.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/check_normality_by_group.html</loc></url>
+<url><loc>https://m-colley.github.io/colleyRstats/reference/check_questionnaire.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/cite_methods.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/classify_outcome.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/colleyRstats_setup.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/colley_theme.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/debug_contr_error.html</loc></url>
+<url><loc>https://m-colley.github.io/colleyRstats/reference/define_questionnaire.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/define_result_macro.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/emit_name_macros.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/emit_overleaf.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/expand_latex_macros.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/figure_base_size.html</loc></url>
+<url><loc>https://m-colley.github.io/colleyRstats/reference/fit_recommended.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/generateEffectPlot.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/generateMoboPlot.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/generateMoboPlot2.html</loc></url>
@@ -39,12 +43,14 @@
 <url><loc>https://m-colley.github.io/colleyRstats/reference/latex_escape.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/latex_preamble.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/latexify_report.html</loc></url>
+<url><loc>https://m-colley.github.io/colleyRstats/reference/list_questionnaires.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/n_fun.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/na.zero.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/normalize.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/not_empty.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/not_in.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/pathPrep.html</loc></url>
+<url><loc>https://m-colley.github.io/colleyRstats/reference/questionnaire_items.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/rFromNPAV.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/rFromWilcox.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/rFromWilcoxAdjusted.html</loc></url>
@@ -65,8 +71,13 @@
 <url><loc>https://m-colley.github.io/colleyRstats/reference/reportggstatsplot.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/reportggstatsplotPostHoc.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/reshape_data.html</loc></url>
+<url><loc>https://m-colley.github.io/colleyRstats/reference/reverse_code.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/save_paper_figure.html</loc></url>
+<url><loc>https://m-colley.github.io/colleyRstats/reference/score_questionnaire.html</loc></url>
+<url><loc>https://m-colley.github.io/colleyRstats/reference/score_reliability.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/stat_sum_df.html</loc></url>
+<url><loc>https://m-colley.github.io/colleyRstats/reference/summarize_sickness.html</loc></url>
 <url><loc>https://m-colley.github.io/colleyRstats/reference/use_colleyrstats_sty.html</loc></url>
+<url><loc>https://m-colley.github.io/colleyRstats/reference/use_study_project.html</loc></url>
 </urlset>
 

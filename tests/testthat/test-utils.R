@@ -439,3 +439,113 @@ test_that(".indefinite_article matches how the following word is read", {
   expect_equal(.indefinite_article("Games-Howell"), "A")
   expect_equal(.indefinite_article(""), "A")
 })
+# -------------------------------------------------------------------------
+# Pareto front direction
+# -------------------------------------------------------------------------
+
+# Four points in two objectives. Maximising both, (1,3), (2,2) and (3,1) are all
+# non-dominated and (2,1) is dominated. Minimising both, the answer is the
+# mirror image: (1,3) and (2,1) survive.
+pareto_df <- function() {
+  data.frame(a = c(1, 2, 3, 2), b = c(3, 2, 1, 1))
+}
+
+
+test_that("add_pareto_moocore_column minimises by default", {
+  skip_if_not_installed("moocore")
+
+  out <- add_pareto_moocore_column(pareto_df(), c("a", "b"))
+
+  expect_equal(out$PARETO_MOOCORE, c(TRUE, FALSE, FALSE, TRUE))
+})
+
+
+test_that("add_pareto_moocore_column can maximise", {
+  skip_if_not_installed("moocore")
+
+  out <- add_pareto_moocore_column(pareto_df(), c("a", "b"), maximise = TRUE)
+
+  expect_equal(out$PARETO_MOOCORE, c(TRUE, TRUE, TRUE, FALSE))
+})
+
+
+test_that("add_pareto_emoa_column can maximise, and agrees with moocore", {
+  skip_if_not_installed("emoa")
+  skip_if_not_installed("moocore")
+  d <- pareto_df()
+
+  expect_equal(
+    add_pareto_emoa_column(d, c("a", "b"))$PARETO_EMOA,
+    c(TRUE, FALSE, FALSE, TRUE)
+  )
+  expect_equal(
+    add_pareto_emoa_column(d, c("a", "b"), maximise = TRUE)$PARETO_EMOA,
+    c(TRUE, TRUE, TRUE, FALSE)
+  )
+  # The two backends must not disagree about the same front.
+  set.seed(9)
+  big <- data.frame(x = runif(40), y = runif(40), z = runif(40))
+  objs <- c("x", "y", "z")
+  for (m in list(FALSE, TRUE, c(TRUE, FALSE, TRUE))) {
+    expect_equal(
+      add_pareto_emoa_column(big, objs, maximise = m)$PARETO_EMOA,
+      add_pareto_moocore_column(big, objs, maximise = m)$PARETO_MOOCORE,
+      info = paste("maximise =", paste(m, collapse = ","))
+    )
+  }
+})
+
+
+test_that("a per-objective direction is honoured", {
+  skip_if_not_installed("moocore")
+  d <- pareto_df()
+
+  # Maximise a, minimise b: only (3,1) is non-dominated.
+  out <- add_pareto_moocore_column(d, c("a", "b"), maximise = c(TRUE, FALSE))
+
+  expect_equal(out$PARETO_MOOCORE, c(FALSE, FALSE, TRUE, FALSE))
+})
+
+
+test_that("passing negated columns is equivalent to maximise = TRUE", {
+  skip_if_not_installed("moocore")
+  # The workaround this argument replaces must give the same answer.
+  d <- pareto_df()
+  negated <- data.frame(a = -d$a, b = -d$b)
+
+  expect_equal(
+    add_pareto_moocore_column(d, c("a", "b"), maximise = TRUE)$PARETO_MOOCORE,
+    add_pareto_moocore_column(negated, c("a", "b"))$PARETO_MOOCORE
+  )
+})
+
+
+test_that("a wrong-length maximise is rejected rather than silently truncated", {
+  skip_if_not_installed("moocore")
+  # moocore::is_nondominated() itself accepts three flags for two objectives and
+  # quietly uses the first two, which would produce a plausible, wrong front.
+  d <- pareto_df()
+
+  expect_error(
+    add_pareto_moocore_column(d, c("a", "b"), maximise = c(TRUE, FALSE, TRUE)),
+    "3 entries but there are 2 objectives"
+  )
+  expect_error(
+    add_pareto_emoa_column(d, c("a", "b"), maximise = c(TRUE, FALSE, TRUE)),
+    "3 entries but there are 2 objectives"
+  )
+  expect_error(add_pareto_moocore_column(d, c("a", "b"), maximise = NA), "no NAs")
+  expect_error(add_pareto_moocore_column(d, c("a", "b"), maximise = "yes"), "must be TRUE or FALSE")
+})
+
+
+test_that("the single-row shortcut still validates the direction", {
+  skip_if_not_installed("moocore")
+  one <- data.frame(a = 1, b = 2)
+
+  expect_error(
+    add_pareto_moocore_column(one, c("a", "b"), maximise = c(TRUE, FALSE, TRUE)),
+    "3 entries"
+  )
+  expect_true(add_pareto_moocore_column(one, c("a", "b"), maximise = TRUE)$PARETO_MOOCORE)
+})

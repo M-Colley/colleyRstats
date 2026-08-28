@@ -4,12 +4,21 @@
 \alias{add_pareto_moocore_column}
 \title{Add \code{PARETO_MOOCORE} Column to a Data Frame}
 \usage{
-add_pareto_moocore_column(data, objectives)
+add_pareto_moocore_column(data, objectives, maximise = FALSE)
 }
 \arguments{
 \item{data}{A data frame containing the data, including the objective columns.}
 
 \item{objectives}{A character vector specifying the names of the objective columns in \code{data}. These columns should be numeric and will be used to calculate the Pareto front.}
+
+\item{maximise}{Direction of optimisation, passed through to
+\code{moocore::is_nondominated()}. \code{FALSE} (the default) treats every
+objective as one to be \emph{minimised}. Pass \code{TRUE} when larger is
+better for every objective -- as it is for trust, acceptance, perceived
+safety and most other rating-scale outcomes -- or a logical vector with one
+entry per objective for a mixed problem, e.g. \code{c(TRUE, TRUE, FALSE)}
+to maximise the first two and minimise the third. This removes the need to
+pass negated copies of your own columns.}
 }
 \value{
 A data frame with the same columns as \code{data}, along with an additional column, \code{PARETO_MOOCORE}, which is \code{TRUE} for rows that are on the Pareto front and \code{FALSE} otherwise.
@@ -29,7 +38,22 @@ main_df <- data.frame(
   Comfort = runif(10)
 )
 
-# Add the Pareto front column
+# Add the Pareto front column (minimising, the default)
 main_df <- add_pareto_moocore_column(data = main_df, objectives)
 head(main_df)
+
+# All four objectives are ratings where higher is better
+main_df <- add_pareto_moocore_column(main_df, objectives, maximise = TRUE)
+
+# Mixed: maximise the ratings, minimise a workload score
+main_df$workload <- runif(10)
+main_df <- add_pareto_moocore_column(
+  main_df,
+  c(objectives, "workload"),
+  maximise = c(TRUE, TRUE, TRUE, TRUE, FALSE)
+)
+}
+\seealso{
+\code{\link[=add_pareto_emoa_column]{add_pareto_emoa_column()}}, which answers the same question via
+\pkg{emoa} and accepts the same \code{maximise} argument.
 }

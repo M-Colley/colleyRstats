@@ -1,0 +1,290 @@
+---
+title: "Scoring questionnaires"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Scoring questionnaires}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+```{r setup}
+library(colleyRstats)
+```
+
+Turning raw item columns into subscale scores is the most repeated step of a
+user study, and the one most able to be wrong without anything looking wrong.
+Every project re-implements the same reverse-coding and averaging by hand, and a
+single mis-numbered item changes every result downstream without producing a
+single error.
+
+`score_questionnaire()` applies a published instrument's own scoring key.
+
+## What is available
+
+```{r}
+list_questionnaires()[, c("key", "name", "n_items", "n_subscales", "scale")]
+```
+
+## Scoring
+
+Point it at the item columns. A prefix is usually enough:
+
+```{r}
+set.seed(1)
+study <- data.frame(participant = factor(1:8))
+study[paste0("sus_", 1:10)] <- lapply(1:10, function(i) sample(1:5, 8, TRUE))
+
+score_questionnaire(study, "sus", prefix = "sus_")
+```
+
+The SUS score is the sum of the ten recoded items times 2.5, which puts it on
+0--100. That is a percentage of the maximum, **not** a percentile: the mean SUS
+across published studies is about 68, so 68 is average rather than poor.
+
+Every instrument's notes say this sort of thing, and
+`questionnaire_items()` prints them:
+
+```{r}
+questionnaire_items("ueq_s")
+```
+
+### Declaring the response range
+
+Instruments are administered on whatever scale the survey tool offered. Say
+which one you used and the responses are rescaled onto the instrument's own
+range before scoring:
+
+```{r}
+tlx <- data.frame(
+  mental = c(14, 3), physical = c(2, 1), temporal = c(11, 4),
+  performance = c(6, 2), effort = c(13, 5), frustration = c(9, 1)
+)
+
+# The 21-point NASA-TLX sheet, scored onto the conventional 0-100
+score_questionnaire(tlx, "nasa_tlx", scale = c(1, 21))
+```
+
+Responses outside the range you declare are an error rather than a silent
+rescale, which is what stops a 1--7 export from being scored as if it were the
+0--100 TLX.
+
+### Adding scores to the data
+
+```{r}
+scored <- score_questionnaire(study, "sus", prefix = "sus_", append = TRUE)
+names(scored)[1:3]
+scored$SUS
+```
+
+## Verify the mapping before you trust the scores
+
+This is the important part.
+
+Item numbers, item order and item polarity belong to the sheet a study actually
+administered, not to the instrument in the abstract. Survey tools renumber
+items, translations reorder them, short forms drop them from the middle, and
+semantic differentials get printed with the poles the other way round. This
+package applies each instrument's *published* key — the right default, and still
+only a default. `score_questionnaire()` maps your columns onto the instrument's
+items *positionally*, so a shifted export produces scores that look entirely
+reasonable and are wrong.
+
+Nothing errors when that happens, which is why R says it out loud: the first
+time each distinct mapping is scored in a session, the mapping and a caution
+print together. Read them rather than tuning them out, and double-check any
+number before it reaches a paper.
+
+Run this once per instrument, per study, and read what it prints:
+
+```{r}
+invisible(check_questionnaire(study, "sus", prefix = "sus_"))
+```
+
+It shows which column supplies which item, which subscale that item loads on,
+whether it is reverse-coded, and the observed range of each column -- so a
+column of all-3s where you expected variation, or a 1--7 export where the
+instrument expects 1--5, is visible immediately.
+
+If your survey stored a pair the other way round, `reverse_items` toggles it.
+Naming an item that the key already reverses *un*-reverses it:
+
+```{r}
+# A survey that anchored NASA-TLX performance "Good" at the high end
+scores <- score_questionnaire(tlx, "nasa_tlx",
+  scale = c(1, 21),
+  reverse_items = "performance"
+)
+scores$Performance
+```
+
+A named `items` argument avoids positional mapping altogether, and is the safer
+choice for an export you did not lay out yourself:
+
+```{r}
+score_questionnaire(
+  tlx, "nasa_tlx",
+  scale = c(1, 21),
+  items = c(
+    mental = "mental", physical = "physical", temporal = "temporal",
+    performance = "performance", effort = "effort", frustration = "frustration"
+  )
+)$RTLX
+```
+
+## Incomplete responses
+
+By default a subscale is scored only if every one of its items was answered,
+and is `NA` otherwise. Nothing is imputed silently.
+
+```{r}
+gappy <- study
+gappy$sus_3[1] <- NA
+
+score_questionnaire(gappy, "sus", prefix = "sus_")$SUS[1]
+
+# Score responses that are at least 80% complete
+score_questionnaire(gappy, "sus", prefix = "sus_", min_valid = 0.8)$SUS[1]
+```
+
+With `min_valid` relaxed, a subscale is the mean of the items present, and a
+sum-scored instrument such as the SUS is scaled up proportionally so it stays on
+its published 0--100 range.
+
+## Internal consistency
+
+`score_reliability()` computes Cronbach's alpha on the same recoded matrix that
+is aggregated, so reverse-coded items are already flipped:
+
+```{r}
+score_reliability(study, "sus", prefix = "sus_")
+```
+
+Because the reversal has already happened, a negative alpha means a real
+problem -- the items of that subscale do not point the same way -- rather than a
+forgotten flip. It warns when one appears.
+
+Do not read the values above as anything: the example responses are random, so
+`Usability` is near zero as it should be, while the two-item `Learnability`
+looks respectable purely by chance. Eight participants is far too few to
+estimate alpha at all, which is itself worth remembering -- `n_complete` is
+reported next to it for that reason.
+
+## Your own instruments
+
+`define_questionnaire()` registers one, after which it behaves exactly like a
+built-in. Put the call in a project's setup script and every analysis in that
+project scores it identically:
+
+```{r}
+define_questionnaire(
+  key = "acceptance",
+  name = "Van der Laan acceptance scale",
+  reference = "Van der Laan, Heino & De Waard (1997), Transp. Res. C 5(1)",
+  scale = c(-2, 2),
+  label = c(
+    "useful - useless", "pleasant - unpleasant", "bad - good",
+    "nice - annoying", "effective - superfluous", "irritating - likeable",
+    "assisting - worthless", "undesirable - desirable",
+    "raising alertness - sleep-inducing"
+  ),
+  subscale = rep(c("Usefulness", "Satisfying"), length.out = 9),
+  reverse = c(1, 2, 4, 5, 7, 9),
+  higher = "better"
+)
+
+vdl <- as.data.frame(matrix(c(-2, 2, -2, 2, -2, 2, -2, 2, -2), nrow = 1))
+names(vdl) <- paste0("item", 1:9)
+
+score_questionnaire(vdl, "acceptance")
+```
+
+## Sickness over time
+
+FMS and MISC are single items sampled repeatedly during exposure, so the
+analysis lives in the time course rather than in any one measurement.
+`summarize_sickness()` produces the per-participant measures those studies
+report:
+
+```{r}
+ratings <- data.frame(
+  participant = rep(c("p1", "p2"), each = 5),
+  minute = rep(0:4, 2),
+  fms = c(0, 1, 3, 6, 8, 0, 0, 1, 1, 2)
+)
+
+summarize_sickness(ratings,
+  value = "fms", id = "participant",
+  time = "minute", threshold = 5
+)
+```
+
+`auc` is the trapezoidal area under the rating curve and `auc_rate` is that
+divided by the observed duration, i.e. the time-weighted mean rating -- which is
+comparable across participants who were exposed for different lengths of time.
+
+Note that MISC is *ordinal* and unevenly spaced: the step from 6 (nausea) to 10
+(vomiting) is not four times the step from 0 to 1. Analyse it with an ordinal
+model rather than by taking means.
+
+You have to say so, though. A 0--10 MISC column has more distinct values than
+`classify_outcome()`'s `ordinal_max_levels` of 7, so left to itself it is taken
+for a count and `recommend_test()` proposes a Poisson GLMM:
+
+```{r}
+misc <- data.frame(misc = c(0, 1, 3, 6, 10, 2, 4, 8))
+classify_outcome(score_questionnaire(misc, "misc")$MISC)
+```
+
+Pass `outcome_type = "ordinal"` to `fit_recommended()`, or raise
+`ordinal_max_levels` to 11.
+
+## Onward
+
+`fit_recommended()` takes the scored data and fits the model each outcome calls
+for. Here is the whole path, from raw items to a manuscript sentence:
+
+```{r}
+set.seed(7)
+trial <- expand.grid(
+  participant = factor(1:12),
+  condition = factor(c("baseline", "ambient", "explicit"))
+)
+effect <- c(baseline = 0, ambient = 0.6, explicit = 1.2)[trial$condition]
+# Participants differ from one another too, which is what the random intercept
+# of the mixed model is there to absorb.
+person <- rnorm(12, 0, 0.6)[as.integer(trial$participant)]
+for (i in 1:10) {
+  raw <- 3 + effect + person + rnorm(nrow(trial), 0, 0.5)
+  if (i %% 2 == 0) raw <- 6 - raw   # the even SUS items are negatively worded
+  trial[[paste0("sus_", i)]] <- pmin(pmax(round(raw), 1), 5)
+}
+
+scored <- score_questionnaire(trial, "sus", prefix = "sus_", append = TRUE)
+
+fit <- fit_recommended(
+  scored,
+  outcome = "SUS",
+  predictors = "condition",
+  cluster = "participant",
+  verbose = FALSE
+)
+
+fit$recommendation$recommendation
+fit$text
+```
+
+The sentence is LaTeX; `expand_latex_macros()` renders it as plain text if you
+want to read it here rather than paste it into a manuscript.
+
+Watch the classification when an outcome stays whole-numbered — a raw NASA-TLX
+subscale or a MISC rating is taken for a count unless you say
+`outcome_type = "continuous"` or `"ordinal"`. SUS and RTLX are fractional, so
+they classify as continuous on their own.
+
+`use_study_project()` scaffolds a whole analysis around this -- scoring, models,
+figures, and the generated LaTeX a manuscript reads -- as a `targets` pipeline,
+and writes those `outcome_type` declarations for you.

@@ -1,4 +1,44 @@
-# colleyRstats 0.1.6 (development)
+# colleyRstats 0.2.0
+
+## NEW FEATURES
+
+### Questionnaire scoring
+
+- New `score_questionnaire()` applies a published instrument's own scoring key to raw item columns: reverse-coding, the recoding it prescribes (centring a semantic differential to -3..+3, zero-basing the SUS), its subscale structure, and its published weights or multipliers. Ten instruments ship: **NASA-TLX** (raw/RTLX), **SUS** with the Lewis & Sauro usability/learnability subscales, **UEQ-S**, the full 26-item **UEQ**, **TiA** (Körber), **AttrakDiff 2**, **IPQ**, **SSQ** (with the Kennedy et al. weights and its overlapping subscales), **FMS** and **MISC**. The scoring is checked against published reference values in the test suite: the SUS anchors (100/0/50), the SSQ weighting (21 raw on each subscale gives 200.34/159.18/292.32, total 235.62), the TLX rescale from any sheet onto 0-100, and the UEQ's balanced polarity, where answering the positive pole of all 26 pairs must give +3 on all six scales.
+- `scale =` declares the response range a survey actually used, so a 21-point TLX sheet, a 20-point slider and a 0-100 slider all score onto the conventional 0-100. Responses outside the declared range are an error, not a silent rescale.
+- `min_valid =` governs incomplete responses. The default scores only complete subscales and returns `NA` otherwise -- no silent imputation. Relaxing it scales a sum-scored instrument up proportionally so it stays on its published range.
+- A standing **caution prints in the console**, not only in the help pages: item numbers, order and polarity depend on how a questionnaire was administered, this package applies the *published* key, and a mismatch produces plausible numbers rather than an error -- so any figure must be double-checked before it goes into a paper. It appears from `score_questionnaire()` (once per distinct mapping per session, alongside the mapping itself), and from `check_questionnaire()`, `questionnaire_items()` and `score_reliability()` every time. The wording lives in one place, so the console text and the help pages cannot drift apart. Silence the repeated note in a pipeline with `options(colleyRstats.quiet_questionnaires = TRUE)`; that quiets the note, not the errors.
+- New `check_questionnaire()` prints the mapping that will be used -- which column supplies which item, its subscale, whether it is reverse-coded, and the observed range of each column -- along with the instrument's scoring notes. This is the guard against the failure mode that motivates the whole feature: item order and polarity belong to the sheet a study actually administered, so a shifted or re-ordered survey export scores silently, plausibly, and wrongly. `score_questionnaire()` also attaches the mapping as an attribute and announces it once per session.
+- New `score_reliability()` gives Cronbach's alpha (and McDonald's omega where 'psych' is installed) per subscale, computed on the same recoded matrix that is aggregated -- so a negative alpha means a real problem rather than a forgotten reversal, and it warns when one appears.
+- New `define_questionnaire()` registers a lab-specific, translated or shortened instrument, which then behaves exactly like a built-in one. Put it in a project's setup script and every analysis in that project scores it identically.
+- New `reverse_code(x, min, max)` flips a response scale using the *possible* range rather than the observed one, and warns about out-of-range values. Taking the endpoints from the data is the classic reverse-coding bug: if nobody picked the lowest option, every flipped response is off by a point.
+- New `summarize_sickness()` reduces a repeated single-item sickness rating (FMS, MISC) to the measures those studies actually analyse: peak, mean, final value, trapezoidal area under the curve, the time-weighted mean, and time to a threshold.
+- New `list_questionnaires()` and `questionnaire_items()` describe the registry and one instrument's items.
+
+### Fitting the recommended model
+
+- New `fit_recommended()` carries `recommend_test()` through to a fitted model. It coerces the outcome and predictors into the classes the model family needs (announcing each coercion, since turning a numeric rating into an ordered factor changes what is estimated), builds the random-effect term for a clustered design, fits, computes pairwise post-hoc contrasts with the machinery that matches the fit, and produces the manuscript sentence via this package's reporter for that family. It covers cumulative link models with and without random effects, linear and generalized linear mixed models, GLMs, the aligned rank transform, nparLD, multinomial regression, and the classical ANOVA / Welch / Kruskal-Wallis / Wilcoxon tests.
+- The point is that the test justified in the methods section and the model actually run come from one call on one data frame, so they cannot drift apart -- the failure mode of a workflow where `recommend_test()` prints advice that is then re-typed by hand.
+- `outcome_type =` overrides the automatic classification. This matters more than it sounds: an outcome whose scores stay whole numbers is taken for a count and fitted with a Poisson model. That catches the six raw NASA-TLX subscales, a single MISC rating, and item-level ratings; SUS and RTLX escape it only because their multipliers and means make them fractional.
+
+### Pareto fronts in the direction you actually optimise
+
+- `add_pareto_moocore_column()` and `add_pareto_emoa_column()` gain `maximise`. Both minimised unconditionally: `moocore::is_nondominated()` was called with its `maximise = FALSE` default and `emoa::is_dominated()` has no direction argument at all. Since trust, acceptance, perceived safety and most other rating-scale objectives are *maximised*, using them meant passing negated copies of your own columns and remembering to negate them everywhere else too. Pass `maximise = TRUE`, or a logical vector with one entry per objective for a mixed problem (`c(TRUE, TRUE, FALSE)` to maximise two and minimise a workload score). The default stays `FALSE`, so existing results are unchanged.
+- The length of `maximise` is validated. `moocore::is_nondominated()` accepts three flags for two objectives and quietly uses the first two, which would produce a plausible, wrong front; passing the wrong number here is an error naming the objectives instead.
+- A test asserts the two backends agree on the same front under every direction setting, and that `maximise = TRUE` matches the negate-your-columns workaround it replaces.
+
+### Starting a study
+
+- New `use_study_project()` scaffolds a study analysis as a reproducible pipeline: a 'targets' pipeline that recomputes only what changed, R scripts split along the stages every user study goes through (read, clean, score, model, plot), a Quarto report, a directory the generated LaTeX lands in so a manuscript `\input{}`s the numbers instead of having them re-typed, `renv` for version pinning, and a `.gitignore` that keeps generated output out of the repository.
+- It ships synthetic example data with a column per item of every instrument named, so a freshly scaffolded project runs end to end before any real data exists. The generated `OUTCOMES` and `OUTCOME_TYPES` vectors are derived by scoring a dummy row through the real code path, so the scaffold cannot name a column that `score_questionnaire()` does not produce.
+- It never overwrites an existing file unless asked, so it can be re-run on a live project to pick up new pieces.
+
+## DOCUMENTATION
+
+- New `vignette("scoring-questionnaires")` covers the scoring key, verifying a mapping before trusting it, incomplete responses, reliability, registering your own instrument, and the sickness time course.
+- The `pkgdown` reference index gains **Questionnaires** and **Starting a study** sections.
+
+# colleyRstats 0.1.6
 
 ## BUG FIXES
 

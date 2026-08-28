@@ -4,12 +4,22 @@
 \alias{add_pareto_emoa_column}
 \title{Add \code{PARETO_EMOA} Column to a Data Frame}
 \usage{
-add_pareto_emoa_column(data, objectives)
+add_pareto_emoa_column(data, objectives, maximise = FALSE)
 }
 \arguments{
 \item{data}{A data frame containing the data, including the objective columns.}
 
 \item{objectives}{A character vector specifying the names of the objective columns in \code{data}. These columns should be numeric and will be used to calculate the Pareto front.}
+
+\item{maximise}{Direction of optimisation. \code{FALSE} (the default) treats
+every objective as one to be \emph{minimised}, which is what
+\pkg{emoa} does natively. Pass \code{TRUE} when larger is better for every
+objective -- as it is for trust, acceptance, perceived safety and most
+other rating-scale outcomes -- or a logical vector with one entry per
+objective for a mixed problem, e.g.
+\code{c(TRUE, TRUE, FALSE)} to maximise the first two and minimise the
+third. Objectives flagged \code{TRUE} are negated internally, so you no
+longer need to pass negated copies of your own columns.}
 }
 \value{
 A data frame with the same columns as \code{data}, along with an additional column, \code{PARETO_EMOA}, which is \code{TRUE} for rows that are on the Pareto front and \code{FALSE} otherwise.
@@ -29,7 +39,14 @@ main_df <- data.frame(
   Comfort = runif(10)
 )
 
-# Add the Pareto front column
+# Add the Pareto front column (minimising, the default)
 main_df <- add_pareto_emoa_column(data = main_df, objectives)
 head(main_df)
+
+# All four objectives are ratings where higher is better
+main_df <- add_pareto_emoa_column(main_df, objectives, maximise = TRUE)
+}
+\seealso{
+\code{\link[=add_pareto_moocore_column]{add_pareto_moocore_column()}}, which answers the same question via
+\pkg{moocore} and accepts the same \code{maximise} argument.
 }

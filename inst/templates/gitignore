@@ -1,0 +1,30 @@
+# R
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# targets: the store is a cache, not a result. It is rebuilt by tar_make(), and
+# committing it makes every run show up as a large binary diff.
+_targets/
+
+# renv keeps the lockfile (which pins the versions) but not the library itself.
+renv/library/
+renv/local/
+renv/staging/
+
+# Generated output. Everything here is reproduced by the pipeline; the raw data
+# and the code are what a reader needs.
+output/
+paper/generated/
+report/*.html
+report/*_files/
+
+# Raw data: uncomment if it is personal or otherwise not shareable. Keep the
+# directory itself tracked so the pipeline's shape stays visible.
+# data-raw/*
+# !data-raw/README.md
+
+.DS_Store
+Thumbs.db

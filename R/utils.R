@@ -982,15 +982,70 @@ reshape_data <- function(input_filepath, sheetName = "Results", marker = "videoi
 }
 
 
+# Internal: validate the `maximise` argument of the Pareto helpers and expand it
+# to one entry per objective.
+#
+# The length check is deliberately strict. moocore::is_nondominated() does NOT
+# reject a `maximise` of the wrong length -- given three flags for two
+# objectives it silently uses the first two -- so a mis-specified direction
+# would quietly produce a plausible, wrong front. Catch it here instead.
+.pareto_maximise <- function(maximise, objectives) {
+  if (!is.logical(maximise) || anyNA(maximise)) {
+    stop(
+      "`maximise` must be TRUE or FALSE, or a logical vector with one entry ",
+      "per objective (no NAs).",
+      call. = FALSE
+    )
+  }
+  n <- length(objectives)
+  if (length(maximise) == 1L) {
+    return(rep(maximise, n))
+  }
+  if (length(maximise) != n) {
+    stop(
+      "`maximise` has ", length(maximise), " entr",
+      if (length(maximise) == 1) "y" else "ies", " but there ",
+      if (n == 1) "is " else "are ", n, " objective", if (n == 1) "" else "s",
+      " (", paste(objectives, collapse = ", "), "). Give one flag, or one per objective.",
+      call. = FALSE
+    )
+  }
+  maximise
+}
+
+
+# Internal: flip the objectives that are to be maximised, so that a
+# minimisation-only dominance routine answers the maximisation question.
+# Negating a criterion turns "smaller is better" into "larger is better" and
+# leaves the dominance relation otherwise untouched.
+.pareto_orient <- function(objective_data, maximise) {
+  for (j in which(maximise)) {
+    objective_data[[j]] <- -objective_data[[j]]
+  }
+  objective_data
+}
+
+
 #' Add `PARETO_EMOA` Column to a Data Frame
 #'
 #' This function calculates the Pareto front using emoa for a given set of objectives in a data frame and adds a new column, `PARETO_EMOA`, which indicates whether each row in the data frame belongs to the Pareto front.
 #'
 #' @param data A data frame containing the data, including the objective columns.
 #' @param objectives A character vector specifying the names of the objective columns in `data`. These columns should be numeric and will be used to calculate the Pareto front.
+#' @param maximise Direction of optimisation. \code{FALSE} (the default) treats
+#'   every objective as one to be \emph{minimised}, which is what
+#'   \pkg{emoa} does natively. Pass \code{TRUE} when larger is better for every
+#'   objective -- as it is for trust, acceptance, perceived safety and most
+#'   other rating-scale outcomes -- or a logical vector with one entry per
+#'   objective for a mixed problem, e.g.
+#'   \code{c(TRUE, TRUE, FALSE)} to maximise the first two and minimise the
+#'   third. Objectives flagged \code{TRUE} are negated internally, so you no
+#'   longer need to pass negated copies of your own columns.
 #'
 #' @return A data frame with the same columns as `data`, along with an additional column, `PARETO_EMOA`, which is `TRUE` for rows that are on the Pareto front and `FALSE` otherwise.
 #' @export
+#' @seealso [add_pareto_moocore_column()], which answers the same question via
+#'   \pkg{moocore} and accepts the same \code{maximise} argument.
 #'
 #' @examples
 #' # Define objective columns
@@ -1004,10 +1059,13 @@ reshape_data <- function(input_filepath, sheetName = "Results", marker = "videoi
 #'   Comfort = runif(10)
 #' )
 #'
-#' # Add the Pareto front column
+#' # Add the Pareto front column (minimising, the default)
 #' main_df <- add_pareto_emoa_column(data = main_df, objectives)
 #' head(main_df)
-add_pareto_emoa_column <- function(data, objectives) {
+#'
+#' # All four objectives are ratings where higher is better
+#' main_df <- add_pareto_emoa_column(main_df, objectives, maximise = TRUE)
+add_pareto_emoa_column <- function(data, objectives, maximise = FALSE) {
   if (!requireNamespace("emoa", quietly = TRUE)) {
     stop("Package 'emoa' is required for add_pareto_emoa_column(). Please install it.")
   }
@@ -1028,9 +1086,14 @@ add_pareto_emoa_column <- function(data, objectives) {
     )
   }
 
+  maximise <- .pareto_maximise(maximise, objectives)
+  objective_data <- .pareto_orient(objective_data, maximise)
+
   # emoa expects one point per matrix *column* (criteria in rows) and
-  # minimises every criterion. is_dominated() flags each point directly, so no
-  # error-prone float-equality matching against the front is needed.
+  # minimises every criterion; emoa::is_dominated() has no direction argument,
+  # so the maximised objectives were negated above. is_dominated() flags each
+  # point directly, so no error-prone float-equality matching against the front
+  # is needed.
   data$PARETO_EMOA <- !emoa::is_dominated(t(as.matrix(objective_data)))
 
   # Return the updated data frame
@@ -1044,9 +1107,19 @@ add_pareto_emoa_column <- function(data, objectives) {
 #'
 #' @param data A data frame containing the data, including the objective columns.
 #' @param objectives A character vector specifying the names of the objective columns in `data`. These columns should be numeric and will be used to calculate the Pareto front.
+#' @param maximise Direction of optimisation, passed through to
+#'   \code{moocore::is_nondominated()}. \code{FALSE} (the default) treats every
+#'   objective as one to be \emph{minimised}. Pass \code{TRUE} when larger is
+#'   better for every objective -- as it is for trust, acceptance, perceived
+#'   safety and most other rating-scale outcomes -- or a logical vector with one
+#'   entry per objective for a mixed problem, e.g. \code{c(TRUE, TRUE, FALSE)}
+#'   to maximise the first two and minimise the third. This removes the need to
+#'   pass negated copies of your own columns.
 #'
 #' @return A data frame with the same columns as `data`, along with an additional column, `PARETO_MOOCORE`, which is `TRUE` for rows that are on the Pareto front and `FALSE` otherwise.
 #' @export
+#' @seealso [add_pareto_emoa_column()], which answers the same question via
+#'   \pkg{emoa} and accepts the same \code{maximise} argument.
 #'
 #' @examples
 #' # Define objective columns
@@ -1060,10 +1133,21 @@ add_pareto_emoa_column <- function(data, objectives) {
 #'   Comfort = runif(10)
 #' )
 #'
-#' # Add the Pareto front column
+#' # Add the Pareto front column (minimising, the default)
 #' main_df <- add_pareto_moocore_column(data = main_df, objectives)
 #' head(main_df)
-add_pareto_moocore_column <- function(data, objectives) {
+#'
+#' # All four objectives are ratings where higher is better
+#' main_df <- add_pareto_moocore_column(main_df, objectives, maximise = TRUE)
+#'
+#' # Mixed: maximise the ratings, minimise a workload score
+#' main_df$workload <- runif(10)
+#' main_df <- add_pareto_moocore_column(
+#'   main_df,
+#'   c(objectives, "workload"),
+#'   maximise = c(TRUE, TRUE, TRUE, TRUE, FALSE)
+#' )
+add_pareto_moocore_column <- function(data, objectives, maximise = FALSE) {
   if (!requireNamespace("moocore", quietly = TRUE)) {
     stop("Package 'moocore' is required for add_pareto_moocore_column(). Please install it.")
   }
@@ -1084,7 +1168,12 @@ add_pareto_moocore_column <- function(data, objectives) {
     )
   }
 
-  # If there's only one row, mark it as PARETO_EMOA directly
+  # Validate the direction before the single-row shortcut, so a mis-specified
+  # `maximise` is reported for every input rather than only for some.
+  maximise <- .pareto_maximise(maximise, objectives)
+
+  # If there's only one row, it is trivially non-dominated whichever way the
+  # objectives point.
   if (nrow(objective_data) == 1) {
     data$PARETO_MOOCORE <- TRUE
     return(data)
@@ -1092,7 +1181,10 @@ add_pareto_moocore_column <- function(data, objectives) {
 
   # moocore::is_nondominated evaluates points directly based on a row x col matrix.
   # It automatically returns a logical vector matching the row indices.
-  data$PARETO_MOOCORE <- moocore::is_nondominated(as.matrix(objective_data))
+  data$PARETO_MOOCORE <- moocore::is_nondominated(
+    as.matrix(objective_data),
+    maximise = maximise
+  )
 
   # Return the updated data frame
   return(data)

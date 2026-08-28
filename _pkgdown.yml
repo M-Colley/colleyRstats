@@ -29,7 +29,22 @@ reference:
   contents:
   - analyze_and_report
   - report_all
+  - fit_recommended
   - emit_overleaf
+
+- title: Questionnaires
+  desc: >
+    Score the standardised instruments a user study runs on, with each
+    instrument's own published key, and check the mapping before you trust it.
+  contents:
+  - score_questionnaire
+  - check_questionnaire
+  - list_questionnaires
+  - questionnaire_items
+  - define_questionnaire
+  - score_reliability
+  - reverse_code
+  - summarize_sickness
 
 - title: Choosing a test
   desc: >
@@ -121,3 +136,11 @@ reference:
   - not_in
   - not_empty
   - pathPrep
+
+- title: Starting a study
+  desc: >
+    Scaffold the analysis as a reproducible pipeline, so every study in the
+    group has the same shape and re-runs from raw data to manuscript in one
+    call.
+  contents:
+  - use_study_project

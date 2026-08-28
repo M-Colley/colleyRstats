@@ -17,6 +17,9 @@
 The primary goal of this package is to significantly reduce repetitive coding efforts, allowing you to focus on interpreting results. Whether you're dealing with ANOVA assumptions, reporting effect sizes, or creating publication-ready visualizations, `colleyRstats` makes these tasks easier.
 
 ## Key Features
+- **Questionnaire Scoring**: `score_questionnaire()` applies a published instrument's own scoring key -- NASA-TLX, SUS, UEQ / UEQ-S, TiA, AttrakDiff, IPQ, SSQ, FMS, MISC -- and `check_questionnaire()` shows the item mapping before you trust the numbers.
+- **Fit What Is Recommended**: `fit_recommended()` carries `recommend_test()` through to a fitted model, its post-hoc contrasts, and the manuscript sentence, so the test you justify and the model you ran cannot drift apart.
+- **Reproducible Study Projects**: `use_study_project()` scaffolds the whole analysis as a `targets` pipeline with `renv` pinning, a Quarto report, and generated LaTeX the manuscript `\input{}`s.
 - **Automated Assumption Checking**: For ANOVA models, automatically verify normality and homogeneity of variance.
 - **Enhanced `ggstatsplot` Wrappers**: Automatically switch between parametric and non-parametric versions of tests based on the data's characteristics.
 - **Principled Test Selection**: `recommend_test()` inspects your data (scale, clustering, assumptions) and recommends the matching model -- including mixed models -- with a ready-to-edit fit call and methods sentence.
@@ -100,6 +103,119 @@ rest of your `library()` calls has less to work with. See
 > rest -- are superseded but remain fully supported and are not going away, so
 > existing scripts keep working unchanged.
 > Both names refer to the same function object and share one help page.
+
+### `score_questionnaire`
+
+Applies a published questionnaire's own scoring key to raw item columns:
+reverse-coding, the recoding it prescribes (centring a semantic differential to
+-3..+3, zero-basing the SUS), its subscale structure, and its published weights.
+
+```r
+score_questionnaire(study, "sus", prefix = "sus_")
+#>    SUS Usability Learnability
+#> 1 42.5    34.375         75.0
+#> 2 40.0    40.625         37.5
+#> 3 55.0    59.375         37.5
+
+# Any sheet, scored onto the range the instrument is reported on
+score_questionnaire(tlx, "nasa_tlx", scale = c(1, 21))
+#>   Mental_Demand Physical_Demand Temporal_Demand Performance Effort Frustration     RTLX
+#> 1            65               5              50          25     60          40 40.83333
+```
+
+Ten instruments ship: NASA-TLX (raw), SUS, UEQ and UEQ-S, TiA, AttrakDiff 2,
+IPQ, SSQ, FMS, MISC. `list_questionnaires()` lists them,
+`questionnaire_items()` shows one instrument's items and scoring notes, and
+`define_questionnaire()` registers your own.
+
+**Verify the mapping before you trust the scores.** Item numbers, order and
+polarity belong to the sheet your participants actually saw — survey tools
+renumber items, translations reorder them, short forms drop them. This package
+applies the *published* key, so a shifted or re-ordered export scores silently,
+plausibly, and wrongly. R says so too: a caution prints alongside the mapping
+the first time each instrument is scored in a session. Read it, and check:
+
+```r
+check_questionnaire(study, "sus", prefix = "sus_")
+#> System Usability Scale (SUS) -- Brooke (1996); Lewis & Sauro (2009), HCII
+#> Assumed response range: 1-5 (the instrument's own; pass `scale` if your survey differed)
+#>
+#> Item mapping (verify against the survey your participants saw):
+#>  item  code column     subscale reverse observed_min observed_max n_missing
+#>     1  sus1  sus_1    Usability   FALSE            1            4         0
+#>     2  sus2  sus_2    Usability    TRUE            2            5         0
+#>     3  sus3  sus_3    Usability   FALSE            2            3         0
+#>     4  sus4  sus_4 Learnability    TRUE            1            5         0
+#>   ...
+```
+
+Related: `score_reliability()` for Cronbach's alpha and McDonald's omega per
+subscale, computed on the reverse-coded items so a negative alpha means a real
+problem; `reverse_code()`; and `summarize_sickness()`, which reduces a repeated
+FMS or MISC rating to peak, mean, final value, area under the curve and time to
+threshold. See `vignette("scoring-questionnaires")`.
+
+### `fit_recommended`
+
+`recommend_test()` stops at advice. `fit_recommended()` carries it through:
+coerces the outcome into the class the model family needs, builds the
+random-effect term, fits, computes the post-hoc contrasts with the machinery
+that matches the fit, and produces the manuscript sentence.
+
+```r
+fit <- fit_recommended(data, outcome = "rating", predictors = "condition", cluster = "participant")
+#> Coerced `rating` to an ordered factor with 4 levels (2 < 3 < 4 < ...).
+#> Fitting: Cumulative Link Mixed Model (CLMM) via ordinal::clmm().
+
+fit$text
+#> A cumulative link mixed model was fitted for rating.
+#> The effect of \textit{conditionB} on rating was not significant
+#>   ($OR = 2.83$, 95\% CI $[0.92, 8.69]$, $z = 1.81$, \p{0.070}).
+#> The effect of \textit{conditionC} on rating was significant
+#>   ($OR = 21.38$, 95\% CI $[5.36, 85.29]$, $z = 4.34$, \pminor{0.001}).
+
+as.data.frame(fit$contrasts)   # Holm-adjusted pairwise comparisons
+#>  contrast estimate    SE  df z.ratio p.value
+#>  A - B       -1.04 0.573 Inf   -1.81  0.0697
+#>  A - C       -3.06 0.706 Inf   -4.34 <0.0001
+#>  B - C       -2.02 0.640 Inf   -3.16  0.0032
+```
+
+It covers cumulative link models with and without random effects, linear and
+generalized linear mixed models, GLMs, ART, nparLD, multinomial regression, and
+the classical ANOVA / Welch / Kruskal-Wallis / Wilcoxon tests.
+
+One thing worth knowing: an outcome whose scores stay **whole numbers** is taken
+for a count and fitted with a Poisson model. That catches the six raw NASA-TLX
+subscales, a single MISC rating, and item-level ratings — but not SUS or RTLX,
+whose multipliers and means make them fractional and therefore continuous. Pass
+`outcome_type = "continuous"` (or `"ordinal"`) when the classification is wrong;
+`use_study_project()` writes those declarations for you.
+
+### `use_study_project`
+
+Scaffolds a study analysis as a reproducible pipeline rather than a directory of
+scripts, so every study in a group has the same shape:
+
+```r
+use_study_project("~/studies/av-communication", questionnaires = c("nasa_tlx", "sus"))
+```
+
+```
+_targets.R              the pipeline: which stage depends on what
+R/read.R                reads the raw export, and nothing else
+R/prepare.R             cleaning, exclusions, questionnaire scoring
+R/analysis.R            the models, and the LaTeX the manuscript reads
+R/figures.R             figures at publication sizes
+report/report.qmd       a Quarto report of everything the pipeline produced
+paper/generated/        generated .tex snippets -- the manuscript \input{}s these
+data-raw/               the raw export, never edited by hand
+renv.lock               pinned package versions
+```
+
+It ships synthetic example data with a column per item of every instrument you
+name, so `targets::tar_make()` runs end to end before any real data exists.
+Re-running it on a live project adds missing pieces without touching your work.
 
 ### `check_assumptions_anova`
 This function suite checks normality and homogeneity of variance assumptions for ANOVA models. Takes a vector of factors. For details on assumptions checking, refer to [Datanovia](https://www.datanovia.com/learn/biostatistics/anova/anova-in-r#check-assumptions-1).

@@ -1,0 +1,102 @@
+---
+title: "{{name}}"
+subtitle: "Analysis report"
+date: today
+format:
+  html:
+    toc: true
+    code-fold: true
+    embed-resources: true
+execute:
+  echo: false
+  warning: false
+---
+
+```{r setup}
+#| include: false
+library(colleyRstats)
+library(targets)
+library(dplyr)
+library(ggplot2)
+
+colleyRstats_setup(print_citation = FALSE, verbose = FALSE)
+
+# Everything shown below is read from the pipeline store rather than recomputed,
+# so this report cannot disagree with what tar_make() produced. If a chunk errors
+# with "target not found", run targets::tar_make() first.
+#
+# Quarto renders with this file's own directory as the working directory, so the
+# store is named explicitly rather than found by search.
+store <- if (dir.exists("_targets")) "_targets" else "../_targets"
+
+scored <- tar_read(scored, store = store)
+results <- tar_read(results, store = store)
+```
+
+## Design
+
+Instruments: {{instruments}}.
+
+```{r design}
+scored |>
+  count(condition, name = "observations") |>
+  knitr::kable()
+```
+
+## What was run
+
+`fit_recommended()` chose a model per outcome from the measurement scale of that
+outcome, whether the design is clustered, and whether the parametric assumptions
+hold. This is the audit trail for the methods section.
+
+```{r models}
+knitr::kable(results$summary)
+```
+
+## Descriptives
+
+```{r descriptives}
+outcomes <- results$summary$outcome
+
+scored |>
+  tidyr::pivot_longer(dplyr::all_of(outcomes), names_to = "outcome", values_to = "value") |>
+  group_by(outcome, condition) |>
+  summarise(
+    n = sum(!is.na(value)),
+    M = round(mean(value, na.rm = TRUE), 2),
+    SD = round(sd(value, na.rm = TRUE), 2),
+    .groups = "drop"
+  ) |>
+  knitr::kable()
+```
+
+## Results
+
+```{r results}
+#| results: asis
+for (dv in names(results$fits)) {
+  fit <- results$fits[[dv]]
+  cat("\n\n### ", dv, "\n\n", sep = "")
+  cat(expand_latex_macros(paste(fit$sentences, collapse = " ")), "\n\n")
+
+  if (!is.null(fit$contrasts)) {
+    print(knitr::kable(as.data.frame(fit$contrasts), digits = 3))
+  }
+}
+```
+
+## Figures
+
+```{r figures}
+#| fig-width: 7
+#| fig-height: 4
+for (dv in names(results$fits)) {
+  print(plot_within_stats(data = scored, x = "condition", y = dv, ylab = dv))
+}
+```
+
+## Reproducibility
+
+```{r session}
+sessionInfo()
+```

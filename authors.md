@@ -8,7 +8,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/M-Colley/colleyRstats/blob/main/inst/CITATION)
+[`inst/CITATION`](https://github.com/M-Colley/colleyRstats/blob/0.2.0/inst/CITATION)
 
 Colley M (2025). “colleyRstats: Functions to Streamline Statistical
 Analysis and Reporting.” https://github.com/M-Colley/colleyRstats.

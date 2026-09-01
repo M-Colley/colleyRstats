@@ -224,7 +224,7 @@ full-width 7 in):
 
 fig_path <- file.path(tempdir(), "tlx-mental.pdf")
 save_paper_figure(res$plot, fig_path, columns = 2)
-#> Saved figure to '/tmp/RtmpS8oRQK/tlx-mental.pdf' (7 x 4.66666666666667 in, base font 9 pt).
+#> Saved figure to '/tmp/RtmpMex5qA/tlx-mental.pdf' (7 x 4.66666666666667 in, base font 9 pt).
 ```
 
 The LaTeX macros used by the reporters (`\F`, `\p`, `\m`, …) are defined

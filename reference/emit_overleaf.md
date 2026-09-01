@@ -87,6 +87,6 @@ out <- report_all(mtcars, dvs = c("mpg", "disp"), iv = "cyl")
 #> A Dunn post-hoc test found that 8 was significantly higher (\m{353.10}, \sd{67.77}) in terms of \disp compared to 4 (\m{105.14}, \sd{26.87}; \padjminor{0.001}). 
 #> A Dunn post-hoc test found that 8 was significantly higher (\m{353.10}, \sd{67.77}) in terms of \disp compared to 6 (\m{183.31}, \sd{41.56}; \padj{0.028}). 
 emit_overleaf(out, dir = file.path(tempdir(), "paper"), overwrite = TRUE)
-#> Wrote an Overleaf-ready project to '/tmp/RtmpMm14fO/paper' (2 sections; \usepackage{colleyRstats}).
+#> Wrote an Overleaf-ready project to '/tmp/RtmpwO0d95/paper' (2 sections; \usepackage{colleyRstats}).
 # }
 ```

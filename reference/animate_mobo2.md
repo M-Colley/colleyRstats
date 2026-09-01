@@ -119,6 +119,6 @@ if (requireNamespace("av", quietly = TRUE)) {
   )
 }
 #> Rendering 3 frames ...
-#> Saved animation to '/tmp/RtmpMm14fO/mobo.mp4' (3 iterations at 5 fps, 384 x 240 px).
+#> Saved animation to '/tmp/RtmpwO0d95/mobo.mp4' (3 iterations at 5 fps, 384 x 240 px).
 # }
 ```

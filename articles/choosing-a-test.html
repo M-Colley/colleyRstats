@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -234,8 +234,8 @@ multiplicative change in the odds of a higher rating):</p>
 <code class="sourceCode R"><span><span class="va">m_clmm</span> <span class="op">&lt;-</span> <span class="fu">ordinal</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/ordinal/man/clmm.html" class="external-link">clmm</a></span><span class="op">(</span><span class="va">rating</span> <span class="op">~</span> <span class="va">cond</span> <span class="op">+</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">id</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">d</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/reportCLMM.html">reportCLMM</a></span><span class="op">(</span><span class="va">m_clmm</span>, dv <span class="op">=</span> <span class="st">"rating"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; A cumulative link mixed model was fitted for rating.</span></span>
-<span><span class="co">#&gt; The effect of \textit{condB} on rating was significant ($OR = 309.89$, 95\% CI $[26.21, 3663.95]$, $z = 4.55$, \pminor{0.001}).</span></span>
-<span><span class="co">#&gt; The effect of \textit{condC} on rating was significant ($OR = 10085.81$, 95\% CI $[384.38, 264641.13]$, $z = 5.53$, \pminor{0.001}).</span></span></code></pre></div>
+<span><span class="co">#&gt; The effect of \textit{condB} on rating was significant ($OR = 309.89$, 95\% CI $[26.21, 3664.11]$, $z = 4.55$, \pminor{0.001}).</span></span>
+<span><span class="co">#&gt; The effect of \textit{condC} on rating was significant ($OR = 10085.81$, 95\% CI $[384.36, 264659.80]$, $z = 5.53$, \pminor{0.001}).</span></span></code></pre></div>
 <p>For the <strong>binary</strong> recommendation, fit the binomial GLMM
 and report it with <code><a href="../reference/reportGLMM.html">reportGLMM()</a></code>; the binomial family is
 likewise exponentiated to odds ratios, with a <code>z</code>

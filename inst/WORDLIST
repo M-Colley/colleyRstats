@@ -7,11 +7,14 @@ CLMM
 CLMMs
 CMD
 ConditionID
+Conover
+Cramer
 Cronbach's
 DV
 DVs
 Datanovia
 Descriptives
+Durbin
 FFmpeg
 FMS
 FSA
@@ -25,6 +28,7 @@ Initialise
 Kenward
 Körber
 LMM
+Labelling
 Levene
 Levene's
 Likert
@@ -48,6 +52,7 @@ UEQ
 UEQ's
 Welch
 Wilk
+Yuen's
 al
 analyse
 analysed
@@ -77,6 +82,7 @@ emoa
 et
 expander
 exponentiate
+formatter
 ggbetweenstats
 ggplot
 ggpmisc
@@ -92,6 +98,7 @@ glm
 glmmTMB
 https
 inspectable
+labelled
 learnability
 lifecycle
 lm
@@ -114,12 +121,14 @@ nparLD
 npav
 optimisation
 optimise
+oversized
 positionally
 pre
 preprocess
 px
 rFromWilcoxAdjusted
 readxl
+recognise
 recognised
 rlang
 roxygen
@@ -129,11 +138,13 @@ sanitised
 scaffolded
 signif
 standardised
+statsExpressions
 subscale
 subscale's
 subscales
 summarised
 summarises
+tex
 tidyverse
 un
 unclosed

@@ -47,6 +47,17 @@ This function extracts significant pairwise comparisons from a \code{ggstatsplot
 calculates the mean and standard deviation for the groups involved using the raw data,
 and prints LaTeX-formatted sentences reporting the results.
 }
+\details{
+Each sentence names the post-hoc test that produced the comparison and the
+multiplicity correction applied to its p-value, both read from the pairwise
+table \code{ggstatsplot} attaches to the plot (e.g. "A Games-Howell post-hoc test
+(Holm-adjusted) found that ..."). Which test that is depends on the \code{type}
+of the plot and on whether it is between- or within-subjects -- Games-Howell,
+Dunn, Durbin-Conover, Student's t or Yuen's trimmed means -- so it is worth
+reporting rather than assuming. When the plot carries no such information
+(an older \code{ggstatsplot}, or a hand-built table) the sentence falls back to a
+plain "A post-hoc test ...".
+}
 \section{LaTeX Requirements}{
 
 To easily copy and paste the results to your manuscript, the following commands
@@ -58,7 +69,12 @@ commands taking arguments (e.g., \verb{\\m\{value\}}):
   \newcommand{\sd}[1]{\\textit{SD}=#1}
   \newcommand{\padj}[1]{$p_{adj}=#1$}
   \newcommand{\padjminor}[1]{$p_{adj}<#1$}
+  \newcommand{\p}[1]{$p=#1$}
+  \newcommand{\pminor}[1]{$p<#1$}
 }
+
+The last two are used only when the plot reports \code{p.adjust.method = "None"}:
+those p-values are uncorrected and must not be labelled \eqn{p_{adj}}.
 }
 
 \section{Naming}{

@@ -1,3 +1,19 @@
+# colleyRstats 0.2.1
+
+## NEW FEATURES
+
+- `reportggstatsplotPostHoc()` names the post-hoc test it is reporting, and the multiplicity correction that produced the p-value: "A Games-Howell post-hoc test (Holm-adjusted) found that ...". Both are read from the pairwise table 'ggstatsplot' attaches to the plot rather than assumed, because which test ran is not something a reader can infer from the call: `type` and the between/within distinction select between Games-Howell, Dunn, Durbin-Conover, Student's t and Yuen's trimmed means, and 'ggstatsplot' may change its defaults between releases. A sentence that says only "A post-hoc test found that ..." is therefore not reproducible, and the methods section it lands in cannot be written from it (#31).
+- The same naming reaches the branch where nothing is significant, which previously reported "A post-hoc test found no significant differences" whatever had been run.
+- Where the plot reports `p.adjust.method = "None"`, the p-values are uncorrected and are now emitted with `\p{}` / `\pminor{}` instead of `\padj{}` / `\padjminor{}`. Labelling a raw p-value $p_{adj}$ claims a correction that was never applied. Both macros are already part of `latex_preamble()` and the shipped `colleyRstats.sty`, so no preamble changes are needed. A plot whose table carries no `p.adjust.method` column says nothing either way and keeps the `\padj{}` macros it has always used.
+
+## BUG FIXES
+
+- `reportggstatsplot()` opened a Welch ANOVA sentence with "An One-way analysis of means ...". The article was chosen from the first letter of the method name, and "One" is a vowel letter read as a consonant ("wun"). It is now chosen from how the name is spoken, which also covers the "yoo" openings ("a unique ...", "a European ..."). The "un-" prefix is deliberately untouched, so "an unpaired Wilcoxon rank sum test" is unchanged.
+
+## DOCUMENTATION
+
+- Six terms used in the 0.2.0 changelog -- a statistician's name, a package name, a file extension and the package's usual British spelling -- were added to `inst/WORDLIST`, so the spell-check workflow passes again.
+
 # colleyRstats 0.2.0
 
 ## NEW FEATURES

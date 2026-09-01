@@ -439,6 +439,78 @@ test_that(".indefinite_article matches how the following word is read", {
   expect_equal(.indefinite_article("Games-Howell"), "A")
   expect_equal(.indefinite_article(""), "A")
 })
+
+test_that(".indefinite_article hears the consonant in a vowel-initial word", {
+  # "One-way analysis of means" is what statsExpressions calls a Welch ANOVA,
+  # and it used to be reported as "An One-way analysis of means ...".
+  expect_equal(.indefinite_article("One-way analysis of means"), "A")
+  expect_equal(.indefinite_article("One-way analysis of means (not assuming equal variances)"), "A")
+  expect_equal(.indefinite_article("One-sample t-test"), "A")
+  expect_equal(.indefinite_article("once-corrected estimate"), "A")
+  # the other "yoo" openings
+  expect_equal(.indefinite_article("unique variance decomposition"), "A")
+  expect_equal(.indefinite_article("uniform prior"), "A")
+  expect_equal(.indefinite_article("European sample"), "A")
+  expect_equal(.indefinite_article("usual approximation"), "A")
+
+  # the words those rules must not swallow: these really are vowel-sounded
+  expect_equal(.indefinite_article("unpaired Wilcoxon rank sum test"), "An")
+  expect_equal(.indefinite_article("unadjusted p-value"), "An")
+  expect_equal(.indefinite_article("uninformative prior"), "An")
+  expect_equal(.indefinite_article("unidentified model"), "An")
+  expect_equal(.indefinite_article("unimportant difference"), "An")
+  expect_equal(.indefinite_article("onerous assumption"), "An")
+  expect_equal(.indefinite_article("ordinal outcome"), "An")
+})
+
+test_that(".posthoc_test_phrase names the test and its correction", {
+  # the names ggstatsplot actually reports across type/design combinations
+  expect_equal(
+    .posthoc_test_phrase("Games-Howell", "Holm"),
+    "A Games-Howell post-hoc test (Holm-adjusted)"
+  )
+  expect_equal(
+    .posthoc_test_phrase("Dunn", "Bonferroni"),
+    "A Dunn post-hoc test (Bonferroni-adjusted)"
+  )
+  expect_equal(
+    .posthoc_test_phrase("Yuen's trimmed means", "FDR"),
+    "A Yuen's trimmed means post-hoc test (FDR-adjusted)"
+  )
+  expect_equal(
+    .posthoc_test_phrase("Durbin-Conover", "Holm"),
+    "A Durbin-Conover post-hoc test (Holm-adjusted)"
+  )
+  # the article follows how the name is read
+  expect_equal(
+    .posthoc_test_phrase("ANOVA-based", "Holm"),
+    "An ANOVA-based post-hoc test (Holm-adjusted)"
+  )
+})
+
+test_that(".posthoc_test_phrase claims nothing it was not told", {
+  expect_equal(.posthoc_test_phrase(), "A post-hoc test")
+  expect_equal(.posthoc_test_phrase(NA_character_, NA_character_), "A post-hoc test")
+  expect_equal(.posthoc_test_phrase("Dunn"), "A Dunn post-hoc test")
+  # "None" is an answer -- it means no correction, so none is named
+  expect_equal(.posthoc_test_phrase("Dunn", "None"), "A Dunn post-hoc test")
+  expect_equal(.posthoc_test_phrase("Dunn", "none"), "A Dunn post-hoc test")
+  # a factor column must yield its label, not its integer code
+  expect_equal(
+    .posthoc_test_phrase(factor("Dunn", levels = c("Games-Howell", "Dunn"))),
+    "A Dunn post-hoc test"
+  )
+  # test names reach LaTeX, so they are escaped
+  expect_equal(.posthoc_test_phrase("Brunner_Munzel"), "A Brunner\\_Munzel post-hoc test")
+})
+
+test_that(".adjustment_is_none only answers when it was told something", {
+  expect_true(.adjustment_is_none("None"))
+  expect_true(.adjustment_is_none("none"))
+  expect_false(.adjustment_is_none("Holm"))
+  expect_false(.adjustment_is_none(NULL)) # absent column is not a claim
+})
+
 # -------------------------------------------------------------------------
 # Pareto front direction
 # -------------------------------------------------------------------------

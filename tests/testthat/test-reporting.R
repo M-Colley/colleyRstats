@@ -280,6 +280,82 @@ test_that("reportggstatsplotPostHoc names the post-hoc test from the `test` colu
   )
 })
 
+# A pairwise table as `ggstatsplot` attaches it: `test` names the post-hoc
+# test, `p.adjust.method` the multiplicity correction.
+fake_pwc_plot <- function(test = NULL, p.adjust.method = NULL, p.value = 0.01) {
+  pwc <- data.frame(
+    group1 = "A", group2 = "B", p.value = p.value,
+    stringsAsFactors = FALSE
+  )
+  if (!is.null(test)) pwc$test <- test
+  if (!is.null(p.adjust.method)) pwc$p.adjust.method <- p.adjust.method
+  structure(list(dummy = TRUE), pairwise_comparisons_data = pwc)
+}
+
+test_that("reportggstatsplotPostHoc names the multiplicity correction", {
+  df <- data.frame(grp = c("A", "A", "B", "B"), val = c(5, 6, 1, 2))
+
+  expect_message(
+    reportggstatsplotPostHoc(
+      df, fake_pwc_plot("Games-Howell", "Holm"),
+      iv = "grp", dv = "val"
+    ),
+    "Games-Howell post-hoc test \\(Holm-adjusted\\)"
+  )
+  expect_message(
+    reportggstatsplotPostHoc(
+      df, fake_pwc_plot("Dunn", "Bonferroni"),
+      iv = "grp", dv = "val"
+    ),
+    "Dunn post-hoc test \\(Bonferroni-adjusted\\)"
+  )
+})
+
+test_that("reportggstatsplotPostHoc does not label an uncorrected p as p_adj", {
+  # `p.adjust.method = "None"` means the table carries raw p-values; calling
+  # them p_adj in a manuscript claims a correction that was never applied.
+  df <- data.frame(grp = c("A", "A", "B", "B"), val = c(5, 6, 1, 2))
+
+  result <- suppressMessages(
+    reportggstatsplotPostHoc(
+      df, fake_pwc_plot("Games-Howell", "None"),
+      iv = "grp", dv = "val"
+    )
+  )
+
+  expect_match(result, "\\\\p\\{")
+  expect_false(grepl("padj", result, fixed = TRUE))
+  # nothing to name, so no correction parenthetical either
+  expect_false(grepl("adjusted", result, fixed = TRUE))
+})
+
+test_that("reportggstatsplotPostHoc names the test when nothing is significant", {
+  # This branch used to say "A post-hoc test found no significant differences"
+  # regardless of which test had actually been run.
+  df <- data.frame(grp = c("A", "A", "B", "B"), val = c(5, 6, 1, 2))
+
+  expect_message(
+    reportggstatsplotPostHoc(
+      df, fake_pwc_plot("Dunn", "Holm", p.value = 0.9),
+      iv = "grp", dv = "val"
+    ),
+    "Dunn post-hoc test \\(Holm-adjusted\\) found no significant differences"
+  )
+})
+
+test_that("reportggstatsplotPostHoc stays generic without the naming columns", {
+  # An older ggstatsplot, or a hand-built table: no claim can be made about
+  # which test ran, and p_adj stays the default it has always been.
+  df <- data.frame(grp = c("A", "A", "B", "B"), val = c(5, 6, 1, 2))
+
+  result <- suppressMessages(
+    reportggstatsplotPostHoc(df, fake_pwc_plot(), iv = "grp", dv = "val")
+  )
+
+  expect_match(result, "^A post-hoc test found that ")
+  expect_match(result, "\\\\padj\\{")
+})
+
 # Note: with only two groups ggstatsplot emits no pairwise comparisons, so a
 # 3-level factor (cyl) is needed to exercise the post-hoc reporting path.
 test_that("reportggstatsplotPostHoc tolerates NA in the dependent variable", {

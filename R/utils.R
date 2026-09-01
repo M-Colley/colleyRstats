@@ -334,8 +334,68 @@ expand_latex_macros <- function(x) {
     }
     return("A")
   }
+  # A vowel letter does not settle it: some vowel-initial words are read
+  # starting with a consonant. "One-way analysis of means" -- the name
+  # statsExpressions gives a Welch ANOVA -- is spoken "wun" and takes "A", as do
+  # the "yoo" spellings ("a unique", "a European"). The "un-" prefix is the trap
+  # in that second class, since "an unpaired Wilcoxon test" and "an unadjusted
+  # p-value" really are vowel-sounded; hence the word boundary after "one" (not
+  # "an onerous") and the exclusion of "unin-", "unim-" and "unid-".
+  if (grepl("^(onc?e\\b|eu|uni(?![nmd])|us[ae]|usu|util|ubiq)", w, ignore.case = TRUE, perl = TRUE)) {
+    return("A")
+  }
   if (grepl("^[aeiouAEIOU]", w)) "An" else "A"
 }
+
+
+# Internal: the first element of `x` as a length-one string, or NULL when it
+# carries nothing usable (absent column, NA, empty string). Factors go through
+# their labels rather than their integer codes.
+.scalar_chr <- function(x) {
+  if (is.null(x) || length(x) == 0) {
+    return(NULL)
+  }
+  x <- trimws(as.character(x)[1])
+  if (is.na(x) || !nzchar(x)) NULL else x
+}
+
+
+# Internal: TRUE when a `p.adjust.method` label says no correction was applied.
+# 'ggstatsplot' spells it "None", `stats::p.adjust()` "none". An absent label
+# (NULL) is not an answer either way and yields FALSE, so a caller that has no
+# such column keeps whatever it did before.
+.adjustment_is_none <- function(adjust) {
+  !is.null(adjust) && tolower(adjust) %in% c("none", "no")
+}
+
+
+# Internal: name the post-hoc test behind a 'ggstatsplot' pairwise table.
+# `pairwise_comparisons_data` carries the test in `test` ("Games-Howell",
+# "Dunn", "Durbin-Conover", "Yuen's trimmed means", "Student's t") and the
+# multiplicity correction in `p.adjust.method` ("Holm", "Bonferroni", "FDR",
+# "None"), so a sentence can say which test produced the p-value it reports
+# instead of the anonymous "A post-hoc test ...". Yields e.g.
+# "A Games-Howell post-hoc test (Holm-adjusted)", and falls back to
+# "A post-hoc test" when the columns are absent -- an older 'ggstatsplot', or a
+# hand-built table.
+.posthoc_test_phrase <- function(test = NULL, adjust = NULL) {
+  test <- .scalar_chr(test)
+  adjust <- .scalar_chr(adjust)
+
+  phrase <- if (is.null(test)) {
+    "A post-hoc test"
+  } else {
+    # the article is chosen from the raw name: latex_escape() may prefix a
+    # backslash, which .indefinite_article() would then have to strip again
+    paste0(.indefinite_article(test), " ", latex_escape(test), " post-hoc test")
+  }
+
+  if (!is.null(adjust) && !.adjustment_is_none(adjust)) {
+    phrase <- paste0(phrase, " (", latex_escape(adjust), "-adjusted)")
+  }
+  phrase
+}
+
 
 # Internal: the F statistics of an ANOVA-style table, whichever way the column
 # is named. `stats::anova()` on an ARTool model names it "F value" for a

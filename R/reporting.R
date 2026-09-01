@@ -765,6 +765,16 @@ reportggstatsplot <- function(p, iv = "independent", dv = "Testdependentvariable
 #' calculates the mean and standard deviation for the groups involved using the raw data,
 #' and prints LaTeX-formatted sentences reporting the results.
 #'
+#' Each sentence names the post-hoc test that produced the comparison and the
+#' multiplicity correction applied to its p-value, both read from the pairwise
+#' table `ggstatsplot` attaches to the plot (e.g. "A Games-Howell post-hoc test
+#' (Holm-adjusted) found that ..."). Which test that is depends on the `type`
+#' of the plot and on whether it is between- or within-subjects -- Games-Howell,
+#' Dunn, Durbin-Conover, Student's t or Yuen's trimmed means -- so it is worth
+#' reporting rather than assuming. When the plot carries no such information
+#' (an older `ggstatsplot`, or a hand-built table) the sentence falls back to a
+#' plain "A post-hoc test ...".
+#'
 #' @section LaTeX Requirements:
 #' To easily copy and paste the results to your manuscript, the following commands
 #' (or similar) must be defined in your LaTeX preamble, as the function outputs
@@ -775,7 +785,12 @@ reportggstatsplot <- function(p, iv = "independent", dv = "Testdependentvariable
 #'   \newcommand{\sd}[1]{\\textit{SD}=#1}
 #'   \newcommand{\padj}[1]{$p_{adj}=#1$}
 #'   \newcommand{\padjminor}[1]{$p_{adj}<#1$}
+#'   \newcommand{\p}[1]{$p=#1$}
+#'   \newcommand{\pminor}[1]{$p<#1$}
 #' }
+#'
+#' The last two are used only when the plot reports `p.adjust.method = "None"`:
+#' those p-values are uncorrected and must not be labelled \eqn{p_{adj}}.
 #'
 #' @param data A data frame containing the raw data used to generate the plot.
 #' @param p A `ggstatsplot` object (e.g., returned by `ggbetweenstats`) containing the pairwise comparison statistics.
@@ -826,8 +841,17 @@ reportggstatsplotPostHoc <- function(data, p, iv = "testiv", dv = "testdv", labe
     return(invisible(NULL))
   }
 
+  # Which post-hoc test produced these p-values, and under which multiplicity
+  # correction. `ggstatsplot` reports both in the pairwise table; an older
+  # version or a hand-built table may not, and then the phrasing stays generic.
+  test_col <- if ("test" %in% names(stats)) stats$test else NULL
+  adjust_col <- if ("p.adjust.method" %in% names(stats)) stats$p.adjust.method else NULL
+
   if (!any(stats$p.value < 0.05, na.rm = TRUE)) {
-    message(paste0("A post-hoc test found no significant differences for ", dv, ". "))
+    message(paste0(
+      .posthoc_test_phrase(test_col, adjust_col),
+      " found no significant differences for ", dv, ". "
+    ))
     return(invisible(NULL))
   }
 
@@ -849,8 +873,16 @@ reportggstatsplotPostHoc <- function(data, p, iv = "testiv", dv = "testdv", labe
 
   for (i in seq_along(stats$p.value)) {
     if (!is.na(stats$p.value[i]) && stats$p.value[i] < 0.05) {
-      # Format p-value
-      pValue <- .fmt_p_macro(stats$p.value[i], macro = "padj", minor_macro = "padjminor")
+      # Format p-value. A table that explicitly reports "None" as its
+      # correction carries raw p-values, which must not be labelled p_adj; an
+      # absent column says nothing either way, so p_adj stays the default.
+      rowAdjust <- .scalar_chr(adjust_col[i])
+      unadjusted <- .adjustment_is_none(rowAdjust)
+      pValue <- .fmt_p_macro(
+        stats$p.value[i],
+        macro = if (unadjusted) "p" else "padj",
+        minor_macro = if (unadjusted) "pminor" else "padjminor"
+      )
 
       # Get conditions
       firstCondition <- stats$group1[i]
@@ -859,13 +891,10 @@ reportggstatsplotPostHoc <- function(data, p, iv = "testiv", dv = "testdv", labe
       firstLabel <- latex_escape(map_label(firstCondition))
       secondLabel <- latex_escape(map_label(secondCondition))
 
-      # Name the post-hoc test (e.g. "Games-Howell", "Dunn") from the `test`
-      # column when present; fall back to a generic phrasing otherwise.
-      testName <- if ("test" %in% names(stats) && !is.na(stats$test[i]) && nzchar(stats$test[i])) {
-        paste0("A ", latex_escape(stats$test[i]), " post-hoc test found that ")
-      } else {
-        "A post-hoc test found that "
-      }
+      # Name the post-hoc test (e.g. "Games-Howell", "Dunn") and the correction
+      # it was adjusted with, so each sentence stands on its own about which
+      # test produced the p-value it reports.
+      testName <- paste0(.posthoc_test_phrase(test_col[i], rowAdjust), " found that ")
 
       valueOne <- data |>
         dplyr::filter(!!rlang::sym(iv) == firstCondition) |>

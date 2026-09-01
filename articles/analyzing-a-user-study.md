@@ -63,7 +63,7 @@ res <- analyze_and_report(
   ylab = "Mental Demand (TLX)"
 )
 #> Shapiro--Wilk tests indicated no significant deviation from normality in any group (all $p \geq 0.05$); therefore, parametric tests were used.
-#> An ANOVA estimation for factorial designs using 'afex' found a significant effect of \ConditionID on tlx\_mental (\F{1.92}{44.2}{5.75}, \p{0.007}, r=0.11).
+#> An ANOVA estimation for factorial designs using 'afex' found a significant effect of \ConditionID on tlx\_mental (\F{1.92}{44.2}{5.75}, \p{0.007}, $\omega_{p}^{2}$ = 0.11).
 #> A Student's t post-hoc test found that Baseline was significantly higher (\m{54.92}, \sd{11.10}) in terms of tlx\_mental compared to HUD (\m{45.88}, \sd{9.76}; \padj{0.033}).
 #> A Student's t post-hoc test found that Baseline was significantly higher (\m{54.92}, \sd{11.10}) in terms of tlx\_mental compared to LED (\m{45.21}, \sd{12.51}; \padj{0.015}).
 ```
@@ -83,7 +83,7 @@ res$plot
 res$methods  # for the Methods section
 #> [1] "Shapiro--Wilk tests indicated no significant deviation from normality in any group (all $p \\geq 0.05$); therefore, parametric tests were used."
 res$text     # the omnibus result
-#> [1] "An ANOVA estimation for factorial designs using 'afex' found a significant effect of \\ConditionID on tlx\\_mental (\\F{1.92}{44.2}{5.75}, \\p{0.007}, r=0.11). "
+#> [1] "An ANOVA estimation for factorial designs using 'afex' found a significant effect of \\ConditionID on tlx\\_mental (\\F{1.92}{44.2}{5.75}, \\p{0.007}, $\\omega_{p}^{2}$ = 0.11). "
 res$posthoc  # significant pairwise comparisons (NULL for 2 groups)
 #> [1] "A Student's t post-hoc test found that Baseline was significantly higher (\\m{54.92}, \\sd{11.10}) in terms of tlx\\_mental compared to HUD (\\m{45.88}, \\sd{9.76}; \\padj{0.033}). " 
 #> [2] "A Student's t post-hoc test found that Baseline was significantly higher (\\m{54.92}, \\sd{11.10}) in terms of tlx\\_mental compared to LED (\\m{45.21}, \\sd{12.51}; \\padj{0.015}). "
@@ -104,11 +104,11 @@ battery <- report_all(
   labels = c(tlx_mental = "Mental Demand", trust = "Trust")
 )
 #> Shapiro--Wilk tests indicated no significant deviation from normality in any group (all $p \geq 0.05$); therefore, parametric tests were used.
-#> An ANOVA estimation for factorial designs using 'afex' found a significant effect of \ConditionID on tlx\_mental (\F{1.92}{44.2}{5.75}, \p{0.007}, r=0.11).
+#> An ANOVA estimation for factorial designs using 'afex' found a significant effect of \ConditionID on tlx\_mental (\F{1.92}{44.2}{5.75}, \p{0.007}, $\omega_{p}^{2}$ = 0.11).
 #> A Student's t post-hoc test found that Baseline was significantly higher (\m{54.92}, \sd{11.10}) in terms of tlx\_mental compared to HUD (\m{45.88}, \sd{9.76}; \padj{0.033}).
 #> A Student's t post-hoc test found that Baseline was significantly higher (\m{54.92}, \sd{11.10}) in terms of tlx\_mental compared to LED (\m{45.21}, \sd{12.51}; \padj{0.015}).
 #> Shapiro--Wilk tests indicated a significant deviation from normality for at least one group (minimum $W = 0.79$, $p < 0.001$); therefore, non-parametric tests were used.
-#> A Friedman rank sum test found a significant effect of \ConditionID on trust (\chisq(2)=10.93, \p{0.004}, r=0.23).
+#> A Friedman rank sum test found a significant effect of \ConditionID on trust (\chisq(2)=10.93, \p{0.004}, $W_{Kendall}$ = 0.23).
 #> A Durbin-Conover post-hoc test found that HUD was significantly higher (\m{4.12}, \sd{1.08}) in terms of \trust compared to Baseline (\m{3.42}, \sd{1.10}; \padj{0.024}).
 #> A Durbin-Conover post-hoc test found that LED was significantly higher (\m{4.46}, \sd{0.78}) in terms of \trust compared to Baseline (\m{3.42}, \sd{1.10}; \padj{0.003}).
 battery$summary
@@ -224,7 +224,7 @@ full-width 7 in):
 
 fig_path <- file.path(tempdir(), "tlx-mental.pdf")
 save_paper_figure(res$plot, fig_path, columns = 2)
-#> Saved figure to '/tmp/RtmpgKuVob/tlx-mental.pdf' (7 x 4.66666666666667 in, base font 9 pt).
+#> Saved figure to '/tmp/RtmpzzPQqq/tlx-mental.pdf' (7 x 4.66666666666667 in, base font 9 pt).
 ```
 
 The LaTeX macros used by the reporters (`\F`, `\p`, `\m`, …) are defined

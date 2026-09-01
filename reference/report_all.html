@@ -13,7 +13,7 @@ variables, plus – when patchwork is installed – a combined figure."></head><
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -120,12 +120,12 @@ patchwork is not installed).</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu">report_all</span><span class="op">(</span><span class="va">mtcars</span>, dvs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mpg"</span>, <span class="st">"disp"</span><span class="op">)</span>, iv <span class="op">=</span> <span class="st">"cyl"</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Shapiro--Wilk tests indicated no significant deviation from normality in any group (all $p \geq 0.05$); therefore, parametric tests were used. Levene's test indicated unequal variances ($F(2, 29) = 5.51$, $p = 0.009$); Welch-corrected statistics were used where applicable.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> An One-way analysis of means (not assuming equal variances) found a significant effect of \cyl on mpg (\F{2}{18.03}{31.62}, \pminor{0.001}, r=0.74). </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> An One-way analysis of means (not assuming equal variances) found a significant effect of \cyl on mpg (\F{2}{18.03}{31.62}, \pminor{0.001}, $\omega^{2}$ = 0.74). </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> A Games-Howell post-hoc test found that 4 was significantly higher (\m{26.66}, \sd{4.51}) in terms of \mpg compared to 6 (\m{19.74}, \sd{1.45}; \padj{0.001}). </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> A Games-Howell post-hoc test found that 4 was significantly higher (\m{26.66}, \sd{4.51}) in terms of \mpg compared to 8 (\m{15.10}, \sd{2.56}; \padjminor{0.001}). </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> A Games-Howell post-hoc test found that 6 was significantly higher (\m{19.74}, \sd{1.45}) in terms of \mpg compared to 8 (\m{15.10}, \sd{2.56}; \padjminor{0.001}). </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Shapiro--Wilk tests indicated a significant deviation from normality for at least one group (minimum $W = 0.80$, $p = 0.043$); therefore, non-parametric tests were used. Levene's test indicated homogeneity of variances ($F(2, 29) = 3.29$, $p = 0.052$).</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> A Kruskal-Wallis rank sum test found a significant effect of \cyl on disp (\chisq(2)=26.68, \pminor{0.001}, r=0.86). </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> A Kruskal-Wallis rank sum test found a significant effect of \cyl on disp (\chisq(2)=26.68, \pminor{0.001}, $\epsilon_{ordinal}^{2}$ = 0.86). </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> A Dunn post-hoc test found that 8 was significantly higher (\m{353.10}, \sd{67.77}) in terms of \disp compared to 4 (\m{105.14}, \sd{26.87}; \padjminor{0.001}). </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> A Dunn post-hoc test found that 8 was significantly higher (\m{353.10}, \sd{67.77}) in terms of \disp compared to 6 (\m{183.31}, \sd{41.56}; \padj{0.028}). </span>
 <span class="r-in"><span><span class="va">out</span><span class="op">$</span><span class="va">summary</span></span></span>

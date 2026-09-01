@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -125,7 +125,7 @@ comparisons.</p>
 <span>  ylab <span class="op">=</span> <span class="st">"Mental Demand (TLX)"</span></span>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt; Shapiro--Wilk tests indicated no significant deviation from normality in any group (all $p \geq 0.05$); therefore, parametric tests were used.</span></span>
-<span><span class="co">#&gt; An ANOVA estimation for factorial designs using 'afex' found a significant effect of \ConditionID on tlx\_mental (\F{1.92}{44.2}{5.75}, \p{0.007}, r=0.11).</span></span>
+<span><span class="co">#&gt; An ANOVA estimation for factorial designs using 'afex' found a significant effect of \ConditionID on tlx\_mental (\F{1.92}{44.2}{5.75}, \p{0.007}, $\omega_{p}^{2}$ = 0.11).</span></span>
 <span><span class="co">#&gt; A Student's t post-hoc test found that Baseline was significantly higher (\m{54.92}, \sd{11.10}) in terms of tlx\_mental compared to HUD (\m{45.88}, \sd{9.76}; \padj{0.033}).</span></span>
 <span><span class="co">#&gt; A Student's t post-hoc test found that Baseline was significantly higher (\m{54.92}, \sd{11.10}) in terms of tlx\_mental compared to LED (\m{45.21}, \sd{12.51}; \padj{0.015}).</span></span></code></pre></div>
 <p>The result carries everything separately, so you can place the pieces
@@ -137,7 +137,7 @@ where they belong:</p>
 <code class="sourceCode R"><span><span class="va">res</span><span class="op">$</span><span class="va">methods</span>  <span class="co"># for the Methods section</span></span>
 <span><span class="co">#&gt; [1] "Shapiro--Wilk tests indicated no significant deviation from normality in any group (all $p \\geq 0.05$); therefore, parametric tests were used."</span></span>
 <span><span class="va">res</span><span class="op">$</span><span class="va">text</span>     <span class="co"># the omnibus result</span></span>
-<span><span class="co">#&gt; [1] "An ANOVA estimation for factorial designs using 'afex' found a significant effect of \\ConditionID on tlx\\_mental (\\F{1.92}{44.2}{5.75}, \\p{0.007}, r=0.11). "</span></span>
+<span><span class="co">#&gt; [1] "An ANOVA estimation for factorial designs using 'afex' found a significant effect of \\ConditionID on tlx\\_mental (\\F{1.92}{44.2}{5.75}, \\p{0.007}, $\\omega_{p}^{2}$ = 0.11). "</span></span>
 <span><span class="va">res</span><span class="op">$</span><span class="va">posthoc</span>  <span class="co"># significant pairwise comparisons (NULL for 2 groups)</span></span>
 <span><span class="co">#&gt; [1] "A Student's t post-hoc test found that Baseline was significantly higher (\\m{54.92}, \\sd{11.10}) in terms of tlx\\_mental compared to HUD (\\m{45.88}, \\sd{9.76}; \\padj{0.033}). " </span></span>
 <span><span class="co">#&gt; [2] "A Student's t post-hoc test found that Baseline was significantly higher (\\m{54.92}, \\sd{11.10}) in terms of tlx\\_mental compared to LED (\\m{45.21}, \\sd{12.51}; \\padj{0.015}). "</span></span></code></pre></div>
@@ -153,11 +153,11 @@ dependent variables:</p>
 <span>  labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>tlx_mental <span class="op">=</span> <span class="st">"Mental Demand"</span>, trust <span class="op">=</span> <span class="st">"Trust"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt; Shapiro--Wilk tests indicated no significant deviation from normality in any group (all $p \geq 0.05$); therefore, parametric tests were used.</span></span>
-<span><span class="co">#&gt; An ANOVA estimation for factorial designs using 'afex' found a significant effect of \ConditionID on tlx\_mental (\F{1.92}{44.2}{5.75}, \p{0.007}, r=0.11).</span></span>
+<span><span class="co">#&gt; An ANOVA estimation for factorial designs using 'afex' found a significant effect of \ConditionID on tlx\_mental (\F{1.92}{44.2}{5.75}, \p{0.007}, $\omega_{p}^{2}$ = 0.11).</span></span>
 <span><span class="co">#&gt; A Student's t post-hoc test found that Baseline was significantly higher (\m{54.92}, \sd{11.10}) in terms of tlx\_mental compared to HUD (\m{45.88}, \sd{9.76}; \padj{0.033}).</span></span>
 <span><span class="co">#&gt; A Student's t post-hoc test found that Baseline was significantly higher (\m{54.92}, \sd{11.10}) in terms of tlx\_mental compared to LED (\m{45.21}, \sd{12.51}; \padj{0.015}).</span></span>
 <span><span class="co">#&gt; Shapiro--Wilk tests indicated a significant deviation from normality for at least one group (minimum $W = 0.79$, $p &lt; 0.001$); therefore, non-parametric tests were used.</span></span>
-<span><span class="co">#&gt; A Friedman rank sum test found a significant effect of \ConditionID on trust (\chisq(2)=10.93, \p{0.004}, r=0.23).</span></span>
+<span><span class="co">#&gt; A Friedman rank sum test found a significant effect of \ConditionID on trust (\chisq(2)=10.93, \p{0.004}, $W_{Kendall}$ = 0.23).</span></span>
 <span><span class="co">#&gt; A Durbin-Conover post-hoc test found that HUD was significantly higher (\m{4.12}, \sd{1.08}) in terms of \trust compared to Baseline (\m{3.42}, \sd{1.10}; \padj{0.024}).</span></span>
 <span><span class="co">#&gt; A Durbin-Conover post-hoc test found that LED was significantly higher (\m{4.46}, \sd{0.78}) in terms of \trust compared to Baseline (\m{3.42}, \sd{1.10}; \padj{0.003}).</span></span>
 <span><span class="va">battery</span><span class="op">$</span><span class="va">summary</span></span>
@@ -254,7 +254,7 @@ write its sentences to a file your manuscript can <code>\input{}</code>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fig_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"tlx-mental.pdf"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/save_paper_figure.html">save_paper_figure</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">plot</span>, <span class="va">fig_path</span>, columns <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Saved figure to '/tmp/RtmpgKuVob/tlx-mental.pdf' (7 x 4.66666666666667 in, base font 9 pt).</span></span></code></pre></div>
+<span><span class="co">#&gt; Saved figure to '/tmp/RtmpzzPQqq/tlx-mental.pdf' (7 x 4.66666666666667 in, base font 9 pt).</span></span></code></pre></div>
 <p>The LaTeX macros used by the reporters (<code>\F</code>,
 <code>\p</code>, <code>\m</code>, …) are defined by
 <code><a href="../reference/latex_preamble.html">latex_preamble()</a></code> or the shipped

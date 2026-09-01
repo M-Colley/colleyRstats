@@ -87,6 +87,6 @@ library(dplyr)
 plt <- ggbetweenstats(mtcars, am, mpg)
 
 reportggstatsplot(plt, iv = "am", dv = "mpg")
-#> A Welch Two Sample t-test found a significant effect of \am on mpg (t(18.33)=-3.77, \p{0.001}, r=-1.35). 
+#> A Welch Two Sample t-test found a significant effect of \am on mpg (t(18.33)=-3.77, \p{0.001}, $g_{Hedges}$ = -1.35). 
 # }
 ```

@@ -82,6 +82,6 @@ Invisibly returns `filename`.
 p <- ggplot2::ggplot(mtcars, ggplot2::aes(factor(cyl), mpg)) +
   ggplot2::geom_boxplot()
 save_paper_figure(p, file.path(tempdir(), "cyl-mpg.pdf"), columns = 1)
-#> Saved figure to '/tmp/RtmpZDhk29/cyl-mpg.pdf' (3.33 x 2.22 in, base font 7 pt).
+#> Saved figure to '/tmp/Rtmp2Ft8yp/cyl-mpg.pdf' (3.33 x 2.22 in, base font 7 pt).
 # }
 ```

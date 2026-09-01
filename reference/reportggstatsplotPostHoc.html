@@ -11,7 +11,7 @@ and prints LaTeX-formatted sentences reporting the results."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,7 +41,7 @@ and prints LaTeX-formatted sentences reporting the results."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Report significant post-hoc pairwise comparisons</h1>
-      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.0/R/reporting.R" class="external-link"><code>R/reporting.R</code></a>, <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.0/R/zzz-aliases.R" class="external-link"><code>R/zzz-aliases.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/main/R/reporting.R" class="external-link"><code>R/reporting.R</code></a>, <a href="https://github.com/M-Colley/colleyRstats/blob/main/R/zzz-aliases.R" class="external-link"><code>R/zzz-aliases.R</code></a></small>
       <div class="d-none name"><code>reportggstatsplotPostHoc.Rd</code></div>
     </div>
 
@@ -108,6 +108,18 @@ so a manuscript can <code>\input{}</code> them</p></dd>
 the text is also emitted via <code><a href="https://rdrr.io/r/base/message.html" class="external-link">message()</a></code>.</p>
     </div>
     <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Each sentence names the post-hoc test that produced the comparison and the
+multiplicity correction applied to its p-value, both read from the pairwise
+table <code>ggstatsplot</code> attaches to the plot (e.g. "A Games-Howell post-hoc test
+(Holm-adjusted) found that ..."). Which test that is depends on the <code>type</code>
+of the plot and on whether it is between- or within-subjects – Games-Howell,
+Dunn, Durbin-Conover, Student's t or Yuen's trimmed means – so it is worth
+reporting rather than assuming. When the plot carries no such information
+(an older <code>ggstatsplot</code>, or a hand-built table) the sentence falls back to a
+plain "A post-hoc test ...".</p>
+    </div>
+    <div class="section level2">
     <h2 id="latex-requirements">LaTeX Requirements<a class="anchor" aria-label="anchor" href="#latex-requirements"></a></h2>
 
 
@@ -119,8 +131,12 @@ commands taking arguments (e.g., <code>\m{value}</code>):</p>
   \newcommand{\sd}[1]{\textit{SD}=#1}
   \newcommand{\padj}[1]{$p_{adj}=#1$}
   \newcommand{\padjminor}[1]{$p_{adj}&lt;#1$}
+  \newcommand{\p}[1]{$p=#1$}
+  \newcommand{\pminor}[1]{$p&lt;#1$}
 </code></pre></div>
 
+<p>The last two are used only when the plot reports <code>p.adjust.method = "None"</code>:
+those p-values are uncorrected and must not be labelled \(p_{adj}\).</p>
     </div>
     <div class="section level2">
     <h2 id="naming">Naming<a class="anchor" aria-label="anchor" href="#naming"></a></h2>

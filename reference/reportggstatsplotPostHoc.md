@@ -63,6 +63,19 @@ Invisibly returns the reported sentence(s) as a character vector; the
 text is also emitted via
 [`message()`](https://rdrr.io/r/base/message.html).
 
+## Details
+
+Each sentence names the post-hoc test that produced the comparison and
+the multiplicity correction applied to its p-value, both read from the
+pairwise table `ggstatsplot` attaches to the plot (e.g. "A Games-Howell
+post-hoc test (Holm-adjusted) found that ..."). Which test that is
+depends on the `type` of the plot and on whether it is between- or
+within-subjects – Games-Howell, Dunn, Durbin-Conover, Student's t or
+Yuen's trimmed means – so it is worth reporting rather than assuming.
+When the plot carries no such information (an older `ggstatsplot`, or a
+hand-built table) the sentence falls back to a plain "A post-hoc test
+...".
+
 ## LaTeX Requirements
 
 To easily copy and paste the results to your manuscript, the following
@@ -74,6 +87,12 @@ function outputs commands taking arguments (e.g., `\m{value}`):
       \newcommand{\sd}[1]{\textit{SD}=#1}
       \newcommand{\padj}[1]{$p_{adj}=#1$}
       \newcommand{\padjminor}[1]{$p_{adj}<#1$}
+      \newcommand{\p}[1]{$p=#1$}
+      \newcommand{\pminor}[1]{$p<#1$}
+
+The last two are used only when the plot reports
+`p.adjust.method = "None"`: those p-values are uncorrected and must not
+be labelled \\p\_{adj}\\.
 
 ## Naming
 

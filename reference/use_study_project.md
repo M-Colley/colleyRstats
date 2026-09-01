@@ -99,23 +99,23 @@ produced.
 # \donttest{
 project <- file.path(tempdir(), "driving-study")
 use_study_project(project, questionnaires = c("nasa_tlx", "sus"), renv = FALSE)
-#> Creating study project 'driving-study' in /tmp/RtmpwO0d95/driving-study
-#>   wrote: /tmp/RtmpwO0d95/driving-study/_targets.R
-#>   wrote: /tmp/RtmpwO0d95/driving-study/R/read.R
-#>   wrote: /tmp/RtmpwO0d95/driving-study/R/prepare.R
-#>   wrote: /tmp/RtmpwO0d95/driving-study/R/analysis.R
-#>   wrote: /tmp/RtmpwO0d95/driving-study/R/figures.R
-#>   wrote: /tmp/RtmpwO0d95/driving-study/report/report.qmd
-#>   wrote: /tmp/RtmpwO0d95/driving-study/README.md
-#>   wrote: /tmp/RtmpwO0d95/driving-study/.gitignore
-#>   wrote: /tmp/RtmpwO0d95/driving-study/data-raw/example-study.csv
-#>   wrote: /tmp/RtmpwO0d95/driving-study/data-raw/README.md
-#>   wrote: /tmp/RtmpwO0d95/driving-study/paper/generated/README.md
-#>   wrote: /tmp/RtmpwO0d95/driving-study/output/figures/README.md
-#>   wrote: /tmp/RtmpwO0d95/driving-study/paper/colleyRstats.sty
+#> Creating study project 'driving-study' in /tmp/Rtmpyqf7IE/driving-study
+#>   wrote: /tmp/Rtmpyqf7IE/driving-study/_targets.R
+#>   wrote: /tmp/Rtmpyqf7IE/driving-study/R/read.R
+#>   wrote: /tmp/Rtmpyqf7IE/driving-study/R/prepare.R
+#>   wrote: /tmp/Rtmpyqf7IE/driving-study/R/analysis.R
+#>   wrote: /tmp/Rtmpyqf7IE/driving-study/R/figures.R
+#>   wrote: /tmp/Rtmpyqf7IE/driving-study/report/report.qmd
+#>   wrote: /tmp/Rtmpyqf7IE/driving-study/README.md
+#>   wrote: /tmp/Rtmpyqf7IE/driving-study/.gitignore
+#>   wrote: /tmp/Rtmpyqf7IE/driving-study/data-raw/example-study.csv
+#>   wrote: /tmp/Rtmpyqf7IE/driving-study/data-raw/README.md
+#>   wrote: /tmp/Rtmpyqf7IE/driving-study/paper/generated/README.md
+#>   wrote: /tmp/Rtmpyqf7IE/driving-study/output/figures/README.md
+#>   wrote: /tmp/Rtmpyqf7IE/driving-study/paper/colleyRstats.sty
 #> 
 #> Done. Next:
-#>   1. setwd("/tmp/RtmpwO0d95/driving-study")
+#>   1. setwd("/tmp/Rtmpyqf7IE/driving-study")
 #>   2. targets::tar_make()            # runs end to end on the example data
 #>   3. replace data-raw/example-study.csv with yours, then edit R/read.R
 #>   4. targets::tar_visnetwork()      # see what is out of date

@@ -489,3 +489,116 @@ test_that("reportArtCon reports no significant differences when appropriate", {
     "no significant differences"
   )
 })
+
+test_that(".effect_size_tex names the effect size that the test actually produced", {
+  es <- colleyRstats:::.effect_size_tex
+
+  # The bug this guards: every branch of reportggstatsplot() used to paste
+  # ", r=", so a Hedges' g of -1.38 was reported as a correlation -- a value
+  # outside the range r can take.
+  expect_equal(es("Hedges' g", -1.3812), "$g_{Hedges}$ = -1.38")
+  expect_equal(es("Cohen's d", 0.8), "$d_{Cohen}$ = 0.80")
+  expect_equal(es("r (rank biserial)", 0.94), "\\rankbiserial{0.94}")
+  expect_equal(es("Kendall's W", 0.0625), "$W_{Kendall}$ = 0.06")
+  expect_equal(es("Epsilon2 (rank)", 0.086), "$\\epsilon_{ordinal}^{2}$ = 0.09")
+  expect_equal(es("Cramer's V", 0.3), "$V_{Cramer}$ = 0.30")
+
+  # "(partial)" must not be swallowed by the plain entry of the same family.
+  expect_equal(es("Eta2 (partial)", 0.16), "$\\eta_{p}^{2}$ = 0.16")
+  expect_equal(es("Eta2", 0.16), "$\\eta^{2}$ = 0.16")
+  expect_equal(es("Omega2 (partial)", 0.04), "$\\omega_{p}^{2}$ = 0.04")
+  expect_equal(es("Omega2", 0.06), "$\\omega^{2}$ = 0.06")
+
+  # The robust tests return long descriptive names; print them rather than
+  # guessing at a symbol.
+  expect_equal(
+    es("Explanatory measure of effect size", 0.378),
+    "Explanatory measure of effect size = 0.38"
+  )
+
+  # Nothing to report is nothing printed, not "NA".
+  expect_equal(es("Hedges' g", NA_real_), "")
+  expect_equal(es("Hedges' g", NULL), "")
+})
+
+test_that(".effect_size_tex drops the leading zero only where APA allows it", {
+  es <- colleyRstats:::.effect_size_tex
+  withr::local_options(colleyRstats.leading_zero = FALSE)
+
+  # eta^2 and r are bounded within [-1, 1], so ".16" is unambiguous.
+  expect_equal(es("Eta2 (partial)", 0.16), "$\\eta_{p}^{2}$ = .16")
+  expect_equal(es("r (rank biserial)", 0.94), "\\rankbiserial{.94}")
+
+  # Hedges' g and Cohen's d are not bounded, so they keep the leading zero.
+  expect_equal(es("Hedges' g", 0.85), "$g_{Hedges}$ = 0.85")
+  expect_equal(es("Cohen's d", 0.85), "$d_{Cohen}$ = 0.85")
+})
+
+test_that("reportggstatsplot labels a t-test effect size as Hedges' g, not r", {
+  set.seed(42)
+  df <- data.frame(
+    id = factor(rep(1:20, times = 2)),
+    condition = factor(rep(c("A", "B"), each = 20)),
+    score = c(stats::rnorm(20), stats::rnorm(20, 1.5))
+  )
+  plt <- ggstatsplot::ggwithinstats(df, condition, score, type = "parametric")
+
+  result <- suppressMessages(reportggstatsplot(plt, iv = "condition", dv = "score"))
+
+  expect_match(result, "g_{Hedges}", fixed = TRUE)
+  expect_false(grepl(", r=", result, fixed = TRUE))
+})
+
+test_that("reportggstatsplot keeps the rank-biserial macro for a Wilcoxon test", {
+  set.seed(42)
+  df <- data.frame(
+    id = factor(rep(1:20, times = 2)),
+    condition = factor(rep(c("A", "B"), each = 20)),
+    score = c(stats::rnorm(20), stats::rnorm(20, 1.5))
+  )
+  plt <- ggstatsplot::ggwithinstats(df, condition, score, type = "nonparametric")
+
+  result <- suppressMessages(reportggstatsplot(plt, iv = "condition", dv = "score"))
+
+  expect_match(result, "\\rankbiserial{", fixed = TRUE)
+  expect_match(result, "(V=", fixed = TRUE)
+})
+
+test_that("reportggstatsplot names Kendall's W for Friedman and Epsilon2 for Kruskal-Wallis", {
+  set.seed(42)
+  df <- data.frame(
+    id = factor(rep(1:20, times = 3)),
+    condition = factor(rep(c("A", "B", "C"), each = 20)),
+    score = c(stats::rnorm(20), stats::rnorm(20, 1.2), stats::rnorm(20, 2.4))
+  )
+
+  friedman <- suppressMessages(reportggstatsplot(
+    ggstatsplot::ggwithinstats(df, condition, score, type = "nonparametric"),
+    iv = "condition", dv = "score"
+  ))
+  expect_match(friedman, "W_{Kendall}", fixed = TRUE)
+
+  kruskal <- suppressMessages(reportggstatsplot(
+    ggstatsplot::ggbetweenstats(df, condition, score, type = "nonparametric"),
+    iv = "condition", dv = "score"
+  ))
+  expect_match(kruskal, "epsilon", fixed = TRUE)
+
+  expect_false(grepl(", r=", friedman, fixed = TRUE))
+  expect_false(grepl(", r=", kruskal, fixed = TRUE))
+})
+
+test_that("reportggstatsplot names the ANOVA effect size instead of calling it r", {
+  set.seed(42)
+  df <- data.frame(
+    condition = factor(rep(c("A", "B", "C"), each = 20)),
+    score = c(stats::rnorm(20), stats::rnorm(20, 1.2), stats::rnorm(20, 2.4))
+  )
+  plt <- ggstatsplot::ggbetweenstats(df, condition, score, type = "parametric")
+
+  result <- suppressMessages(reportggstatsplot(plt, iv = "condition", dv = "score"))
+
+  expect_match(result, "\\F{", fixed = TRUE)
+  expect_match(result, "omega", fixed = TRUE)
+  expect_false(grepl(", r=", result, fixed = TRUE))
+})

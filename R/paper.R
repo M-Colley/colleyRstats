@@ -129,18 +129,7 @@ save_paper_figure <- function(plot = ggplot2::last_plot(), filename, columns = 1
     base_size <- figure_base_size(width)
   }
   if (!all(is.na(base_size))) {
-    plot <- plot + .resize_theme(base_size)
-    # .resize_theme() leaves legend.title alone so that it cannot undo the
-    # element_blank() colley_theme() sets. Where a plot does ask for a legend
-    # title, it still has to be scaled, or it keeps whatever absolute size the
-    # plotting wrapper gave it.
-    if (!inherits(.plot_theme_element(plot, "legend.title"), "element_blank")) {
-      plot <- plot + ggplot2::theme(
-        legend.title = ggplot2::element_text(
-          size = base_size * .COLLEY_TEXT_RATIOS[["axis.text"]]
-        )
-      )
-    }
+    plot <- .resize_figure(plot, base_size)
   }
 
   dir <- dirname(filename)

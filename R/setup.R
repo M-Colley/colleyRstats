@@ -387,6 +387,35 @@ colley_theme <- function(base_size = 17, base_family = "") {
 }
 
 
+# Internal: apply .resize_theme() to a figure, whether it is one plot or a grid.
+#
+# A patchwork is several plots wrapped in one object, and `+` adds a theme to
+# the LAST panel only. Resizing a grid with `+` therefore leaves every panel but
+# the final one at whatever size it was built with, which reads as a single
+# oversized panel in an otherwise uniform figure. `&` is patchwork's "apply to
+# every panel" operator, and reaching every panel is exactly what resizing a
+# multi-panel figure means.
+.resize_figure <- function(plot, base_size) {
+  add_theme <- if (inherits(plot, "patchwork")) `&` else `+`
+
+  plot <- add_theme(plot, .resize_theme(base_size))
+
+  # .resize_theme() leaves legend.title alone so that it cannot undo the
+  # element_blank() colley_theme() sets. Where a figure does ask for a legend
+  # title, it still has to be scaled, or it keeps whatever absolute size the
+  # plotting wrapper gave it.
+  if (!inherits(.plot_theme_element(plot, "legend.title"), "element_blank")) {
+    plot <- add_theme(plot, ggplot2::theme(
+      legend.title = ggplot2::element_text(
+        size = base_size * .COLLEY_TEXT_RATIOS[["axis.text"]]
+      )
+    ))
+  }
+
+  plot
+}
+
+
 # Base font size of the currently active theme, in points. Used by the plotting
 # wrappers so that annotation drawn by other packages (ggsignif brackets, for
 # instance) matches the theme instead of being fixed in absolute units.

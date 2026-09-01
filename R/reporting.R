@@ -696,9 +696,17 @@ reportggstatsplot <- function(p, iv = "independent", dv = "Testdependentvariable
   stats <- ggstatsplot::extract_stats(p)$subtitle_data
   resultString <- ""
 
-  effectSize <- .fmt_bounded(stats$estimate)
+  stat_col <- function(nm) if (nm %in% names(stats)) stats[[nm]] else NULL
+
   pValue <- .fmt_p_macro(stats$p.value)
   statistic <- .fmt_num(stats$statistic)
+
+  # The effect size is named by the test, not by the branch we happen to be in:
+  # a t-test gives Hedges' g, a Wilcoxon a rank-biserial r, a Friedman test
+  # Kendall's W. Read the name statsExpressions supplies and render the matching
+  # symbol, so the sentence cannot call an unbounded g an "r".
+  effectTex <- .effect_size_tex(stat_col("effectsize"), stats$estimate)
+  effectPart <- if (nzchar(effectTex)) paste0(", ", effectTex) else ""
 
   # Create String. Method names come from statsExpressions, which uses the
   # stats::*.test naming ("Wilcoxon rank sum test" for unpaired data, statistic
@@ -709,25 +717,24 @@ reportggstatsplot <- function(p, iv = "independent", dv = "Testdependentvariable
   # full double precision (e.g. "F(1.80875305770353, 66.9238631350305)").
   # Rank-based tests carry no df column at all, so read it only if it is there
   # (a bare stats$df would warn about an uninitialised column).
-  stat_col <- function(nm) if (nm %in% names(stats)) stats[[nm]] else NULL
   df_raw <- stat_col("df")
   df_disp <- .fmt_df(df_raw)
   df_error_disp <- .fmt_df(stat_col("df.error"))
 
   if (stats$method %in% c("Kruskal-Wallis rank sum test", "Friedman rank sum test")) {
-    resultString <- paste0("(\\chisq(", df_error_disp, ")=", statistic, ", ", pValue, ", r=", effectSize, ")")
+    resultString <- paste0("(\\chisq(", df_error_disp, ")=", statistic, ", ", pValue, effectPart, ")")
   } else if (stats$method %in% c("Paired t-test", "Welch Two Sample t-test", "Student's t-test")) {
-    resultString <- paste0("(t(", df_error_disp, ")=", statistic, ", ", pValue, ", r=", effectSize, ")")
+    resultString <- paste0("(t(", df_error_disp, ")=", statistic, ", ", pValue, effectPart, ")")
   } else if (grepl("signed rank", stats$method, fixed = TRUE)) {
-    resultString <- paste0("(V=", statistic, ", ", pValue, ", r=", effectSize, ")")
+    resultString <- paste0("(V=", statistic, ", ", pValue, effectPart, ")")
   } else if (grepl("rank sum test", stats$method, fixed = TRUE) || stats$method == "Mann-Whitney U test") {
-    resultString <- paste0("(W=", statistic, ", ", pValue, ", r=", effectSize, ")")
+    resultString <- paste0("(W=", statistic, ", ", pValue, effectPart, ")")
   } else if (!is.null(df_raw) && !is.na(df_raw)) {
     # ANOVA and similar tests with both df and df.error
-    resultString <- paste0("(\\F{", df_disp, "}{", df_error_disp, "}{", statistic, "}, ", pValue, ", r=", effectSize, ")")
+    resultString <- paste0("(\\F{", df_disp, "}{", df_error_disp, "}{", statistic, "}, ", pValue, effectPart, ")")
   } else {
     # Fallback for other methods
-    resultString <- paste0("(statistic=", statistic, ", ", pValue, ", effect size=", effectSize, ")")
+    resultString <- paste0("(statistic=", statistic, ", ", pValue, effectPart, ")")
   }
 
 

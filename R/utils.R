@@ -362,6 +362,76 @@ expand_latex_macros <- function(x) {
   out
 }
 
+# Internal: the LaTeX rendering of a statsExpressions effect size.
+#
+# `ggstatsplot::extract_stats(p)$subtitle_data` carries the effect size in
+# `estimate` and NAMES it in `effectsize` -- and that name changes with the
+# test: a paired t-test yields Hedges' g, a Wilcoxon r (rank biserial), a
+# Friedman test Kendall's W, a Kruskal-Wallis Epsilon2 (rank), an ANOVA Omega2.
+# Calling all of them "r", as the reporters did before 0.2.0, puts a wrong
+# statistic name in the manuscript, and for the standardised mean differences an
+# impossible one: g is unbounded, so a reported "r=-1.38" claims a correlation
+# outside [-1, 1].
+#
+# Two things follow from the name: the symbol, and whether the value is bounded
+# within [-1, 1]. Only the bounded ones may lose their leading zero under APA
+# style, which is what .fmt_bounded() does; the rest go through .fmt_num().
+#
+# Unrecognised names are printed verbatim rather than guessed at. The robust
+# tests in particular return long descriptive names ("Explanatory measure of
+# effect size") that already read as English.
+.effect_size_tex <- function(name, value, digits = 2) {
+  num <- suppressWarnings(as.numeric(value)[1])
+  if (length(num) == 0L || is.na(num)) {
+    return("")
+  }
+  nm <- if (is.null(name) || length(name) == 0L || is.na(name[1])) {
+    ""
+  } else {
+    trimws(as.character(name)[1])
+  }
+  key <- tolower(nm)
+
+  # The rank-biserial correlation has a house macro of its own, and
+  # reportArtCon() already emits it, so the two reporters stay consistent.
+  if (grepl("rank biserial", key, fixed = TRUE)) {
+    return(paste0("\\rankbiserial{", .fmt_bounded(num, digits), "}"))
+  }
+
+  # Most specific pattern first: "eta2 (partial)" must not be caught by the
+  # plain "eta2" entry, nor "log(odds ratio)" by "odds ratio".
+  known <- list(
+    c("eta2 (partial)",   "$\\eta_{p}^{2}$",           "bounded"),
+    c("omega2 (partial)", "$\\omega_{p}^{2}$",         "bounded"),
+    c("epsilon2 (rank)",  "$\\epsilon_{ordinal}^{2}$", "bounded"),
+    c("eta2",             "$\\eta^{2}$",               "bounded"),
+    c("omega2",           "$\\omega^{2}$",             "bounded"),
+    c("epsilon2",         "$\\epsilon^{2}$",           "bounded"),
+    c("kendall's w",      "$W_{Kendall}$",             "bounded"),
+    c("cohen's w",        "$w_{Cohen}$",               "bounded"),
+    c("cramer",           "$V_{Cramer}$",              "bounded"),
+    c("pearson's c",      "$C$",                       "bounded"),
+    c("hedges",           "$g_{Hedges}$",              "unbounded"),
+    c("cohen's d",        "$d_{Cohen}$",               "unbounded"),
+    c("log(odds ratio)",  "$\\log(OR)$",               "unbounded"),
+    c("odds ratio",       "$OR$",                      "unbounded")
+  )
+  for (row in known) {
+    if (grepl(row[[1]], key, fixed = TRUE)) {
+      val <- if (identical(row[[3]], "bounded")) {
+        .fmt_bounded(num, digits)
+      } else {
+        .fmt_num(num, digits)
+      }
+      return(paste0(row[[2]], " = ", val))
+    }
+  }
+
+  label <- if (nzchar(nm)) latex_escape(nm) else "effect size"
+  paste0(label, " = ", .fmt_num(num, digits))
+}
+
+
 # Internal: LaTeX p-value macro, e.g. "\\p{0.033}", or "\\pminor{0.001}" below
 # the reporting threshold. macro/minor_macro switch to the adjusted-p variants
 # ("padj"/"padjminor") used by the post-hoc reporters.

@@ -309,3 +309,62 @@ test_that("check functions expose their statistics as attributes", {
   expect_s3_class(lev, "data.frame")
   expect_true(all(c("df1", "df2", "statistic", "p") %in% names(lev)))
 })
+
+test_that("resizing reaches every panel of a patchwork, not just the last", {
+  skip_if_not_installed("patchwork")
+
+  # The regression this guards: save_paper_figure() used `plot + .resize_theme()`,
+  # and on a patchwork `+` modifies only the LAST panel. A seven-panel grid came
+  # out with six panels at their build size and one at the figure size.
+  built_at <- 30
+  mk <- function(y) {
+    ggplot2::ggplot(mtcars, ggplot2::aes(wt, .data[[y]])) +
+      ggplot2::geom_point() +
+      ggplot2::theme_gray(base_size = built_at)
+  }
+  pw <- patchwork::wrap_plots(list(mk("mpg"), mk("hp"), mk("disp")), ncol = 2)
+
+  resized <- colleyRstats:::.resize_figure(pw, 7)
+
+  panel_sizes <- function(x) {
+    panels <- c(x$patches$plots, list(x))
+    vapply(panels, function(p) {
+      s <- p$theme$axis.text$size
+      if (is.null(s)) NA_real_ else as.numeric(s)
+    }, numeric(1))
+  }
+  sizes <- panel_sizes(resized)
+
+  expect_length(sizes, 3L)
+  expect_false(anyNA(sizes))
+  expect_true(all(sizes == 7 * colleyRstats:::.COLLEY_TEXT_RATIOS[["axis.text"]]))
+  expect_equal(length(unique(sizes)), 1L)
+})
+
+test_that("save_paper_figure writes a patchwork grid", {
+  skip_if_not_installed("patchwork")
+
+  p <- ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + ggplot2::geom_point()
+  pw <- patchwork::wrap_plots(list(p, p), ncol = 2)
+
+  dir <- file.path(tempdir(), "fig-patchwork-test")
+  on.exit(unlink(dir, recursive = TRUE), add = TRUE)
+  path <- file.path(dir, "grid.pdf")
+
+  suppressMessages(save_paper_figure(pw, path, columns = 2))
+  expect_true(file.exists(path))
+})
+
+test_that("a single plot still resizes through the plain `+` path", {
+  p <- ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) +
+    ggplot2::geom_point() +
+    ggplot2::theme_gray(base_size = 30)
+
+  resized <- colleyRstats:::.resize_figure(p, 7)
+
+  expect_false(inherits(resized, "patchwork"))
+  expect_equal(
+    as.numeric(resized$theme$axis.text$size),
+    7 * colleyRstats:::.COLLEY_TEXT_RATIOS[["axis.text"]]
+  )
+})

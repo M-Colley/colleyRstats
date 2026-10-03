@@ -140,14 +140,27 @@
   }
 
   if (is.factor(v)) {
-    label_values <- suppressWarnings(as.numeric(levels(v)))
-    if (!anyNA(label_values)) {
+    lv <- trimws(levels(v))
+    # A blank level is a missing response, as a blank cell is in a text column.
+    blank <- lv %in% c("", "NA")
+    label_values <- suppressWarnings(as.numeric(lv))
+    label_values[blank] <- NA_real_
+    text_levels <- !blank & is.na(label_values)
+    if (!any(text_levels)) {
       return(label_values[as.integer(v)])
     }
-    if (is.ordered(v)) {
-      return(as.numeric(as.integer(v)))
+    # Numbers and text side by side ("0", "1", "2", "3", "no answer"): the
+    # numbers ARE the responses, so the level order must not be used -- in that
+    # example it would score every answer one point too high. The text levels
+    # have no value on the scale; say which they are rather than guess.
+    if (any(!blank & !text_levels)) {
+      stop(.q_unparseable_message(column, lv[text_levels]), call. = FALSE)
     }
-    bad_levels <- levels(v)[is.na(label_values)]
+    if (is.ordered(v)) {
+      positions <- ifelse(blank, NA_real_, cumsum(!blank))
+      return(positions[as.integer(v)])
+    }
+    bad_levels <- lv[text_levels]
     stop(
       "Item column '", column, "' is an unordered factor whose levels are not ",
       "numbers (", paste0("'", utils::head(bad_levels, 3), "'", collapse = ", "),
@@ -546,19 +559,25 @@
 #
 #   * NASA-TLX: every response at or below 21 on the 0-100 scale is the
 #     signature of the 21-point paper sheet (or a 20-point slider). Scored as
-#     0-100 it understates workload about five-fold.
-#   * A zero-based instrument (IPQ 0-6, SSQ 0-3) on which NOBODY chose 0, across
-#     every item and respondent, is what a 1-based export (1-7, 1-4) looks like
-#     when nobody chose the top point. Every response is then one point too
-#     high, and every reversal is off by two.
-#   * A one-based instrument (SUS 1-5, UEQ 1-7, TiA 1-5) on which NOBODY chose
-#     the top point is what a 0-based export (0-4, 0-6) looks like when nobody
-#     chose 0.
+#     0-100 it understates workload about five-fold. Responses that are all
+#     multiples of 5 are the 0-100 sheet's own steps (a low-workload study), so
+#     they do not trigger it.
+#   * A zero-based instrument (IPQ 0-6, SSQ 0-3) whose responses fill exactly
+#     1..top -- nobody chose 0, but someone chose every other end -- is what a
+#     1-based export (1-7, 1-4) looks like when nobody chose its top point.
+#     Every response is then one point too high, and every reversal is off by
+#     two.
+#   * A one-based instrument (SUS 1-5, UEQ 1-7, TiA 1-5) whose responses fill
+#     exactly 1..top-1 is what a 0-based export (0-4, 0-6) looks like when
+#     nobody chose 0.
 #
-# Both general rules need several respondents and a multi-item, whole-point
-# instrument -- with one row, or a single item such as the FMS, an unused end
-# of the scale is unremarkable. They are only ever warnings, and an explicit
-# `scale` (which the caller has therefore thought about) silences them.
+# The general rules ask for the observed range to be the assumed one shifted by
+# exactly one point, not merely for an unused end: in a small or homogeneous
+# sample nobody choosing the top of a 7-point scale is unremarkable (responses
+# of 2-6 on the UEQ-S), and warning there taught people to ignore the warning.
+# They also need several respondents and a multi-item, whole-point instrument.
+# They are only ever warnings, and an explicit `scale` (which the caller has
+# therefore thought about) silences them.
 .q_coding_warnings <- function(def, x, from, scale_supplied) {
   if (isTRUE(scale_supplied)) {
     return(character())
@@ -570,7 +589,10 @@
   obs_txt <- paste0(.q_fmt_value(observed[1]), " to ", .q_fmt_value(observed[2]))
   out <- character()
 
-  if (identical(def$key, "nasa_tlx") && observed[2] <= 21) {
+  xv <- as.numeric(unlist(x, use.names = FALSE))
+  xv <- xv[!is.na(xv)]
+  steps_of_5 <- all(abs(xv / 5 - round(xv / 5)) < 1e-8)
+  if (identical(def$key, "nasa_tlx") && observed[2] <= 21 && !steps_of_5) {
     out <- c(out, paste0(
       def$name, ": responses run only from ", .q_fmt_value(observed[1]), " to ",
       .q_fmt_value(observed[2]), ", although the assumed range is ",
@@ -584,7 +606,7 @@
   x <- as.matrix(x)
   n_respondents <- sum(rowSums(!is.na(x)) > 0)
   if (isTRUE(def$integer) && nrow(def$items) > 1L && n_respondents >= 5L) {
-    if (from[1] == 0 && observed[1] > 0) {
+    if (from[1] == 0 && observed[1] == from[1] + 1 && observed[2] == from[2]) {
       out <- c(out, paste0(
         def$name, ": no respondent chose ", from[1], " on any item (responses run ",
         obs_txt, " on the assumed range ", from[1], "-", from[2], "). If the survey ",
@@ -594,7 +616,7 @@
         "scale = c(", from[1], ", ", from[2], ") to confirm and silence this warning."
       ))
     }
-    if (from[1] == 1 && observed[2] < from[2]) {
+    if (from[1] == 1 && observed[1] == from[1] && observed[2] == from[2] - 1) {
       out <- c(out, paste0(
         def$name, ": no respondent chose ", from[2], " on any item (responses run ",
         obs_txt, " on the assumed range ", from[1], "-", from[2], "). If the survey ",
@@ -1362,8 +1384,10 @@ define_questionnaire <- function(key, name, scale, subscale, code = NULL,
       call. = FALSE
     )
   }
-  if (any(!nzchar(trimws(subscale)))) {
-    stop("Every item needs a non-empty `subscale`.", call. = FALSE)
+  # nzchar(NA) is TRUE, so a missing subscale has to be caught on its own; it
+  # would otherwise be scored into a column named "NA.".
+  if (anyNA(subscale) || any(!nzchar(trimws(subscale)))) {
+    stop("Every item needs a non-empty, non-missing `subscale`.", call. = FALSE)
   }
   reverse <- .q_def_reverse(reverse, code)
 

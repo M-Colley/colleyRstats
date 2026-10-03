@@ -559,3 +559,43 @@ test_that("a single two-level within factor is checked on the paired differences
   expect_false(isTRUE(r$assumptions$normal))
   expect_match(r$methods_text, "per-participant differences between the levels of `cond`", fixed = TRUE)
 })
+
+test_that("a factor's omnibus test in a model with a covariate is taken at the covariate's mean", {
+  # lmerTest's Type III test of `cond` in y ~ cond * age is the cond effect at
+  # age = 0; the reported main effect is the one at the mean age, i.e. the
+  # Type III test of the model with age centred.
+  skip_if_not_installed("lmerTest")
+  skip_if_not_installed("emmeans")
+  set.seed(3)
+  n <- 30
+  d <- data.frame(id = factor(rep(1:n, each = 4)), cond = factor(rep(c("A", "B"), 2 * n)))
+  d$age <- rep(runif(n, 20, 60), each = 4)
+  d$y <- 0.74 * (d$cond == "B") + 0.01 * d$age + rnorm(n)[d$id] + rnorm(4 * n)
+  tab <- .omnibus_table(lmerTest::lmer(y ~ cond * age + (1 | id), data = d))
+  d$age_c <- d$age - mean(d$age)
+  ref <- as.data.frame(stats::anova(lmerTest::lmer(y ~ cond * age_c + (1 | id), data = d), type = 3))
+  expect_equal(tab$statistic[tab$term == "cond"], ref["cond", "F value"], tolerance = 1e-6)
+  expect_equal(tab$p[tab$term == "cond"], ref["cond", "Pr(>F)"], tolerance = 1e-6)
+  expect_equal(tab$statistic[tab$term == "cond:age"], ref["cond:age_c", "F value"], tolerance = 1e-6)
+  # the uncentred Type III test is a different, much weaker hypothesis here
+  old <- as.data.frame(stats::anova(lmerTest::lmer(y ~ cond * age + (1 | id), data = d), type = 3))
+  expect_gt(abs(tab$statistic[tab$term == "cond"] - old["cond", "F value"]), 10)
+})
+
+test_that("an intercept-only model has an empty omnibus table, not an error", {
+  skip_if_not_installed("lmerTest")
+  set.seed(1)
+  d <- data.frame(id = factor(rep(1:10, each = 3)), y = rnorm(30))
+  tab <- .omnibus_table(lmerTest::lmer(y ~ 1 + (1 | id), data = d))
+  expect_identical(nrow(tab), 0L)
+  expect_named(tab, c("term", "df1", "df2", "statistic", "stat_name", "p", "method"))
+})
+
+test_that("joint-test chi-squares are recovered exactly, not from rounded F ratios", {
+  skip_if_not_installed("emmeans")
+  set.seed(3)
+  d <- data.frame(cond = factor(rep(c("A", "B", "C"), 40)), x = rnorm(120))
+  d$y <- rbinom(120, 1, plogis(0.6 * (d$cond == "C")))
+  tab <- .omnibus_table(glm(y ~ cond, data = d, family = binomial))
+  expect_equal(tab$statistic, stats::qchisq(tab$p, tab$df1, lower.tail = FALSE))
+})

@@ -1212,3 +1212,64 @@ test_that("check_questionnaire handles a single-item instrument", {
 test_that("the TiA is cited by the publication year of AISC vol. 823", {
   expect_match(colleyRstats:::.q_get("tia")$reference, "Koerber \\(2019\\)")
 })
+
+
+test_that("a factor mixing numeric and text levels is refused, not scored by level position", {
+  # Read by position, "0".."3" plus "no answer" scored every SSQ answer one point
+  # too high (Total 160.82 instead of 82.28).
+  set.seed(1)
+  vals <- matrix(sample(0:3, 16 * 6, TRUE), nrow = 6)
+  d <- as.data.frame(lapply(seq_len(16), function(j) {
+    ordered(as.character(vals[, j]), levels = c("0", "1", "2", "3", "no answer"))
+  }))
+  names(d) <- paste0("ssq_", 1:16)
+  expect_error(
+    suppressMessages(score_questionnaire(d, "ssq", prefix = "ssq_")),
+    "no answer", fixed = TRUE
+  )
+  # the same answers as plain numeric labels score as numbers
+  d2 <- as.data.frame(lapply(seq_len(16), function(j) factor(as.character(vals[, j]))))
+  names(d2) <- paste0("ssq_", 1:16)
+  num <- as.data.frame(vals)
+  names(num) <- paste0("ssq_", 1:16)
+  expect_equal(
+    suppressMessages(score_questionnaire(d2, "ssq", prefix = "ssq_", scale = c(0, 3))),
+    suppressMessages(score_questionnaire(num, "ssq", prefix = "ssq_", scale = c(0, 3))),
+    ignore_attr = TRUE
+  )
+})
+
+test_that("a blank factor level is a missing response, as a blank text cell is", {
+  v <- factor(c("1", "", "3", "2"), levels = c("", "1", "2", "3"))
+  expect_identical(.q_as_numeric(v, "x"), c(1, NA, 3, 2))
+  w <- ordered(c("low", "", "high"), levels = c("", "low", "high"))
+  expect_identical(.q_as_numeric(w, "x"), c(1, NA, 2))
+})
+
+test_that("define_questionnaire refuses a missing subscale", {
+  expect_error(
+    define_questionnaire("na_sub", "N", scale = c(1, 5), subscale = c("A", NA, "A")),
+    "non-missing `subscale`", fixed = TRUE
+  )
+})
+
+test_that("coding-shift warnings need the range to be the assumed one shifted by a point", {
+  set.seed(2)
+  # UEQ-S, six respondents answering 2-6: nobody at the top is unremarkable
+  ueqs <- as.data.frame(matrix(sample(2:6, 6 * 8, TRUE), nrow = 6))
+  names(ueqs) <- paste0("ueqs_", 1:8)
+  expect_no_warning(suppressMessages(score_questionnaire(ueqs, "ueq_s", prefix = "ueqs_")))
+  # IPQ, answers 2-6 on 0-6: not the 1-7 export pattern
+  ipq <- as.data.frame(matrix(sample(2:6, 6 * 14, TRUE), nrow = 6))
+  names(ipq) <- paste0("ipq_", 1:14)
+  expect_no_warning(suppressMessages(score_questionnaire(ipq, "ipq", prefix = "ipq_")))
+  # IPQ filling exactly 1-6 on 0-6: the 1-7 export pattern, warned
+  ipq_shift <- as.data.frame(matrix(rep(1:6, length.out = 6 * 14), nrow = 6))
+  names(ipq_shift) <- paste0("ipq_", 1:14)
+  expect_warning(suppressMessages(score_questionnaire(ipq_shift, "ipq", prefix = "ipq_")), "one point")
+  # NASA-TLX, a low-workload respondent on 0-100 in steps of 5
+  tlx <- data.frame(tlx_1 = 10, tlx_2 = 5, tlx_3 = 20, tlx_4 = 15, tlx_5 = 0, tlx_6 = 10)
+  expect_no_warning(suppressMessages(score_questionnaire(tlx, "nasa_tlx", prefix = "tlx_")))
+  tlx21 <- data.frame(tlx_1 = 13, tlx_2 = 4, tlx_3 = 17, tlx_4 = 8, tlx_5 = 2, tlx_6 = 11)
+  expect_warning(suppressMessages(score_questionnaire(tlx21, "nasa_tlx", prefix = "tlx_")), "21-point")
+})

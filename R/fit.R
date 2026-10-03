@@ -65,9 +65,28 @@
 
   if (identical(outcome_type, "binary") && !is.factor(data[[outcome]])) {
     data[[outcome]] <- factor(data[[outcome]])
+    lv <- levels(data[[outcome]])
+    if (length(lv) == 2L) {
+      say("Coerced `", outcome, "` to a factor; modelling P(", lv[2], ").")
+    } else {
+      # A binomial model codes the first level as failure and EVERY other level
+      # as success, so with three codes it models P(not first), not P(second).
+      warning(
+        "`", outcome, "` has ", length(lv), " distinct values but was declared binary: ",
+        "the binomial model contrasts '", lv[1], "' with all other values, i.e. it models ",
+        "P(", outcome, " != ", lv[1], "). Recode it to two values if that is not what you mean.",
+        call. = FALSE
+      )
+    }
+  }
+
+  # A nominal outcome stored as text: mblogit() and multinom() need a factor
+  # (mblogit refuses a character response outright).
+  if (identical(outcome_type, "nominal") && !is.factor(data[[outcome]])) {
+    data[[outcome]] <- factor(data[[outcome]])
     say(
-      "Coerced `", outcome, "` to a factor; modelling P(",
-      levels(data[[outcome]])[2], ")."
+      "Coerced `", outcome, "` to a factor with ", nlevels(data[[outcome]]),
+      " categories; '", levels(data[[outcome]])[1], "' is the reference category."
     )
   }
 
@@ -490,6 +509,16 @@
           call. = FALSE
         )
       }
+      # nparLD refuses a participant missing a condition ("Some subjects are
+      # missing subplot levels"). As in every paired analysis here, it is fitted on
+      # the participants observed in all conditions (.complete_within()).
+      data <- .complete_within(
+        data, cluster, predictors, outcome,
+        context = if (isTRUE(verbose)) paste0("nparLD analysis of '", outcome, "': ") else NULL
+      )$data
+      data[c(predictors, cluster)] <- lapply(data[c(predictors, cluster)], function(v) {
+        if (is.factor(v)) droplevels(v) else v
+      })
       sr <- .safe_rename(data, c(outcome, predictors, cluster))
       m <- sr$map
       f <- stats::as.formula(paste(m[[outcome]], "~", m[[predictors]]))
@@ -644,6 +673,7 @@
     bonferroni = "Bonferroni",
     tukey = "Tukey",
     sidak = "Sidak",
+    hs = "Holm-Sidak",
     hochberg = "Hochberg",
     hommel = "Hommel",
     fdr = ,
@@ -686,6 +716,48 @@
 }
 
 
+# Internal: for each contrast of an ART-C interaction term, the two cells it
+# compares, as list(first, second) of per-factor levels (NULL where it cannot be
+# told). ART-C pastes the factors of the term into one with "," between the
+# levels ("b,1,x"), and emmeans parenthesises labels holding "-" -- so splitting
+# the contrast labels on " - " and "," misreads level names such as "low - fast"
+# or "b,1". The cells are instead read from the contrast coefficients (+1 on the
+# first cell, -1 on the second) and looked up among the real combinations of
+# the factor levels; a combination that two different cells would spell the
+# same way is an error rather than a guess.
+.art_con_cell_pairs <- function(con, data, vars) {
+  cc <- con@misc$con.coef
+  og <- con@misc$orig.grid
+  if (!is.matrix(cc) || !is.data.frame(og) || ncol(og) != 1L) {
+    stop("ART-C contrasts of an interaction have an unexpected layout.", call. = FALSE)
+  }
+  combos <- expand.grid(
+    lapply(vars, function(v) levels(droplevels(as.factor(data[[v]])))),
+    stringsAsFactors = FALSE
+  )
+  key <- do.call(paste, c(unname(as.list(combos)), sep = ","))
+  if (anyDuplicated(key)) {
+    stop("Level names containing \",\" make the ART-C cells of `",
+         paste(vars, collapse = ":"), "` ambiguous; rename those levels.", call. = FALSE)
+  }
+  cell <- function(lbl) {
+    r <- match(lbl, key)
+    if (is.na(r)) NULL else unname(unlist(combos[r, ]))
+  }
+  og_lab <- as.character(og[[1]])
+  lapply(seq_len(nrow(cc)), function(i) {
+    pos <- which(cc[i, ] > 0)
+    neg <- which(cc[i, ] < 0)
+    if (length(pos) != 1L || length(neg) != 1L) {
+      return(NULL)
+    }
+    a <- cell(og_lab[pos])
+    b <- cell(og_lab[neg])
+    if (is.null(a) || is.null(b)) NULL else list(a, b)
+  })
+}
+
+
 # Internal: one family of pairwise contrasts -- the levels of `f`, averaged over
 # the other factors (by = NULL), or compared within each level of `by` (simple
 # effects). Returns list(grid, table).
@@ -702,14 +774,11 @@
     vars <- order[order %in% c(f, by)]
     con <- ARTool::art.con(fit$model, paste(unname(m[vars]), collapse = ":"), adjust = "none")
     s <- as.data.frame(con)
-    lv <- lapply(strsplit(as.character(s$contrast), " - ", fixed = TRUE), function(x) {
-      lapply(x, function(y) strsplit(y, ",", fixed = TRUE)[[1]])
-    })
+    lv <- .art_con_cell_pairs(con, fit$model$data, unname(m[vars]))
     fi <- match(f, vars)
     bi <- match(by, vars)
     keep <- vapply(lv, function(z) {
-      length(z) == 2L && all(lengths(z) == length(vars)) &&
-        identical(z[[1]][bi], z[[2]][bi]) && !identical(z[[1]][fi], z[[2]][fi])
+      !is.null(z) && identical(z[[1]][bi], z[[2]][bi]) && !identical(z[[1]][fi], z[[2]][fi])
     }, logical(1))
     s <- s[keep, , drop = FALSE]
     lv <- lv[keep]
@@ -750,6 +819,9 @@
   cat_preds <- names(categorical)[categorical]
   if (length(cat_preds) == 0) {
     return(NULL)
+  }
+  if (identical(fit$fun, "stats::kruskal.test")) {
+    return(.dunn_contrasts(rec, data, adjust, say))
   }
   no_posthoc <- c(
     htest = "classical (htest)", nparld = "nparLD", multinom = "multinomial",
@@ -792,30 +864,79 @@
       grids[[key]] <<- res$grid
       tables[[key]] <<- res$table
     }
+    !is.null(res)
   }
   for (f in cat_preds) run(f, NULL)
+  # An interaction is described as followed up only if every one of its
+  # simple-effect families was actually computed; the methods text must not
+  # claim comparisons that are missing from $contrasts.
+  simple <- character(0)
   for (t in sig_terms) {
     vars <- strsplit(t, ":", fixed = TRUE)[[1]]
-    for (f in vars) run(f, setdiff(vars, f))
+    ok <- vapply(vars, function(f) run(f, setdiff(vars, f)), logical(1))
+    if (all(ok)) simple <- c(simple, t)
   }
   if (length(tables) == 0) {
     return(NULL)
   }
   tab <- do.call(rbind, unname(tables))
   rownames(tab) <- NULL
-  list(emmeans = grids, contrasts = tab, simple = sig_terms)
+  # ART-C simple effects are adjusted with p.adjust(), which knows no Tukey,
+  # Sidak, Scheffe or multivariate-t; those fall back to Holm, and the methods
+  # text has to name what was actually applied.
+  simple_adjust <- unique(tab$adjust[grepl(" | ", tab$term, fixed = TRUE)])
+  list(emmeans = grids, contrasts = tab, simple = simple,
+       simple_adjust = if (length(simple_adjust) == 1L) simple_adjust else adjust)
+}
+
+
+# Internal: Dunn's test as the follow-up of the Kruskal-Wallis route, which
+# recommend_test() labels "Kruskal-Wallis + Dunn's test": without it, the methods
+# sentence would claim a post-hoc test that was never run. FSA::dunnTest() knows
+# the p.adjust() corrections except Hommel; anything else falls back to Holm,
+# and the table records what was applied.
+.dunn_contrasts <- function(rec, data, adjust, say) {
+  if (!requireNamespace("FSA", quietly = TRUE)) {
+    say("Install 'FSA' to follow the Kruskal-Wallis test up with Dunn's test.")
+    return(NULL)
+  }
+  pred <- rec$predictors[[1]]
+  method <- tolower(adjust)
+  if (identical(method, "fdr")) method <- "bh"
+  if (!method %in% c("holm", "bonferroni", "sidak", "hs", "hochberg", "bh", "by", "none")) {
+    say("Dunn's test does not support adjust = \"", adjust, "\"; the comparisons are Holm-adjusted.")
+    method <- "holm"
+  }
+  d <- data[stats::complete.cases(data[c(rec$outcome, pred)]), , drop = FALSE]
+  dt <- NULL
+  # FSA::dunnTest() prints the omnibus test as a side effect.
+  invisible(utils::capture.output(
+    dt <- FSA::dunnTest(d[[rec$outcome]], droplevels(as.factor(d[[pred]])), method = method)
+  ))
+  res <- dt$res
+  tab <- data.frame(
+    term = pred, by = NA_character_, contrast = as.character(res$Comparison),
+    estimate = NA_real_, scale = "mean rank", SE = NA_real_, df = NA_real_,
+    lower.CL = NA_real_, upper.CL = NA_real_, statistic = res$Z, p.value = res$P.adj,
+    adjust = method, stringsAsFactors = FALSE, row.names = NULL
+  )
+  list(emmeans = list(dunn = dt), contrasts = tab, simple = character(0),
+       simple_adjust = method, engine = "dunn")
 }
 
 
 # Internal: the methods sentence describing the post-hoc comparisons.
-.contrasts_methods_text <- function(engine, adjust, simple) {
-  how <- if (identical(engine, "art")) {
-    "Pairwise post-hoc comparisons used ART-C contrasts (`ARTool::art.con`)"
+.contrasts_methods_text <- function(engine, adjust, simple, simple_adjust = adjust) {
+  # Dunn's test has one family; name the correction it actually applied.
+  if (identical(engine, "dunn")) adjust <- simple_adjust
+  how <- if (identical(engine, "dunn")) {
+    "Pairwise post-hoc comparisons (Dunn's test, `FSA::dunnTest`)"
+  } else if (identical(engine, "art")) {
+    "Pairwise post-hoc comparisons (ART-C contrasts, `ARTool::art.con`)"
+  } else if (identical(engine, "lm_hc3")) {
+    "Pairwise post-hoc comparisons of the estimated marginal means (`emmeans`, with HC3 standard errors)"
   } else {
-    paste0(
-      "Pairwise post-hoc comparisons of the estimated marginal means (`emmeans`)",
-      if (identical(engine, "lm_hc3")) " used HC3 standard errors and" else ""
-    )
+    "Pairwise post-hoc comparisons of the estimated marginal means (`emmeans`)"
   }
   adj <- if (identical(tolower(adjust), "none")) {
     " were not adjusted for multiplicity"
@@ -829,7 +950,11 @@
       paste0("`", gsub(":", "` x `", simple, fixed = TRUE), "`", collapse = " and "),
       " interaction", if (length(simple) > 1) "s" else "",
       ", simple effects of each factor were compared within the levels of the other",
-      if (!identical(tolower(adjust), "none")) ", adjusted within each level" else ""
+      if (!identical(tolower(simple_adjust), "none")) {
+        paste0(", ", .adjust_label(simple_adjust), "-adjusted within each level")
+      } else {
+        ""
+      }
     )
   }
   paste0(s, ".")
@@ -993,8 +1118,28 @@ fit_recommended <- function(data, outcome, predictors = NULL, cluster = NULL,
     )
   }
 
+  # Every engine fits the complete cases that recommend_test() judged. ARTool,
+  # nparLD and mblogit refuse a missing value outright ("cannot be performed
+  # when fixed effects have missing data"), and the others would each drop
+  # their own rows silently.
+  data <- as.data.frame(data)
+  analysed <- c(outcome, predictors, cluster)
+  complete <- stats::complete.cases(data[analysed])
+  if (!all(complete)) {
+    if (isTRUE(verbose)) {
+      message(
+        "Dropped ", sum(!complete), " row", if (sum(!complete) == 1L) "" else "s",
+        " with a missing value in ", paste0("`", analysed, "`", collapse = ", "), "."
+      )
+    }
+    data <- data[complete, , drop = FALSE]
+    data[c(predictors, cluster)] <- lapply(data[c(predictors, cluster)], function(v) {
+      if (is.factor(v)) droplevels(v) else v
+    })
+  }
+
   data <- .fit_coerce(
-    as.data.frame(data), outcome, predictors, cluster,
+    data, outcome, predictors, cluster,
     outcome_type = rec$outcome_type, categorical = rec$categorical, verbose = verbose
   )
 
@@ -1031,6 +1176,8 @@ fit_recommended <- function(data, outcome, predictors = NULL, cluster = NULL,
   con <- NULL
   emm <- NULL
   simple <- character(0)
+  simple_adjust <- adjust
+  posthoc_engine <- fit$engine
   if (isTRUE(contrasts)) {
     cres <- .fit_contrasts(fit, rec, data,
       adjust = adjust, omnibus = omni,
@@ -1040,7 +1187,14 @@ fit_recommended <- function(data, outcome, predictors = NULL, cluster = NULL,
       emm <- cres$emmeans
       con <- cres$contrasts
       simple <- cres$simple
+      simple_adjust <- cres$simple_adjust
+      if (!is.null(cres$engine)) posthoc_engine <- cres$engine
     }
+  }
+  # The Kruskal-Wallis route is labelled "Kruskal-Wallis + Dunn's test"; the
+  # methods sentence may say so only if Dunn's test was actually run.
+  if (identical(fit$fun, "stats::kruskal.test") && !identical(posthoc_engine, "dunn")) {
+    rec$recommendation <- "Kruskal-Wallis test"
   }
 
   # The reporters both message() their sentences and return them invisibly.
@@ -1050,6 +1204,10 @@ fit_recommended <- function(data, outcome, predictors = NULL, cluster = NULL,
   if (!is.na(fit$reporter)) {
     # Most reporters take the fitted model; ART's takes its ANOVA table.
     report_object <- if (is.null(fit$report_object)) fit$model else fit$report_object
+    # Names as plain text, as in every other sentence fit_recommended() writes:
+    # $sentences and sink_to are standalone LaTeX with no \providecommand stubs,
+    # so a name macro such as \B{} would be an undefined control sequence.
+    op <- options(colleyRstats.name_macros = FALSE)
     text <- tryCatch(
       suppressMessages(do.call(fit$reporter, list(report_object, dv = outcome))),
       error = function(e) {
@@ -1060,7 +1218,8 @@ fit_recommended <- function(data, outcome, predictors = NULL, cluster = NULL,
           )
         }
         NULL
-      }
+      },
+      finally = options(op)
     )
   } else if (fit$engine %in% c("aov", "afex", "anova3", "lm_hc3") && !is.null(omni)) {
     dv_tex <- latex_escape(outcome)
@@ -1109,7 +1268,8 @@ fit_recommended <- function(data, outcome, predictors = NULL, cluster = NULL,
   notes <- character(0)
   if (isTRUE(fit$singular)) {
     notes <- c(notes, paste0(
-      "The final random-effects structure `", fit$random, "` is singular: a variance ",
+      "The final random-effects structure `", gsub("`", "", fit$random, fixed = TRUE),
+      "` is singular: a variance ",
       "component was estimated at (or near) zero, so that random effect does not ",
       "contribute to the model."
     ))
@@ -1118,7 +1278,9 @@ fit_recommended <- function(data, outcome, predictors = NULL, cluster = NULL,
     notes <- c(notes, "The model did not converge cleanly, so its estimates should be interpreted with caution.")
     warning("The ", rec$recommendation, " did not converge cleanly; see $methods.", call. = FALSE)
   }
-  if (!is.null(con)) notes <- c(notes, .contrasts_methods_text(fit$engine, adjust, simple))
+  if (!is.null(con)) {
+    notes <- c(notes, .contrasts_methods_text(posthoc_engine, adjust, simple, simple_adjust))
+  }
   methods <- paste(c(rec$methods_text, notes), collapse = " ")
   methods_tex <- .methods_tex(methods)
 

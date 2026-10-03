@@ -432,7 +432,7 @@ generateEffectPlot <- function(data,
   not_empty(shownEffect)
   if (lifecycle::is_present(numberColors)) {
     lifecycle::deprecate_warn(
-      when = "0.2.1",
+      when = "0.3.0",
       what = "generateEffectPlot(numberColors)",
       details = paste(
         "It never had any effect: the colours come from see::scale_colour_see(),",
@@ -835,7 +835,7 @@ generateMoboPlot2 <- function(data, x = "Iteration", y, phaseCol = "Phase", fill
 #' @param fillColourGroup A string representing the column name in `data` that defines the fill color grouping for the plot. Default is `"ConditionID"`.
 #' @param ytext A custom label for the y-axis. If not provided, the y-axis label will be the title-cased version of `y`.
 #' @param legendPos A numeric vector of length 2 specifying the position of the legend inside the plot. Default is `c(0.65, 0.85)`.
-#' @param numberSamplingSteps An integer specifying the number of initial sampling steps before the optimization phase begins, counted in distinct iterations from the first one (so it also works when iterations start at 0 or are spaced by more than 1). Must be smaller than the number of iterations. Default is 5.
+#' @param numberSamplingSteps An integer specifying the number of initial sampling steps before the optimization phase begins, counted in iteration steps from the first iteration (the spacing being the smallest gap between iterations), so it also works when iterations start at 0 or are spaced by more than 1, and a missing iteration does not move the boundary. A value that covers every iteration in the data gives a warning. Default is 5.
 #' @param labelPosFormulaY A string specifying the vertical position of the polynomial equation label in the plot. Acceptable values are `"top"`, `"center"`, or `"bottom"`. Default is `"top"`.
 #' @param verticalLinePosY A numeric value of the y-coordinate where the "sampling" and "optimization" line should be drawn.
 #'
@@ -880,22 +880,29 @@ generateMoboPlot <- function(data, x, y, fillColourGroup = "ConditionID", ytext,
   x_was_numeric <- is.numeric(data[[x]])
   data[[x]] <- x_numeric
 
-  # `numberSamplingSteps` counts iterations; the guides need the iteration
-  # *value* that ends the sampling phase. For iterations 1, 2, 3, ... the two
-  # coincide, which is what the code used to assume.
+  # `numberSamplingSteps` counts iteration steps; the guides need the iteration
+  # *value* that ends the sampling phase. It is counted in steps of the
+  # iteration spacing from the first iteration, not as the k-th iteration
+  # observed: with iteration 4 missing from 1..10, the 5th observed iteration is
+  # 6, which would move the boundary into the optimisation phase.
   its <- sort(unique(x_numeric[!is.na(x_numeric)]))
   if (!is.numeric(numberSamplingSteps) || length(numberSamplingSteps) != 1L ||
       is.na(numberSamplingSteps) || numberSamplingSteps != round(numberSamplingSteps) ||
-      numberSamplingSteps < 1 || numberSamplingSteps >= length(its)) {
-    stop(
-      "`numberSamplingSteps` must be a whole number between 1 and ", length(its) - 1L,
-      " (the data cover ", length(its), " iterations).",
+      numberSamplingSteps < 1) {
+    stop("`numberSamplingSteps` must be a whole number of at least 1.", call. = FALSE)
+  }
+  step <- if (length(its) > 1L) min(diff(its)) else 1
+  last_sampling <- its[1L] + (numberSamplingSteps - 1) * step
+  if (last_sampling >= its[length(its)]) {
+    warning(
+      "`numberSamplingSteps` = ", numberSamplingSteps, " covers every iteration in the data ",
+      "(up to ", its[length(its)], "), so no optimisation phase is shown.",
       call. = FALSE
     )
   }
   guides <- .mobo_guides(
     x_numeric,
-    last_sampling = its[numberSamplingSteps],
+    last_sampling = last_sampling,
     last_iteration = its[length(its)],
     integer_breaks = !x_was_numeric
   )

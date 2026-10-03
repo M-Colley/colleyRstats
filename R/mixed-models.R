@@ -1168,6 +1168,9 @@ recommend_test <- function(data, outcome, predictors = NULL, cluster = NULL,
     tried <- if (!is.null(rnd$dropped) && length(rnd$dropped$slopes)) rnd$dropped$slopes else rnd$slopes
     if (length(tried) > 0) {
       sl <- paste0("`", tried, "`", collapse = " and ")
+      if (isTRUE(rnd$slope_interaction) && is.null(rnd$dropped) && grepl("*", rnd$term, fixed = TRUE)) {
+        sl <- paste0(sl, " and their interaction")
+      }
       lead <- paste0(
         "Because each `", x$cluster, "` contributed several observations per level of ", sl,
         ", by-`", x$cluster, "` random slopes for ", sl
@@ -1175,7 +1178,10 @@ recommend_test <- function(data, outcome, predictors = NULL, cluster = NULL,
       s <- c(s, if (!is.null(rnd$dropped)) {
         paste0(
           lead, " were included in the initial model (Barr et al., 2013), but the fit was ",
-          rnd$dropped$reason, ", so the random-effects structure was simplified to `", rnd$term, "`."
+          # the term carries its own backticks for non-syntactic names ("(1 | `P id`)");
+          # nested inside the quoting backticks they would break the LaTeX typesetting
+          rnd$dropped$reason, ", so the random-effects structure was simplified to `",
+          gsub("`", "", rnd$term, fixed = TRUE), "`."
         )
       } else {
         paste0(lead, " are included alongside the random intercepts (Barr et al., 2013).")
@@ -1490,17 +1496,35 @@ print.colley_recommendation <- function(x, ...) {
 # (term, df1, df2, statistic, stat_name = "F"/"chisq", p, method).
 #   * linear mixed models: lmerTest's Type III F-tests with Satterthwaite's
 #     degrees of freedom (contrast-coding independent);
-#   * everything else: emmeans::joint_tests(), which builds the tests from the
-#     reference grid and is therefore independent of the contrast coding too --
-#     an F-test for lm, a Wald chi-squared (F x df1, df2 = Inf) for GLM(M)s and
-#     cumulative link models. A numeric covariate enters with
-#     cov.reduce = range, so its own slope is tested and factors that interact
-#     with it are evaluated at its mid-range.
+#   * everything else, and every model with a numeric covariate:
+#     emmeans::joint_tests(), which builds the tests from the reference grid and
+#     is therefore independent of the contrast coding too -- an F-test for lm
+#     and LMMs (Satterthwaite df), a Wald chi-squared for GLM(M)s and
+#     cumulative link models.
+#
+# A numeric covariate needs the second route. Type III tests are independent of
+# how the factors are coded, but not of where the covariate is zero: in
+# y ~ cond * age, lmerTest's "main effect of cond" is the cond effect at age = 0,
+# which for ages of 20-60 years is a prediction nobody asked about (F = 0.11,
+# p = .74, against p < .001 for the same effect at the mean age, as the post-hoc
+# contrasts report). The covariate is therefore entered at its mean +/- 1: the
+# factor effects are then averaged to the mean, and the covariate's own slope
+# and its interactions are still tested (for a term linear in the covariate,
+# the spacing of the two points does not change the test).
 .omnibus_table <- function(model, info = .mixed_model_info(model)) {
+  empty <- data.frame(term = character(0), df1 = numeric(0), df2 = numeric(0),
+                      statistic = numeric(0), stat_name = character(0), p = numeric(0),
+                      method = character(0), stringsAsFactors = FALSE)
   lmm <- inherits(model, "merMod") && isTRUE(info$gaussian)
-  if (lmm && requireNamespace("lmerTest", quietly = TRUE)) {
+  has_lmertest <- requireNamespace("lmerTest", quietly = TRUE)
+  covariates <- .omnibus_covariates(model)
+
+  if (lmm && has_lmertest && length(covariates) == 0L) {
     m <- if (inherits(model, "lmerModLmerTest")) model else lmerTest::as_lmerModLmerTest(model)
     a <- as.data.frame(stats::anova(m, type = 3, ddf = "Satterthwaite"))
+    if (nrow(a) == 0L) {
+      return(empty)
+    }
     return(data.frame(
       term = gsub("`", "", rownames(a)), df1 = a$NumDF, df2 = a$DenDF,
       statistic = a$`F value`, stat_name = "F", p = a$`Pr(>F)`,
@@ -1513,19 +1537,59 @@ print.colley_recommendation <- function(x, ...) {
   args <- list(model)
   method <- "Wald"
   if (lmm) {
-    # Reached only without lmerTest: no small-sample df, so asymptotic tests.
-    args$lmer.df <- "asymptotic"
-    method <- "asymptotic"
+    # Satterthwaite with lmerTest; without it no small-sample df are available.
+    args$lmer.df <- if (has_lmertest) "satterthwaite" else "asymptotic"
+    method <- if (has_lmertest) "Satterthwaite" else "asymptotic"
   }
-  jt <- as.data.frame(suppressMessages(do.call(emmeans::joint_tests, args)))
+  if (length(covariates) > 0L) {
+    args$at <- lapply(covariates, function(v) v + c(-1, 1))
+  }
+  jt <- tryCatch(
+    as.data.frame(suppressMessages(do.call(emmeans::joint_tests, args))),
+    error = function(e) {
+      # an intercept-only model has nothing to test
+      if (grepl("no factors to test", conditionMessage(e), fixed = TRUE)) NULL else stop(e)
+    }
+  )
+  if (is.null(jt)) {
+    return(empty)
+  }
   jt <- jt[!grepl("^\\(", jt[["model term"]]), , drop = FALSE]
+  if (nrow(jt) == 0L) {
+    return(empty)
+  }
   inf <- !is.finite(jt$df2)
+  # joint_tests() rounds its F ratios to three decimals; recover the statistic
+  # from the exact p-value where that is numerically safe.
+  stat <- ifelse(inf, jt$F.ratio * jt$df1, jt$F.ratio)
+  exact <- is.finite(jt$p.value) & jt$p.value > 1e-12 & jt$p.value < 1
+  stat[exact & inf] <- stats::qchisq(jt$p.value[exact & inf], jt$df1[exact & inf], lower.tail = FALSE)
+  stat[exact & !inf] <- stats::qf(jt$p.value[exact & !inf], jt$df1[exact & !inf],
+                                  jt$df2[exact & !inf], lower.tail = FALSE)
   data.frame(
     term = gsub("`", "", as.character(jt[["model term"]])), df1 = jt$df1, df2 = jt$df2,
-    statistic = ifelse(inf, jt$F.ratio * jt$df1, jt$F.ratio),
-    stat_name = ifelse(inf, "chisq", "F"), p = jt$p.value,
+    statistic = stat, stat_name = ifelse(inf, "chisq", "F"), p = jt$p.value,
     method = method, stringsAsFactors = FALSE
   )
+}
+
+# Internal: the numeric covariates of a model and their means, as a named list,
+# read from emmeans' reference grid (which holds a covariate at its mean and a
+# factor at its levels). Empty when there are none or emmeans cannot tell.
+.omnibus_covariates <- function(model) {
+  if (!requireNamespace("emmeans", quietly = TRUE)) {
+    return(list())
+  }
+  # A probe only: for a backticked name such as `Condition ID` model.frame()
+  # warns that the variable "is not a factor" while emmeans still reads its
+  # levels correctly, so that warning is noise here.
+  rg <- tryCatch(suppressWarnings(suppressMessages(emmeans::ref_grid(model))),
+                 error = function(e) NULL)
+  if (is.null(rg)) {
+    return(list())
+  }
+  lv <- rg@levels
+  lv[vapply(lv, function(v) is.numeric(v) && length(v) == 1L, logical(1))]
 }
 
 

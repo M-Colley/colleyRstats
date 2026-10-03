@@ -27,7 +27,12 @@ colleyRstats_setup(print_citation = FALSE, verbose = FALSE)
 #
 # Quarto renders with this file's own directory as the working directory, so the
 # store is named explicitly rather than found by search.
-store <- if (dir.exists("_targets")) "_targets" else "../_targets"
+root <- if (dir.exists("_targets")) "." else ".."
+store <- file.path(root, "_targets")
+
+# The pipeline's own code: the design settings (PREDICTORS, CLUSTER) and the
+# figure function, so the report draws exactly the figures make_figures() does.
+for (f in list.files(file.path(root, "R"), pattern = "[.]R$", full.names = TRUE)) source(f)
 
 scored <- tar_read(scored, store = store)
 results <- tar_read(results, store = store)
@@ -39,7 +44,7 @@ Instruments: {{instruments}}.
 
 ```{r design}
 scored |>
-  count(condition, name = "observations") |>
+  count(across(all_of(PREDICTORS)), name = "observations") |>
   knitr::kable()
 ```
 
@@ -60,7 +65,7 @@ outcomes <- results$summary$outcome
 
 scored |>
   tidyr::pivot_longer(dplyr::all_of(outcomes), names_to = "outcome", values_to = "value") |>
-  group_by(outcome, condition) |>
+  group_by(outcome, across(all_of(PREDICTORS))) |>
   summarise(
     n = sum(!is.na(value)),
     M = round(mean(value, na.rm = TRUE), 2),
@@ -91,7 +96,7 @@ for (dv in names(results$fits)) {
 #| fig-width: 7
 #| fig-height: 4
 for (dv in names(results$fits)) {
-  print(plot_within_stats(data = scored, x = "condition", y = dv, ylab = dv, subject = "participant"))
+  print(plot_outcome(scored, dv))
 }
 ```
 

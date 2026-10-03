@@ -222,16 +222,45 @@ test_that("renv is opt-in, and runs outside the calling session", {
 
 test_that("the generated figures pass the participant column to within-subject plots", {
   # plot_within_stats() requires `subject` to pair observations across
-  # conditions; a call without it would not run.
+  # conditions; a call without it would not run. The figure code lives in one
+  # function, which the report reuses rather than re-typing the column names.
   path <- scaffold()
   figures <- readLines(file.path(path, "R", "figures.R"))
   report <- readLines(file.path(path, "report", "report.qmd"))
 
-  code <- grep("^[[:space:]]*#", c(figures, report), value = TRUE, invert = TRUE)
+  code <- grep("^[[:space:]]*#", figures, value = TRUE, invert = TRUE)
   calls <- grep("plot_within_stats(", code, fixed = TRUE, value = TRUE)
-  expect_length(calls, 3L)
-  expect_equal(sum(grepl("subject = CLUSTER", figures, fixed = TRUE)), 2L)
-  expect_true(any(grepl("subject = \"participant\"", report, fixed = TRUE)))
+  expect_length(calls, 1L)
+  expect_match(calls, "subject = cluster", fixed = TRUE)
+  expect_true(any(grepl("plot_outcome(scored, dv)", report, fixed = TRUE)))
+  expect_false(any(grepl("\"participant\"", report, fixed = TRUE)))
+})
+
+
+test_that("the generated figures follow a between-subjects design (CLUSTER <- NULL)", {
+  skip_on_cran()
+  path <- scaffold(questionnaires = "sus")
+  withr::local_dir(path)
+  env <- new.env(parent = globalenv())
+  for (f in list.files("R", full.names = TRUE)) sys.source(f, envir = env)
+  scored <- suppressMessages(env$score_scales(env$prepare_study(env$read_study("data-raw/example-study.csv"))))
+
+  # one row per participant, the conditions spread across participants: a
+  # between-subjects study
+  ids <- unique(as.character(scored$participant))
+  conds <- unique(as.character(scored$condition))
+  pick <- conds[(seq_along(ids) - 1L) %% length(conds) + 1L]
+  between <- scored[paste(scored$participant, scored$condition) %in% paste(ids, pick), , drop = FALSE]
+  expect_false(anyDuplicated(between$participant) > 0)
+  env$CLUSTER <- NULL
+  figures <- suppressWarnings(suppressMessages(env$make_figures(between)))
+  expect_true(all(file.exists(figures)))
+
+  # with the cluster declared, a factor that does not vary within participants
+  # is still plotted between subjects, after averaging repeated rows
+  env$CLUSTER <- "participant"
+  p <- suppressWarnings(suppressMessages(env$plot_outcome(between, "SUS")))
+  expect_s3_class(p, "ggplot")
 })
 
 

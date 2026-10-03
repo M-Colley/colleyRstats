@@ -692,10 +692,26 @@ test_that("generateMoboPlot counts sampling steps from the first iteration", {
   # Five sampling iterations are 0..4, so the boundary is at 4.5 (it used to be
   # drawn at 5.5 on a factor axis where level "0" sits at position 1).
   expect_equal(suppressWarnings(ggplot2::layer_data(p, vline))$xintercept, 4.5)
-  expect_error(
+  # covering every iteration still plots, with a warning (it used to stop)
+  expect_warning(
     generateMoboPlot(df, x = "Iteration", y = "score", numberSamplingSteps = 10),
+    "no optimisation phase"
+  )
+  expect_error(
+    generateMoboPlot(df, x = "Iteration", y = "score", numberSamplingSteps = 0),
     "numberSamplingSteps"
   )
+})
+
+test_that("a missing iteration does not move the sampling boundary", {
+  skip_if_not_installed("Hmisc")
+  set.seed(1)
+  df <- data.frame(Iteration = rep(setdiff(1:10, 4), each = 2), score = rnorm(18),
+                   ConditionID = rep(c("A", "B"), 9))
+  p <- generateMoboPlot(df, x = "Iteration", y = "score", numberSamplingSteps = 5)
+  vline <- which(vapply(p$layers, function(l) inherits(l$geom, "GeomVline"), logical(1)))
+  # sampling is iterations 1..5 whether or not iteration 4 was logged
+  expect_equal(suppressWarnings(ggplot2::layer_data(p, vline))$xintercept, 5.5)
 })
 
 

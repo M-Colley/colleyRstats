@@ -687,3 +687,113 @@ test_that("the adjust argument actually adjusts", {
   expect_true(all(holm$p.value >= none$p.value - 1e-12))
   expect_true(any(holm$p.value > none$p.value))
 })
+
+
+test_that("fit_recommended drops incomplete rows once, so ART accepts data with NA", {
+  skip_if_not_installed("ARTool")
+  set.seed(4)
+  d <- expand.grid(id = factor(1:12), a = factor(c("a1", "a2")), b = factor(c("b1", "b2", "b3")))
+  d$y <- rexp(nrow(d)) * (1 + (d$a == "a2"))
+  d$y[c(3, 50)] <- NA
+  expect_message(
+    f <- suppressWarnings(fit_recommended(d, "y", c("a", "b"), cluster = "id",
+                                          outcome_type = "continuous", verbose = TRUE)),
+    "Dropped 2 rows with a missing value"
+  )
+  expect_s3_class(f, "colley_fit")
+})
+
+test_that("a clustered nominal outcome stored as text is fitted", {
+  skip_if_not_installed("mclogit")
+  set.seed(8)
+  d <- data.frame(id = factor(rep(1:20, each = 6)), cond = factor(rep(c("A", "B"), 60)))
+  d$choice <- sample(c("p", "q", "r"), 120, TRUE)
+  f <- suppressWarnings(fit_recommended(d, "choice", "cond", cluster = "id", verbose = FALSE))
+  expect_identical(f$engine, "mblogit")
+})
+
+test_that("ART sentences from fit_recommended name the factors as text, so they compile", {
+  skip_if_not_installed("ARTool")
+  set.seed(5)
+  d <- expand.grid(id = factor(1:10), A = factor(c("a1", "a2")), B = factor(c("b1", "b2")))
+  d$y <- rexp(nrow(d)) + 2 * (d$A == "a2")
+  f <- suppressWarnings(fit_recommended(d, "y", c("A", "B"), cluster = "id",
+                                        outcome_type = "continuous", verbose = FALSE))
+  skip_if_not(identical(f$engine, "art"), "the data did not take the ART route")
+  expect_false(any(grepl("\\\\[AB]\\{\\}", f$sentences)))
+  expect_true(isTRUE(getOption("colleyRstats.name_macros", TRUE)))   # option restored
+})
+
+test_that("ART simple effects work with level names holding ' - ' and ',', and are described only if computed", {
+  skip_if_not_installed("ARTool")
+  set.seed(1)
+  d <- expand.grid(id = factor(1:12), A = factor(c("low - fast", "b,1")), B = factor(c("x", "y")))
+  d$y <- rexp(nrow(d)) + 4 * (d$A == "b,1") * (d$B == "y")
+  f <- suppressWarnings(fit_recommended(d, "y", c("A", "B"), cluster = "id",
+                                        outcome_type = "continuous", verbose = FALSE))
+  skip_if_not(identical(f$engine, "art"), "the data did not take the ART route")
+  simple <- f$contrasts[grepl(" | ", f$contrasts$term, fixed = TRUE), ]
+  expect_gt(nrow(simple), 0)
+  expect_setequal(unique(simple$by[simple$term == "A | B"]), c("B = x", "B = y"))
+  expect_true(all(simple$contrast[simple$term == "A | B"] %in% c("b,1 - low - fast", "low - fast - b,1")))
+  expect_match(f$methods, "simple effects", fixed = TRUE)
+})
+
+test_that("ART simple effects with a Tukey request are described as Holm-adjusted", {
+  skip_if_not_installed("ARTool")
+  set.seed(1)
+  d <- expand.grid(id = factor(1:12), A = factor(c("a1", "a2")), B = factor(c("x", "y")))
+  d$y <- rexp(nrow(d)) + 4 * (d$A == "a2") * (d$B == "y")
+  f <- suppressWarnings(fit_recommended(d, "y", c("A", "B"), cluster = "id", adjust = "tukey",
+                                        outcome_type = "continuous", verbose = FALSE))
+  skip_if_not(identical(f$engine, "art") && length(grep(" | ", f$contrasts$term, fixed = TRUE)) > 0,
+              "no ART simple effects in this draw")
+  expect_match(f$methods, "Holm-adjusted within each level", fixed = TRUE)
+  expect_no_match(f$methods, "Tukey-adjusted within each level", fixed = TRUE)
+})
+
+test_that("nparLD is fitted on the participants observed in every condition", {
+  skip_if_not_installed("nparLD")
+  set.seed(6)
+  d <- data.frame(id = factor(rep(1:15, 3)), cond = factor(rep(c("A", "B", "C"), each = 15)))
+  d$y <- rexp(45) + as.integer(d$cond)
+  d <- d[!(d$id == "4" & d$cond == "C"), ]
+  rec <- suppressWarnings(recommend_test(d, "y", "cond", cluster = "id"))
+  skip_if_not(identical(rec$model_function, "nparLD::nparLD"), "the data did not take the nparLD route")
+  expect_message(
+    f <- suppressWarnings(fit_recommended(d, "y", "cond", cluster = "id", verbose = TRUE)),
+    "dropped 1 of 15 participants"
+  )
+  expect_identical(f$engine, "nparld")
+})
+
+test_that("the Kruskal-Wallis route runs the Dunn follow-up its methods sentence names", {
+  skip_if_not_installed("FSA")
+  set.seed(7)
+  d <- data.frame(g = factor(rep(c("A", "B", "C"), each = 20)))
+  d$y <- rexp(60) * c(1, 2, 4)[as.integer(d$g)]
+  f <- suppressWarnings(fit_recommended(d, "y", "g", outcome_type = "continuous", verbose = FALSE))
+  skip_if_not(identical(f$model_function, "stats::kruskal.test"), "the data did not take the Kruskal-Wallis route")
+  expect_match(f$methods, "Dunn's test", fixed = TRUE)
+  expect_identical(nrow(f$contrasts), 3L)
+  expect_identical(unique(f$contrasts$adjust), "holm")
+})
+
+test_that("declaring a three-valued outcome binary warns about what the binomial model estimates", {
+  d <- data.frame(g = factor(rep(c("A", "B"), 30)), y = rep(1:3, 20))
+  expect_warning(
+    .fit_coerce(d, "y", "g", NULL, outcome_type = "binary", verbose = FALSE),
+    "P(y != 1)", fixed = TRUE
+  )
+})
+
+test_that("a non-syntactic cluster name is not nested in backticks in the methods text", {
+  skip_if_not_installed("lme4")
+  set.seed(2)
+  d <- data.frame(`P id` = factor(rep(1:12, each = 6)), cond = factor(rep(c("A", "B"), 36)),
+                  check.names = FALSE)
+  d$y <- rnorm(72) + rnorm(12)[d$`P id`] * 0
+  f <- suppressWarnings(fit_recommended(d, "y", "cond", cluster = "P id", verbose = FALSE))
+  expect_false(grepl("``", f$methods, fixed = TRUE))
+  expect_false(grepl("\\texttt{(1 | }", f$methods_tex, fixed = TRUE))
+})

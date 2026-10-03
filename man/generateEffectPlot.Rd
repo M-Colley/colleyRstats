@@ -19,7 +19,8 @@ generateEffectPlot(
   effectDescription = NULL,
   xLabelsOverwrite = NULL,
   useLatexMarkup = FALSE,
-  numberColors = 6
+  numberColors = lifecycle::deprecated(),
+  subject = NULL
 )
 
 plot_effect(
@@ -36,7 +37,8 @@ plot_effect(
   effectDescription = NULL,
   xLabelsOverwrite = NULL,
   useLatexMarkup = FALSE,
-  numberColors = 6
+  numberColors = lifecycle::deprecated(),
+  subject = NULL
 )
 }
 \arguments{
@@ -66,13 +68,50 @@ plot_effect(
 
 \item{useLatexMarkup}{use latex font and markup}
 
-\item{numberColors}{number of colors}
+\item{numberColors}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Never had any
+effect: the colours come from \code{\link[see:scale_colour_see]{see::scale_colour_see()}}, which uses one
+colour per group. Passing it warns.}
+
+\item{subject}{optional participant-ID column (a string). Give it when
+\code{x} and/or \code{fillColourGroup} vary within participants, to get
+within-subject error bars (see Details). Default \code{NULL}.}
 }
 \value{
 a plot
 }
 \description{
 Function to define a plot, either showing the main or interaction effect in bold.
+}
+\details{
+\strong{Points and lines.} The small points and the dashed (main) or bold
+(interaction) per-group lines are the cell means. The bold main-effect line
+and its large points are the \emph{unweighted} marginal means of \code{x}: for each
+level of \code{x}, the mean of the cell means across \code{fillColourGroup}. That is
+the quantity a main effect in a factorial ANOVA is about; the mean of the
+raw observations would weight each cell by its size and, in an unbalanced
+design, follow whichever group happens to be larger.
+
+\strong{Error bars} are 95\\% confidence intervals of each cell mean:
+\itemize{
+\item \code{subject = NULL} (default): nonparametric bootstrap intervals
+(\code{\link[ggplot2:mean_cl_boot]{ggplot2::mean_cl_boot()}}, requires 'Hmisc'). These treat every
+observation as independent, i.e. they are \strong{between-subject} intervals.
+That is right for between-subject factors, but for a factor that varies
+within participants they include the between-participant spread a
+within-subject comparison does not depend on, and look misleadingly wide.
+\item \code{subject} given: \strong{within-subject} intervals after Cousineau (2005), with
+the Morey (2008) correction. Each participant's scores are centred on
+their own mean, the variance of the normalised scores is inflated by
+\eqn{M/(M-1)} (\eqn{M} = number of within-subject conditions), and a
+factor that does not vary within participants is respected by normalising
+within its groups. Participants without a value in every within-subject
+condition are dropped (with a message), and more than one row per
+participant and cell is an error.
+}
+
+Either way, the intervals describe single means, not differences between
+them; overlapping bars do not by themselves imply a non-significant
+difference.
 }
 \section{Naming}{
 
@@ -105,4 +144,13 @@ generateEffectPlot(
   legendPos = c(0.1, 0.23)
 )
 }
+}
+\references{
+Cousineau, D. (2005). Confidence intervals in within-subject designs: A
+simpler solution to Loftus and Masson's method. \emph{Tutorials in Quantitative
+Methods for Psychology, 1}(1), 42--45.
+
+Morey, R. D. (2008). Confidence intervals from normalized data: A correction
+to Cousineau (2005). \emph{Tutorials in Quantitative Methods for Psychology,
+4}(2), 61--64.
 }

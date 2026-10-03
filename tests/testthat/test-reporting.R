@@ -57,7 +57,7 @@ test_that("reportART distinguishes main and interaction effects", {
 
   expect_message(
     reportART(model[1, , drop = FALSE], dv = "mental demand"),
-    "main effect of .*Video on mental demand"
+    "main effect of .*Video\\{\\} on mental demand"
   )
   expect_message(
     reportART(model[2, , drop = FALSE], dv = "mental demand"),
@@ -66,21 +66,24 @@ test_that("reportART distinguishes main and interaction effects", {
 })
 
 test_that("reportNparLD reports significant effects", {
+  # The table nparLD returns carries Statistic, df and p-value only. This
+  # fixture used to add an RTE column that no real fit has, exercising a branch
+  # that emitted ", $RTE=0.60" with no closing "$" (pdflatex: "Missing $").
   model <- list(
     ANOVA.test = data.frame(
       Statistic = c(4.2, NA),
       df = c(1, 10),
       `p-value` = c(0.02, NA),
-      RTE = c(0.6, NA),
       check.names = FALSE
     )
   )
   rownames(model$ANOVA.test) <- c("Time", "Residuals")
 
   expect_message(
-    reportNparLD(model, dv = "TLX1"),
+    result <- reportNparLD(model, dv = "TLX1"),
     "nparLD analysis found a significant"
   )
+  expect_false(grepl("RTE", result, fixed = TRUE))
 })
 
 test_that("reportNparLD reads the ANOVA-type statistic from an nparLD 2.3.0 fit", {
@@ -96,7 +99,7 @@ test_that("reportNparLD reads the ANOVA-type statistic from an nparLD 2.3.0 fit"
 
   expect_message(
     reportNparLD(model, dv = "TLX1"),
-    "nparLD analysis found a significant main effect of .*Time on TLX1"
+    "nparLD analysis found a significant main effect of .*Time\\{\\} on TLX1"
   )
 })
 
@@ -124,7 +127,7 @@ test_that("reportNparLD reports a real nparLD fit", {
 
   expect_message(
     suppressWarnings(reportNparLD(model, dv = "TLX1")),
-    "nparLD analysis found a significant main effect of .*Time on TLX1"
+    "nparLD analysis found a significant main effect of .*Time\\{\\} on TLX1"
   )
 })
 
@@ -232,16 +235,37 @@ test_that("latexify_report formats output as LaTeX", {
   expect_true(grepl("\\$\\\\hat\\{R\\}\\$", out))
 })
 
-test_that("reportMeanAndSD emits formatted output", {
+test_that("reportMeanAndSD emits typeset text, not LaTeX comments", {
+  # Every line used to start with "%", so a manuscript that \input{} the file
+  # typeset nothing; level names were not escaped and newlines were doubled.
   example_data <- data.frame(
-    Condition = rep(c("A", "B"), each = 5),
-    TLX1 = rnorm(10)
+    Condition = rep(c("A", "tlx_B"), each = 5),
+    TLX1 = c(1:5, 6:10)
   )
 
   expect_message(
-    reportMeanAndSD(example_data, iv = "Condition", dv = "TLX1"),
-    "%A"
+    result <- reportMeanAndSD(example_data, iv = "Condition", dv = "TLX1"),
+    "^A: \\\\m\\{3\\.00\\}, \\\\sd\\{1\\.58\\}"
   )
+  expect_equal(result, c(
+    "A: \\m{3.00}, \\sd{1.58}",
+    "tlx\\_B: \\m{8.00}, \\sd{1.58}"
+  ))
+  expect_false(any(startsWith(result, "%")))
+  expect_false(any(grepl("\n", result, fixed = TRUE)))
+
+  path <- withr::local_tempfile(fileext = ".tex")
+  suppressMessages(reportMeanAndSD(example_data, iv = "Condition", dv = "TLX1", sink_to = path))
+  expect_equal(
+    readLines(path),
+    c("A: \\m{3.00}, \\sd{1.58};", "tlx\\_B: \\m{8.00}, \\sd{1.58}.")
+  )
+
+  # the old comment form stays available on request
+  comment <- suppressMessages(
+    reportMeanAndSD(example_data, iv = "Condition", dv = "TLX1", as_comment = TRUE)
+  )
+  expect_true(all(startsWith(comment, "%")))
 })
 
 test_that("reportggstatsplot reports results", {
@@ -677,4 +701,759 @@ test_that("reportggstatsplot names the ANOVA effect size instead of calling it r
   expect_match(result, "\\F{", fixed = TRUE)
   expect_match(result, "omega", fixed = TRUE)
   expect_false(grepl(", r=", result, fixed = TRUE))
+})
+
+
+# ---- Regression tests for the 0.3.0 reporting fixes --------------------------
+
+# Compile a LaTeX fragment with the package's own preamble -- the single source
+# of truth for the report macros -- plus \providecommand stubs for any name
+# macro (\UX, \mode, ...), as emit_overleaf() writes them. Skipped where no
+# pdflatex is installed.
+expect_compiles <- function(body) {
+  skip_on_cran()
+  skip_if(!nzchar(Sys.which("pdflatex")), "pdflatex is not available")
+  body <- paste(body, collapse = "\n\n")
+  toks <- unique(regmatches(body, gregexpr("\\\\[A-Za-z]+", body))[[1]])
+  stubs <- sprintf("\\providecommand{%s}{%s}", toks, sub("^\\\\", "", toks))
+  dir <- tempfile("colley-tex-")
+  dir.create(dir)
+  on.exit(unlink(dir, recursive = TRUE), add = TRUE)
+  writeLines(
+    c(
+      "\\documentclass{article}", "\\usepackage{booktabs}",
+      colleyRstats:::.colley_macro_lines(), stubs,
+      "\\begin{document}", body, "\\end{document}"
+    ),
+    file.path(dir, "doc.tex")
+  )
+  log <- suppressWarnings(system2(
+    "pdflatex",
+    c(
+      "-interaction=nonstopmode", "-halt-on-error",
+      paste0("-output-directory=", dir), file.path(dir, "doc.tex")
+    ),
+    stdout = TRUE, stderr = TRUE
+  ))
+  status <- attr(log, "status")
+  ok <- is.null(status) || identical(as.integer(status), 0L)
+  expect(ok, paste(
+    c("pdflatex failed:", grep("^!|^l\\.[0-9]", log, value = TRUE)),
+    collapse = "\n"
+  ))
+  invisible(ok)
+}
+
+# Level A: 26 ones plus four large outliers. Its mean (10.87) is the largest of
+# the three, yet its mean rank is by far the smallest -- Dunn's Z for "A - B"
+# is -4.40. Every post-hoc reporter used to call A "significantly higher".
+skewed_three_groups <- function() {
+  set.seed(1)
+  data.frame(
+    g = factor(rep(c("A", "B", "C"), each = 30)),
+    v = c(
+      rep(1, 26), 60, 70, 80, 90,
+      stats::rnorm(30, 5, 0.5), stats::rnorm(30, 5.2, 0.5)
+    )
+  )
+}
+
+# FSA 0.10 prints its result while computing it.
+quiet_dunn <- function(...) {
+  out <- NULL
+  utils::capture.output(out <- suppressMessages(FSA::dunnTest(...)))
+  out
+}
+
+# One factor whose levels emmeans rewrites in contrast labels.
+art_con_with_levels <- function(levs, adjust = "holm") {
+  set.seed(123)
+  n <- 20
+  df <- data.frame(
+    UserID = factor(rep(seq_len(n), times = 3)),
+    mode = factor(rep(levs, each = n), levels = levs)
+  )
+  df$score <- as.numeric(df$mode) * 2 + stats::rnorm(nrow(df))
+  m <- ARTool::art(score ~ mode + Error(UserID), data = df)
+  list(ac = ARTool::art.con(m, ~mode, adjust = adjust), data = df)
+}
+
+test_that("reportDunnTest takes the direction from Z, not from the means", {
+  skip_if_not_installed("FSA")
+  df <- skewed_three_groups()
+  d <- quiet_dunn(v ~ g, data = df, method = "holm")
+  # the scenario: the test and the means point in opposite directions
+  expect_lt(d$res$Z[d$res$Comparison == "A - B"], 0)
+  expect_gt(mean(df$v[df$g == "A"]), mean(df$v[df$g == "B"]))
+
+  result <- suppressMessages(reportDunnTest(d, data = df, iv = "g", dv = "v"))
+
+  # before: "... for the g A was significantly higher (\m{10.87}, \sd{25.92}) ..."
+  expect_false(any(grepl("A was significantly higher", result, fixed = TRUE)))
+  expect_length(result, 2)
+  # descriptives match the rank-based test: medians and IQRs
+  expect_match(
+    result[1],
+    "g B was significantly higher (\\mdn{5.13}, \\iqr{0.57}) than for A (\\mdn{1.00}, \\iqr{0.00}; ",
+    fixed = TRUE
+  )
+  expect_match(result[2], "g C was significantly higher (\\mdn{5.17}", fixed = TRUE)
+})
+
+test_that("reportDunnTest warns when forced means contradict the test", {
+  skip_if_not_installed("FSA")
+  df <- skewed_three_groups()
+  d <- quiet_dunn(v ~ g, data = df, method = "holm")
+
+  warnings <- testthat::capture_warnings(
+    result <- suppressMessages(
+      reportDunnTest(d, data = df, iv = "g", dv = "v", descriptives = "mean")
+    )
+  )
+  expect_length(warnings, 2)
+  expect_match(warnings, "order them the other way round", all = TRUE)
+  # the sentence still follows the test
+  expect_match(result[1], "g B was significantly higher (\\m{5.04}, \\sd{0.46})", fixed = TRUE)
+})
+
+test_that("reportDunnTest flags data that disagree with the test's Z", {
+  skip_if_not_installed("FSA")
+  df <- skewed_three_groups()
+  d <- quiet_dunn(v ~ g, data = df, method = "holm")
+  swapped <- df
+  swapped$g <- factor(c(A = "B", B = "A", C = "C")[as.character(df$g)])
+
+  warnings <- testthat::capture_warnings(
+    suppressMessages(reportDunnTest(d, data = swapped, iv = "g", dv = "v"))
+  )
+  expect_true(any(grepl("disagrees with the mean ranks", warnings, fixed = TRUE)))
+})
+
+test_that("reportDunnTest does not label uncorrected p-values as adjusted", {
+  skip_if_not_installed("FSA")
+  df <- skewed_three_groups()
+
+  holm <- suppressMessages(reportDunnTest(
+    quiet_dunn(v ~ g, data = df, method = "holm"),
+    data = df, iv = "g", dv = "v"
+  ))
+  expect_match(holm, "^A Dunn post-hoc test \\(Holm-adjusted\\) found that ")
+  expect_match(holm, "\\padjminor{0.001}", fixed = TRUE)
+
+  none <- suppressMessages(reportDunnTest(
+    quiet_dunn(v ~ g, data = df, method = "none"),
+    data = df, iv = "g", dv = "v"
+  ))
+  expect_match(none, "^A Dunn post-hoc test found that ")
+  expect_match(none, "\\pminor{0.001}", fixed = TRUE)
+  expect_false(any(grepl("padj", none, fixed = TRUE)))
+  expect_false(any(grepl("adjusted", none, fixed = TRUE)))
+})
+
+test_that("reportDunnTestTable heads uncorrected p-values 'p' and names the correction", {
+  skip_if_not_installed("FSA")
+  skip_if_not_installed("xtable")
+  df <- skewed_three_groups()
+
+  none <- utils::capture.output(suppressMessages(reportDunnTestTable(
+    quiet_dunn(v ~ g, data = df, method = "none"),
+    data = df, iv = "g", dv = "v"
+  )))
+  expect_true(any(grepl("Comparison & Z & p & r", none, fixed = TRUE)))
+  expect_false(any(grepl("p-adjusted", none, fixed = TRUE)))
+  expect_true(any(grepl("not adjusted for multiple comparisons", none, fixed = TRUE)))
+
+  holm <- utils::capture.output(suppressMessages(reportDunnTestTable(
+    quiet_dunn(v ~ g, data = df, method = "holm"),
+    data = df, iv = "g", dv = "v"
+  )))
+  expect_true(any(grepl("Comparison & Z & p-adjusted & r", holm, fixed = TRUE)))
+  expect_true(any(grepl("p-values are Holm-adjusted", holm, fixed = TRUE)))
+  # the caption states the direction in terms of what Dunn compares
+  expect_true(any(grepl("first-named level has the higher mean rank", holm, fixed = TRUE)))
+  expect_compiles(holm)
+})
+
+test_that("reportDunnTestTable never rounds a p-value across .05", {
+  set.seed(42)
+  data <- data.frame(
+    g = factor(rep(c("A", "B"), each = 10)),
+    v = c(stats::rnorm(10), stats::rnorm(10, 3))
+  )
+  d <- list(res = data.frame(
+    Comparison = "A - B", Z = -1.96, P.adj = 0.04996, stringsAsFactors = FALSE
+  ))
+  out <- utils::capture.output(suppressMessages(
+    reportDunnTestTable(d, data = data, iv = "g", dv = "v")
+  ))
+  # formatC() printed "0.0500" -- a "significant" row showing p = .05
+  expect_true(any(grepl("0.04996", out, fixed = TRUE)))
+  expect_false(any(grepl("0.0500 ", out, fixed = TRUE)))
+})
+
+test_that("reportDunnTest computes the effect size for a dv name with spaces", {
+  skip_if_not_installed("FSA")
+  df <- skewed_three_groups()
+  names(df)[2] <- "Mental Demand"
+  d <- quiet_dunn(`Mental Demand` ~ g, data = df, method = "holm")
+
+  expect_no_warning(
+    result <- suppressMessages(reportDunnTest(d, data = df, iv = "g", dv = "Mental Demand"))
+  )
+  expect_match(result, "\\rankbiserial{0.73}", fixed = TRUE)
+})
+
+test_that("reportArtCon takes the direction from the contrast estimate", {
+  skip_if_not_installed("ARTool")
+  skip_if_not_installed("emmeans")
+  df <- skewed_three_groups()
+  m <- ARTool::art(v ~ g, data = df)
+  ac <- ARTool::art.con(m, ~g, adjust = "holm")
+  expect_lt(summary(ac)$estimate[1], 0) # A - B: A lower on the aligned ranks
+
+  result <- suppressMessages(reportArtCon(ac, data = df, iv = "g", dv = "v"))
+  expect_false(any(grepl("A was significantly higher", result, fixed = TRUE)))
+  expect_match(
+    result[1],
+    "^An ART-C post-hoc test \\(Holm-adjusted\\) found that v for the g B was significantly higher \\(\\\\mdn\\{5\\.13\\}"
+  )
+
+  warnings <- testthat::capture_warnings(suppressMessages(
+    reportArtCon(ac, data = df, iv = "g", dv = "v", descriptives = "mean")
+  ))
+  expect_match(warnings, "order them the other way round", all = TRUE)
+})
+
+test_that("reportArtCon handles levels that emmeans rewrites in its labels", {
+  skip_if_not_installed("ARTool")
+  skip_if_not_installed("emmeans")
+
+  # numeric-looking levels are labelled "mode1 - mode2"
+  num <- art_con_with_levels(c("1", "2", "3"))
+  expect_match(as.character(summary(num$ac)$contrast[1]), "mode1 - mode2", fixed = TRUE)
+  result <- suppressMessages(reportArtCon(num$ac, data = num$data, iv = "mode", dv = "score"))
+  expect_match(result, "\\\\mode\\{\\} 3 was significantly higher", all = FALSE)
+
+  # levels containing - + * / are parenthesised: "Both - (Hand-only)"
+  hyph <- art_con_with_levels(c("Both", "Hand-only", "Eye+Hand"))
+  expect_true(any(grepl("(Hand-only)", summary(hyph$ac)$contrast, fixed = TRUE)))
+  # used to fail with "missing value where TRUE/FALSE needed"
+  result <- suppressMessages(reportArtCon(
+    hyph$ac, data = hyph$data, iv = "mode", dv = "score", paired = TRUE, id = "UserID"
+  ))
+  expect_match(result[2], "Eye+Hand was significantly higher", fixed = TRUE)
+  expect_match(result[2], "than for Both (", fixed = TRUE)
+
+  # the summary (no contrast coefficients) is matched by label instead
+  expect_no_error(suppressMessages(
+    reportArtCon(summary(hyph$ac), data = hyph$data, iv = "mode", dv = "score")
+  ))
+
+  # the table used to fill r with NA for these levels
+  out <- utils::capture.output(suppressMessages(reportArtConTable(
+    hyph$ac, data = hyph$data, iv = "mode", dv = "score", paired = TRUE, id = "UserID"
+  )))
+  rows <- grep("Hand", out, value = TRUE)
+  expect_length(grep(" & ", rows), 3)
+  expect_false(any(grepl("NA", rows, fixed = TRUE)))
+})
+
+test_that("reportArtCon refuses contrasts that are not over the single factor iv", {
+  skip_if_not_installed("ARTool")
+  skip_if_not_installed("emmeans")
+  set.seed(123)
+  n <- 20
+  df <- data.frame(
+    UserID = factor(rep(seq_len(n), times = 3)),
+    mode = factor(rep(c("Hand", "Eye", "Both"), each = n)),
+    prime = factor(rep(rep(c("A", "B"), each = n / 2), times = 3))
+  )
+  df$score <- as.numeric(df$mode) * 2 + stats::rnorm(nrow(df))
+  m <- ARTool::art(score ~ mode * prime + Error(UserID / mode), data = df)
+  ac <- suppressMessages(ARTool::art.con(m, "mode:prime", adjust = "holm"))
+
+  # (emmeans itself warns while computing the df of these cell contrasts)
+  expect_error(
+    suppressWarnings(suppressMessages(reportArtCon(ac, data = df, iv = "mode", dv = "score"))),
+    "does not compare two levels"
+  )
+})
+
+test_that("reportArtCon and its table do not label uncorrected p-values as adjusted", {
+  skip_if_not_installed("ARTool")
+  skip_if_not_installed("emmeans")
+  skip_if_not_installed("xtable")
+  fit <- art_con_with_levels(c("Hand", "Eye", "Both"), adjust = "none")
+
+  result <- suppressMessages(reportArtCon(fit$ac, data = fit$data, iv = "mode", dv = "score"))
+  expect_match(result, "^An ART-C post-hoc test found that ")
+  expect_false(any(grepl("padj", result, fixed = TRUE)))
+  expect_match(result, "\\pminor{0.001}", fixed = TRUE)
+
+  out <- utils::capture.output(suppressMessages(
+    reportArtConTable(fit$ac, data = fit$data, iv = "mode", dv = "score")
+  ))
+  expect_true(any(grepl("Comparison & t & df & p & r", out, fixed = TRUE)))
+  expect_false(any(grepl("p-adjusted", out, fixed = TRUE)))
+  expect_true(any(grepl("not adjusted for multiple comparisons", out, fixed = TRUE)))
+
+  holm <- art_con_with_levels(c("Hand", "Eye", "Both"), adjust = "holm")
+  result <- suppressMessages(reportArtCon(holm$ac, data = holm$data, iv = "mode", dv = "score"))
+  expect_match(result, "^An ART-C post-hoc test \\(Holm-adjusted\\) found that ")
+  expect_compiles(result)
+})
+
+test_that("reportArtConTable prints fractional df and names a z statistic", {
+  skip_if_not_installed("ARTool")
+  skip_if_not_installed("emmeans")
+  skip_if_not_installed("lme4")
+  skip_if_not_installed("xtable")
+  set.seed(5)
+  n <- 12
+  dd <- data.frame(
+    UserID = factor(rep(seq_len(n), times = 3)),
+    mode = factor(rep(c("Hand", "Eye", "Both"), each = n))
+  )
+  dd$score <- as.numeric(dd$mode) * 2 + stats::rnorm(nrow(dd)) + rep(stats::rnorm(n), 3)
+  dd <- dd[-c(3, 17, 30), ]
+
+  # Kenward-Roger df of an unbalanced mixed ART model: 19.29, printed as "19"
+  m <- suppressMessages(ARTool::art(score ~ mode + (1 | UserID), data = dd))
+  ac <- suppressMessages(ARTool::art.con(m, ~mode, adjust = "holm"))
+  kr_df <- summary(ac)$df[1]
+  expect_false(kr_df == round(kr_df))
+  out <- utils::capture.output(suppressMessages(
+    reportArtConTable(ac, data = dd, iv = "mode", dv = "score")
+  ))
+  expect_true(any(grepl(paste0(" & ", round(kr_df, 2), " & "), out, fixed = TRUE)))
+
+  # an emmeans contrast with asymptotic df carries z ratios: header "z", no df
+  fit <- lme4::lmer(score ~ mode + (1 | UserID), data = dd)
+  zc <- emmeans::contrast(
+    emmeans::emmeans(fit, ~mode, lmer.df = "asymptotic"), "pairwise", adjust = "holm"
+  )
+  out_z <- utils::capture.output(suppressMessages(
+    reportArtConTable(zc, data = dd, iv = "mode", dv = "score")
+  ))
+  expect_true(any(grepl("Comparison & z & p-adjusted & r", out_z, fixed = TRUE)))
+  expect_true(any(grepl("Positive z-values", out_z, fixed = TRUE)))
+  expect_compiles(out_z)
+})
+
+test_that("reportNparLD writes a compilable F(df, infinity) with the fractional ATS df", {
+  skip_if_not_installed("nparLD")
+  set.seed(123)
+  d <- data.frame(
+    Subject = factor(rep(1:10, each = 3)),
+    Time = factor(rep(c("T1", "T2", "T3"), times = 10)),
+    TLX1 = rep(c(45, 52, 61), times = 10) + stats::rnorm(30, sd = 4)
+  )
+  utils::capture.output(
+    model <- nparLD::nparLD(TLX1 ~ Time, data = d, subject = "Subject")
+  )
+  ats_df <- as.data.frame(colleyRstats:::.nparld_anova_table(model))$df[1]
+  expect_false(ats_df == round(ats_df))
+
+  result <- suppressMessages(reportNparLD(model, dv = "tlx_mental"))
+  # was "\F{2}{$\infty$}{...}": a rounded df, and nested math inside \F
+  expect_match(result, paste0("\\F{", round(ats_df, 2), "}{\\infty}{"), fixed = TRUE)
+  expect_false(grepl("$\\infty$", result, fixed = TRUE))
+  expect_match(result, "on tlx\\_mental", fixed = TRUE)
+  expect_compiles(result)
+})
+
+test_that("reportNparLD escapes the dv in its no-effects message", {
+  model <- list(ANOVA.test = data.frame(
+    Statistic = 0.4, df = 1.9, `p-value` = 0.6, check.names = FALSE
+  ))
+  rownames(model$ANOVA.test) <- "Time"
+  expect_message(
+    reportNparLD(model, dv = "tlx_mental"),
+    "no significant effects on tlx\\\\_mental"
+  )
+})
+
+test_that("reportNparLD labels terms by ':' and renders each factor safely", {
+  ats <- matrix(
+    c(12.3, 1.7, 1e-05, 8.2, 1.4, 0.001),
+    nrow = 2, byrow = TRUE,
+    dimnames = list(c("UX", "Video_Type:trial2"), c("Statistic", "df", "p-value"))
+  )
+  model <- structure(list(ATS = ats), class = "nparld_fit")
+  result <- suppressMessages(reportNparLD(model, dv = "X position"))
+  expect_match(result[1], "main effect of \\UX{} on X position", fixed = TRUE)
+  expect_match(result[2], "interaction effect of Video\\_Type $\\times$ trial2 on X position", fixed = TRUE)
+  expect_compiles(result)
+})
+
+test_that("reportART decides interaction from ':' and renders each factor safely", {
+  # A main effect called UX was reported as an interaction (it contains a
+  # capital X), a dv "X position" became "on $\times$ \ position", and
+  # Video_Type / trial2 were emitted as un-compilable \Video_Type / \trial2.
+  model <- data.frame(
+    Term = c("UX", "Video_Type:trial2", "time"),
+    F = c(9, 7, 6), Df = c(1, 2, 1), Df.res = c(38, 76.5, 38),
+    `Pr(>F)` = c(0.004, 0.0016, 0.02),
+    check.names = FALSE
+  )
+  result <- suppressMessages(reportART(model, dv = "X position"))
+
+  expect_match(result[1], "main effect of \\UX{} on X position", fixed = TRUE)
+  expect_match(
+    result[2],
+    "interaction effect of Video\\_Type $\\times$ trial2 on X position (\\F{2}{76.5}{7.00}",
+    fixed = TRUE
+  )
+  # `time` is the TeX primitive \time: it must come out as text
+  expect_match(result[3], "main effect of time on X position", fixed = TRUE)
+  expect_false(any(grepl("\\Video_Type", result, fixed = TRUE)))
+  expect_compiles(result)
+})
+
+test_that("reportART reports a real ART anova with underscores in factor names", {
+  skip_if_not_installed("ARTool")
+  set.seed(123)
+  d <- data.frame(
+    y = stats::rnorm(80),
+    Video_Type = factor(rep(c("A", "B"), each = 40)),
+    UX = factor(rep(c("G1", "G2"), times = 40)),
+    UserID = factor(rep(1:20, each = 4))
+  )
+  d$y <- d$y + (d$UX == "G2") * 1.5 + (d$Video_Type == "B") * (d$UX == "G2") * 1.5
+  a <- stats::anova(ARTool::art(y ~ Video_Type * UX + Error(UserID / UX), data = d))
+
+  result <- suppressMessages(reportART(a, dv = "tlx_mental"))
+  expect_match(result, "main effect of Video\\_Type on", fixed = TRUE, all = FALSE)
+  expect_match(result, "main effect of \\UX{} on", fixed = TRUE, all = FALSE)
+  expect_match(result, "interaction effect of Video\\_Type $\\times$ \\UX{} on", fixed = TRUE, all = FALSE)
+  expect_compiles(result)
+})
+
+test_that("reportNPAV labels terms by ':' and escapes the dv", {
+  model <- data.frame(
+    Df = c(1, 1, 10), `F value` = c(6.12, 5.01, NA), `Pr(>F)` = c(0.033, 0.045, NA),
+    check.names = FALSE
+  )
+  rownames(model) <- c("UX", "Video_Type:trial2", "Residuals")
+  result <- suppressWarnings(suppressMessages(reportNPAV(model, dv = "tlx_mental")))
+  expect_match(result[1], "main effect of \\UX{} on tlx\\_mental", fixed = TRUE)
+  expect_match(result[2], "interaction effect of Video\\_Type $\\times$ trial2", fixed = TRUE)
+  expect_compiles(result)
+
+  none <- data.frame(Df = c(1, 10), `F value` = c(0.1, NA), `Pr(>F)` = c(0.8, NA), check.names = FALSE)
+  rownames(none) <- c("UX", "Residuals")
+  expect_message(
+    suppressWarnings(reportNPAV(none, dv = "tlx_mental")),
+    "no significant effects on tlx\\\\_mental"
+  )
+})
+
+test_that("reportART and reportNPAV give a two-sided 95% CI for partial eta squared", {
+  # F_to_eta2() defaults to a one-sided interval whose upper bound is always 1;
+  # it was printed as "95% CI: [0.02, 1.00]".
+  es <- as.data.frame(effectsize::F_to_eta2(9, 1, 38, ci = 0.95, alternative = "two.sided"))
+  expected <- sprintf("95\\%% CI: [%.2f, %.2f]", es$CI_low, es$CI_high)
+
+  model <- data.frame(
+    Term = "UX", F = 9, Df = 1, Df.res = 38, `Pr(>F)` = 0.004, check.names = FALSE
+  )
+  art <- suppressMessages(reportART(model, dv = "TiA"))
+  expect_match(art, expected, fixed = TRUE)
+  expect_false(grepl("1.00]", art, fixed = TRUE))
+
+  npav <- data.frame(Df = c(1, 38), `F value` = c(9, NA), `Pr(>F)` = c(0.004, NA), check.names = FALSE)
+  rownames(npav) <- c("UX", "Residuals")
+  npav_out <- suppressWarnings(suppressMessages(reportNPAV(npav, dv = "TiA")))
+  expect_match(npav_out, expected, fixed = TRUE)
+})
+
+test_that("reportggstatsplotPostHoc writes the dv as text, never as a macro", {
+  # .tex_name("v") used to give \v -- the hacek accent -- and "Workload" became
+  # a \Workload macro, unlike every other reporter.
+  df <- data.frame(grp = c("A", "A", "B", "B"), v = c(5, 6, 1, 2), Workload = c(5, 6, 1, 2))
+  plot <- fake_pwc_plot("Games-Howell", "Holm")
+
+  v <- suppressMessages(reportggstatsplotPostHoc(df, plot, iv = "grp", dv = "v"))
+  expect_match(v, "in terms of v compared to", fixed = TRUE)
+  expect_false(grepl("\\v", v, fixed = TRUE))
+
+  w <- suppressMessages(reportggstatsplotPostHoc(df, plot, iv = "grp", dv = "Workload"))
+  expect_match(w, "in terms of Workload compared to", fixed = TRUE)
+})
+
+test_that("reportggstatsplotPostHoc overwrites sink_to when nothing is significant", {
+  # It returned before writing, so the manuscript kept an earlier run's
+  # significant result.
+  df <- data.frame(grp = c("A", "A", "B", "B"), val = c(5, 6, 1, 2))
+  path <- withr::local_tempfile(fileext = ".tex")
+  writeLines("A post-hoc test found that A was significantly higher.", path)
+
+  result <- suppressMessages(reportggstatsplotPostHoc(
+    df, fake_pwc_plot("Games-Howell", "Holm", p.value = 0.4),
+    iv = "grp", dv = "val", sink_to = path
+  ))
+  expect_equal(readLines(path), result)
+  expect_match(result, "found no significant differences for val")
+})
+
+test_that("reportggstatsplotPostHoc takes a Dunn direction from mean ranks", {
+  df <- skewed_three_groups()
+  plt <- ggstatsplot::ggbetweenstats(df, g, v, type = "nonparametric")
+
+  result <- suppressMessages(reportggstatsplotPostHoc(df, plt, iv = "g", dv = "v"))
+  expect_false(any(grepl("that A was significantly higher", result, fixed = TRUE)))
+  expect_true(any(grepl(
+    "that B was significantly higher (\\mdn{5.13}, \\iqr{0.57}) in terms of v compared to A (\\mdn{1.00}",
+    result,
+    fixed = TRUE
+  )))
+  expect_compiles(result)
+})
+
+test_that("reportggstatsplotPostHoc takes a Durbin-Conover direction from within-participant ranks", {
+  # B exceeds A within every participant but one, whose A is an outlier of
+  # 100: the mean of A is larger, but A ranks below B in 14 of 15 blocks.
+  set.seed(11)
+  n <- 15
+  base <- stats::rnorm(n)
+  d <- data.frame(
+    id = factor(rep(seq_len(n), times = 3)),
+    cond = factor(rep(c("A", "B", "C"), each = n)),
+    y = c(base, base + 0.3 + stats::runif(n, 0, 0.1), base + 2 + stats::runif(n, 0, 0.1))
+  )
+  d$y[d$id == 1 & d$cond == "A"] <- 100
+  expect_gt(mean(d$y[d$cond == "A"]), mean(d$y[d$cond == "B"]))
+  plt <- ggstatsplot::ggwithinstats(d, cond, y, subject.id = id, type = "nonparametric")
+
+  result <- suppressMessages(reportggstatsplotPostHoc(d, plt, iv = "cond", dv = "y", subject = "id"))
+  expect_match(result[1], "^A Durbin-Conover post-hoc test")
+  expect_true(any(grepl("that B was significantly higher (\\mdn{", result, fixed = TRUE)))
+  expect_false(any(grepl("that A was significantly higher", result, fixed = TRUE)))
+
+  # without `subject`, observations are paired by row order (as ggwithinstats
+  # does without subject.id) and the user is told so
+  expect_warning(
+    suppressMessages(reportggstatsplotPostHoc(d, plt, iv = "cond", dv = "y")),
+    "paired by their row order"
+  )
+})
+
+test_that("reportggstatsplotPostHoc describes Yuen's test with trimmed means", {
+  set.seed(42)
+  df <- data.frame(
+    condition = factor(rep(c("A", "B", "C"), each = 20)),
+    score = c(stats::rnorm(20), stats::rnorm(20, 0.8), stats::rnorm(20, 1.6))
+  )
+  plt <- ggstatsplot::ggbetweenstats(df, condition, score, type = "robust")
+  result <- suppressMessages(reportggstatsplotPostHoc(df, plt, iv = "condition", dv = "score"))
+
+  trimmed_c <- mean(df$score[df$condition == "C"], trim = 0.2)
+  expect_match(result, "^A Yuen's trimmed means post-hoc test")
+  expect_match(result[1], paste0("that C was significantly higher ($M_{t}$=", sprintf("%.2f", trimmed_c)), fixed = TRUE)
+  expect_compiles(result)
+})
+
+test_that("reportggstatsplotPostHoc describes only the participants ggwithinstats tested", {
+  # Participant 1 lacks C, so ggwithinstats() drops them -- including their
+  # outlying A of 40. Means over all rows put A above B (2.38 vs 0.91) although
+  # the paired test, on the remaining 14, finds B higher.
+  set.seed(12)
+  n <- 15
+  w <- data.frame(
+    id = factor(rep(seq_len(n), times = 3)),
+    cond = factor(rep(c("A", "B", "C"), each = n))
+  )
+  w$y <- rep(stats::rnorm(n), 3) +
+    c(stats::rnorm(n, 0, 0.5), stats::rnorm(n, 1.5, 0.5), stats::rnorm(n, 3, 0.5))
+  w$y[w$id == 1 & w$cond == "A"] <- 40
+  w$y[w$id == 1 & w$cond == "C"] <- NA
+  plt <- ggstatsplot::ggwithinstats(w, cond, y, subject.id = id, type = "parametric")
+
+  result <- suppressMessages(
+    reportggstatsplotPostHoc(w, plt, iv = "cond", dv = "y", subject = "id")
+  )
+  complete <- w[w$id != "1", ]
+  m_a <- sprintf("%.2f", mean(complete$y[complete$cond == "A"]))
+  m_b <- sprintf("%.2f", mean(complete$y[complete$cond == "B"]))
+  expect_match(
+    result[1],
+    paste0("that B was significantly higher (\\m{", m_b, "}"),
+    fixed = TRUE
+  )
+  expect_match(result[1], paste0("compared to A (\\m{", m_a, "}"), fixed = TRUE)
+
+  # without `subject` the mismatch is flagged
+  expect_warning(
+    suppressMessages(reportggstatsplotPostHoc(w, plt, iv = "cond", dv = "y")),
+    "Pass `subject`"
+  )
+
+  # one row per participant and level is required
+  dup <- rbind(w, w[1, ])
+  expect_error(
+    suppressMessages(reportggstatsplotPostHoc(dup, plt, iv = "cond", dv = "y", subject = "id")),
+    "one row per participant"
+  )
+})
+
+test_that("reportggstatsplotPostHoc ignores `subject` for a between-subjects design", {
+  df <- data.frame(
+    pid = factor(1:4), grp = c("A", "A", "B", "B"), val = c(5, 6, 1, 2)
+  )
+  expect_message(
+    result <- reportggstatsplotPostHoc(
+      df, fake_pwc_plot("Games-Howell", "Holm"),
+      iv = "grp", dv = "val", subject = "pid"
+    ),
+    "between-subjects"
+  )
+  expect_match(result, "A was significantly higher (\\m{5.50}", fixed = TRUE)
+})
+
+test_that("reportggstatsplotPostHoc refuses Bayesian pairwise tables", {
+  # They carry Bayes factors and no p.value column, which used to be read as
+  # "no significant differences".
+  set.seed(42)
+  df <- data.frame(
+    condition = factor(rep(c("A", "B", "C"), each = 20)),
+    score = c(stats::rnorm(20), stats::rnorm(20, 0.8), stats::rnorm(20, 1.6))
+  )
+  plt <- ggstatsplot::ggbetweenstats(df, condition, score, type = "bayes")
+  expect_error(
+    reportggstatsplotPostHoc(df, plt, iv = "condition", dv = "score"),
+    "Bayes factors, not p-values"
+  )
+})
+
+test_that("reportggstatsplot reports a Bayes factor for type = 'bayes'", {
+  # .fmt_p_macro(NULL) failed with "argument is of length zero".
+  set.seed(42)
+  df <- data.frame(
+    condition = factor(rep(c("A", "B", "C"), each = 20)),
+    score = c(stats::rnorm(20), stats::rnorm(20, 0.8), stats::rnorm(20, 1.6))
+  )
+  plt <- ggstatsplot::ggbetweenstats(df, condition, score, type = "bayes")
+  bf <- ggstatsplot::extract_stats(plt)$subtitle_data$bf10[1]
+
+  result <- suppressMessages(reportggstatsplot(plt, iv = "condition", dv = "score"))
+  expect_match(result, "$\\mathrm{BF}_{10} = ", fixed = TRUE)
+  expect_match(
+    result,
+    paste("found", as.character(effectsize::interpret_bf(bf, rules = "jeffreys1961")), "an effect of"),
+    fixed = TRUE
+  )
+  expect_compiles(result)
+})
+
+test_that("reportggstatsplot reports Yuen's trimmed-means test as t(df)", {
+  # It fell through to "(statistic=-2.73, ...)" and dropped df.error.
+  set.seed(42)
+  df <- data.frame(
+    condition = factor(rep(c("A", "B"), each = 20)),
+    score = c(stats::rnorm(20), stats::rnorm(20, 1.2))
+  )
+  plt <- ggstatsplot::ggbetweenstats(df, condition, score, type = "robust")
+  st <- ggstatsplot::extract_stats(plt)$subtitle_data
+
+  result <- suppressMessages(reportggstatsplot(plt, iv = "condition", dv = "score"))
+  expect_match(result, paste0("(t(", round(st$df.error, 2), ")="), fixed = TRUE)
+  expect_false(grepl("statistic=", result, fixed = TRUE))
+})
+
+test_that("reportggstatsplot does not double the article of a method name", {
+  set.seed(42)
+  df <- data.frame(
+    condition = factor(rep(c("A", "B", "C"), each = 20)),
+    score = c(stats::rnorm(20), stats::rnorm(20, 0.8), stats::rnorm(20, 1.6))
+  )
+  plt <- ggstatsplot::ggbetweenstats(df, condition, score, type = "robust")
+  result <- suppressMessages(reportggstatsplot(plt, iv = "condition", dv = "score"))
+  # statsExpressions names it "A heteroscedastic one-way ANOVA for trimmed means"
+  expect_match(result, "^A heteroscedastic one-way ANOVA for trimmed means found")
+  expect_false(grepl("^An? A ", result))
+})
+
+test_that("latexify_report escapes every LaTeX special it does not convert", {
+  input <- paste(
+    "We fitted a model to predict tlx_mental with cond_type (formula: tlx_mental ~ cond_type).",
+    "- The effect of cond_type [b] is significant (p < .001, R2 > 0.5) & large: 100% #1, x^2",
+    sep = "\n"
+  )
+  out <- latexify_report(input, print_result = FALSE)
+
+  expect_match(out, "predict tlx\\_mental with cond\\_type", fixed = TRUE)
+  expect_match(out, "tlx\\_mental $\\sim$ cond\\_type", fixed = TRUE)
+  expect_match(out, "(p $<$ .001, $R^2$ $>$ 0.5) \\& large: 100\\% \\#1, x\\textasciicircum{}2", fixed = TRUE)
+  expect_match(out, "\\item The effect", fixed = TRUE)
+  expect_compiles(out)
+})
+
+test_that("latexify_report output of a real report() compiles", {
+  skip_if_not_installed("report")
+  set.seed(3)
+  d <- data.frame(
+    tlx_mental = stats::rnorm(40),
+    cond_type = factor(rep(c("a", "b"), 20))
+  )
+  txt <- report::report(stats::lm(tlx_mental ~ cond_type, data = d))
+  out <- latexify_report(txt, print_result = FALSE)
+  expect_false(grepl("tlx_mental", out, fixed = TRUE))
+  expect_match(out, "tlx\\_mental", fixed = TRUE)
+  expect_compiles(out)
+})
+
+test_that("post-hoc tables use a \\label key that LaTeX accepts", {
+  expect_equal(
+    colleyRstats:::.table_label("tab:posthoc", "Species", "cost%#"),
+    "tab:posthoc-Species-cost--"
+  )
+  expect_equal(
+    colleyRstats:::.table_label("tab:artcon", "mode", "Sepal.Length"),
+    "tab:artcon-mode-Sepal.Length"
+  )
+})
+
+
+test_that(".ggstatsplot_is_within does not read 'independent samples' as within", {
+  set.seed(4)
+  d <- data.frame(g = rep(c("a", "b"), each = 20), v = c(rnorm(20), rnorm(20, 1)))
+  p <- ggstatsplot::ggbetweenstats(d, g, v, type = "robust")
+  expect_match(ggstatsplot::extract_stats(p)$subtitle_data$method[1], "independent", ignore.case = TRUE)
+  expect_false(.ggstatsplot_is_within(p))
+})
+
+test_that("Bayes factors below 1 keep two significant digits", {
+  expect_identical(.fmt_bf(0.014), "0.014")
+  expect_identical(.fmt_bf(0.05), "0.050")
+  expect_identical(.fmt_bf(0.5), "0.50")
+  expect_identical(.fmt_bf(3.2), "3.20")
+})
+
+test_that("the direction warning only recommends 'auto' when descriptives were forced", {
+  desc <- data.frame(loc = c(1, 2), row.names = c("A", "B"))
+  expect_warning(
+    .check_descriptive_direction(desc, "A", "B", TRUE, "mean", "Dunn test", forced = TRUE),
+    "descriptives = \"auto\"", fixed = TRUE
+  )
+  w <- tryCatch(
+    .check_descriptive_direction(desc, "A", "B", TRUE, "median", "Dunn test", forced = FALSE),
+    warning = function(w) conditionMessage(w)
+  )
+  expect_match(w, "conventionally accompany")
+  expect_no_match(w, "descriptives = \"auto\"", fixed = TRUE)
+})
+
+test_that("reportggstatsplotPostHoc warns on a within plot without subject, even with equal counts", {
+  set.seed(9)
+  n <- 15
+  d <- data.frame(id = rep(1:n, 3), cond = rep(c("A", "B", "C"), each = n))
+  d$y <- rnorm(n, 0, 2)[d$id] + c(0, 2, 4)[as.integer(factor(d$cond))] + rnorm(3 * n, 0, 0.5)
+  p <- ggstatsplot::ggwithinstats(d, cond, y, subject.id = id, type = "p")
+  expect_warning(
+    suppressMessages(reportggstatsplotPostHoc(d, p, iv = "cond", dv = "y")),
+    "no `subject` was given", fixed = TRUE
+  )
+  expect_no_warning(
+    suppressMessages(reportggstatsplotPostHoc(d, p, iv = "cond", dv = "y", subject = "id"))
+  )
 })

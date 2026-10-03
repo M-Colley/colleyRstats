@@ -4,7 +4,13 @@
 \alias{assumption_methods_text}
 \title{Methods-section sentence justifying the test selection}
 \usage{
-assumption_methods_text(data, x, y, include_homogeneity = FALSE)
+assumption_methods_text(
+  data,
+  x,
+  y,
+  include_homogeneity = FALSE,
+  subject = NULL
+)
 }
 \arguments{
 \item{data}{the data frame}
@@ -13,22 +19,55 @@ assumption_methods_text(data, x, y, include_homogeneity = FALSE)
 
 \item{y}{the dependent variable (column name as string)}
 
-\item{include_homogeneity}{whether to also report Levene's test. Useful for
-between-subjects designs. Default \code{FALSE}.}
+\item{include_homogeneity}{whether to also report the homogeneity-of-variance
+test run by \code{\link[=check_homogeneity_by_group]{check_homogeneity_by_group()}} (named as that function reports
+it: the Brown-Forsythe, i.e. median-centred Levene's, test). Between
+subjects only: with \code{subject} given it is skipped with a message,
+because equal variances across conditions are not an assumption of a
+repeated-measures analysis (its counterpart, sphericity, is tested and
+corrected by the ANOVA itself). Default \code{FALSE}.}
+
+\item{subject}{the participant-ID column for a within-subjects design, as a
+string; \code{NULL} (default) for a between-subjects design. Passed to
+\code{\link[=check_normality_by_group]{check_normality_by_group()}}.}
 }
 \value{
 Invisibly returns the sentence(s) as a single string; the text is
 also emitted via \code{message()}.
 }
 \description{
-Runs the group-wise Shapiro-Wilk normality check (and optionally Levene's
-test for homogeneity of variances) and turns the outcome into a ready-made
-methods-section sentence, including the relevant statistics. This is the
-justification reviewers expect next to the choice of a parametric or
-non-parametric test.
+Runs \code{\link[=check_normality_by_group]{check_normality_by_group()}} (and optionally a test for homogeneity of
+variances) and turns the outcome into a ready-made methods-section sentence
+that says what was tested and reports the statistic the decision rests on.
+This is the justification reviewers expect next to the choice of a
+parametric or non-parametric test.
+}
+\details{
+The sentence follows the check exactly:
+\itemize{
+\item \strong{Between subjects}: one Shapiro--Wilk test per group, Holm-corrected
+across the groups; the adjusted p-values are labelled
+\eqn{p_{Holm}}{p_Holm}. A rejection names the group(s) with their
+\eqn{W} and p; otherwise the group with the smallest p is reported.
+\item \strong{Within subjects} (\code{subject} given): one test on the paired
+differences (two conditions) or on the residuals of the additive
+participant + condition model (more conditions). Participants excluded for
+lacking a condition are counted in the text.
+\item A group that could not be tested (fewer than three values, or all values
+identical -- e.g. everyone ticked the top of a rating scale) is named and
+stated to have been treated as non-normal, which sends the analysis to the
+non-parametric branch.
+}
+
+p-values are printed so that rounding never moves them across .05, .01 or
+.10, and all statistics are plain LaTeX math (no custom macros needed).
 }
 \examples{
 set.seed(1)
 d <- data.frame(g = rep(c("A", "B"), each = 20), v = rnorm(40))
 assumption_methods_text(d, x = "g", y = "v")
+
+# within subjects: the paired differences are tested
+d$id <- rep(1:20, times = 2)
+assumption_methods_text(d, x = "g", y = "v", subject = "id")
 }

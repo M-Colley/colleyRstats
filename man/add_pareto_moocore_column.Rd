@@ -22,6 +22,11 @@ pass negated copies of your own columns.}
 }
 \value{
 A data frame with the same columns as \code{data}, along with an additional column, \code{PARETO_MOOCORE}, which is \code{TRUE} for rows that are on the Pareto front and \code{FALSE} otherwise.
+Identical rows share one verdict: every copy of a non-dominated point is
+kept (\code{keep_weakly = TRUE}), as in \code{\link[=add_pareto_emoa_column]{add_pareto_emoa_column()}}, where
+\code{moocore::is_nondominated()} on its own would mark only the first
+copy. Rows with a missing objective value get \code{NA}, with a warning,
+and the front is computed from the complete rows.
 }
 \description{
 This function calculates the Pareto front using moocore for a given set of objectives in a data frame and adds a new column, \code{PARETO_MOOCORE}, which indicates whether each row in the data frame belongs to the Pareto front.

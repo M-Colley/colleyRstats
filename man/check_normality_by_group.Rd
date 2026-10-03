@@ -4,25 +4,75 @@
 \alias{check_normality_by_group}
 \title{Check normality for groups}
 \usage{
-check_normality_by_group(data, x, y)
+check_normality_by_group(data, x, y, subject = NULL, p_adjust = "holm")
 }
 \arguments{
 \item{data}{the data frame}
 
-\item{x}{the x column}
+\item{x}{the grouping (condition) column, as a string}
 
-\item{y}{the y column}
+\item{y}{the outcome column, as a string}
+
+\item{subject}{the participant-ID column for a within-subjects design, as a
+string; \code{NULL} (default) for a between-subjects design.}
+
+\item{p_adjust}{multiplicity correction across groups, passed to
+\code{\link[stats:p.adjust]{stats::p.adjust()}}. Default \code{"holm"}; only used between subjects.}
 }
 \value{
-TRUE if all groups are normal, FALSE otherwise. The per-group
-Shapiro-Wilk statistics are attached as a data frame in the \code{"tests"}
-attribute (columns: group, \code{W}, \code{p_value}), e.g. for use in a
-methods section via \code{\link[=assumption_methods_text]{assumption_methods_text()}}. For groups with more
-than 5000 non-missing values, Shapiro-Wilk is computed on a random sample of
-5000 observations (a warning is emitted); the returned value still reflects
-that sampled test. Because the sample is drawn randomly, results for such
-large groups are not reproducible unless a seed is set beforehand.
+\code{TRUE} if no test rejects normality and every group could be
+tested, \code{FALSE} otherwise. Attributes:
+\describe{
+\item{\code{tests}}{data frame with columns \code{group} (the condition,
+or \code{"differences"} / \code{"residuals"} within subjects),
+\code{n}, \code{W}, \code{p_value}, \code{p_adjusted} and
+\code{testable}, e.g. for \code{\link[=assumption_methods_text]{assumption_methods_text()}}.}
+\item{\code{method}}{\code{"groupwise"}, \code{"differences"} or
+\code{"residuals"}.}
+\item{\code{p_adjust}}{the correction applied (\code{"none"} for a
+single test).}
+\item{\code{untestable}}{the groups that could not be tested.}
+\item{\code{dropped_subjects}}{within subjects: the participants left
+out for lacking a condition.}
+}
+For a group with more than 5000 values, Shapiro-Wilk is computed on a
+random sample of 5000 (a warning is emitted), so the result is only
+reproducible with a seed set beforehand.
 }
 \description{
-Check normality for groups
+Decides between a parametric and a non-parametric analysis from Shapiro-Wilk
+tests, testing the quantity the parametric test actually assumes to be
+normal.
+}
+\details{
+\itemize{
+\item \strong{Between subjects} (\code{subject = NULL}): one test per group, with the
+p-values corrected for the number of groups (\code{p_adjust}, Holm by
+default). Without the correction, six perfectly normal groups would send
+about one analysis in four to the non-parametric branch by chance alone.
+\item \strong{Within subjects} (\code{subject} given): a paired t-test assumes the
+\emph{differences} are normal, and a repeated-measures ANOVA the \emph{residuals}
+after removing participant and condition effects -- not the raw scores per
+condition, which also carry the between-participant spread. With two
+conditions the per-participant differences are tested; with more, the
+residuals of the additive model \code{y ~ x + subject}. Participants
+lacking any condition are left out (they cannot enter a paired analysis),
+and more than one row per participant and condition is an error.
+}
+
+A group that cannot be tested -- fewer than three values, or no variance at
+all, as in a rating scale where everyone ticked the top box -- counts as
+\strong{not} normal, so the decision errs towards the non-parametric test rather
+than letting an untestable group pass silently.
+
+Testing assumptions with significance tests has well-known limits (low power
+in small samples, trivial deviations flagged in large ones); report the
+check, and treat it as one input to the choice rather than the whole of it.
+}
+\examples{
+set.seed(1)
+d <- data.frame(id = rep(1:20, 2), cond = rep(c("A", "B"), each = 20))
+d$score <- rnorm(40, mean = ifelse(d$cond == "A", 5, 6))
+check_normality_by_group(d, "cond", "score")                  # between
+check_normality_by_group(d, "cond", "score", subject = "id")  # within
 }

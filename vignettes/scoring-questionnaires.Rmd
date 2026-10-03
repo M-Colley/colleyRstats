@@ -45,6 +45,41 @@ The SUS score is the sum of the ten recoded items times 2.5, which puts it on
 0--100. That is a percentage of the maximum, **not** a percentile: the mean SUS
 across published studies is about 68, so 68 is average rather than poor.
 
+A prefix selects the columns, and their *names* then say which item each one
+holds -- never their sort order, which would put `sus_10` before `sus_2`, or
+`tlx_effort` before `tlx_mental`. Either what follows the prefix is the item's
+code or label, compared without case or punctuation:
+
+```{r}
+tlx_named <- data.frame(
+  tlx_effort = 50, tlx_frustration = 60, tlx_mental = 10,
+  tlx_performance = 40, tlx_physical = 20, tlx_temporal = 30
+)
+score_questionnaire(tlx_named, "nasa_tlx", prefix = "tlx_")$Mental_Demand
+```
+
+or it carries one item number per column, running exactly 1 to the number of
+items (`sus_2`, `SUS[2]`, or `SUS_2_1`, where the number that varies across the
+columns is the item). Names that do neither -- a partial match, numbering from
+0 -- are an error asking for a named `items` mapping rather than a guess.
+
+### Item columns must be numbers
+
+Survey exports often deliver responses as text. A column holding
+`"Strongly agree"`, `"5 - Strongly agree"` or a decimal comma such as `"2,5"`
+stops scoring with an error that names the values and says how to recode them:
+converting them would silently turn those answers into missing values, and with
+a relaxed `min_valid` the row would be scored as if the participant had skipped
+them. Blank cells are missing responses. Factors are read by their labels when
+those are numbers, and by level order only when the factor is ordered.
+
+```{r}
+text_export <- study
+text_export$sus_3 <- as.character(text_export$sus_3)
+text_export$sus_3[1] <- "Strongly agree"
+try(score_questionnaire(text_export, "sus", prefix = "sus_"))
+```
+
 Every instrument's notes say this sort of thing, and
 `questionnaire_items()` prints them:
 
@@ -72,6 +107,25 @@ Responses outside the range you declare are an error rather than a silent
 rescale, which is what stops a 1--7 export from being scored as if it were the
 0--100 TLX.
 
+The quieter failure is a coding that fits the range but is shifted against it.
+The scoring message prints the observed range next to the assumed one, and
+without an explicit `scale` three patterns draw a warning: NASA-TLX responses
+that never exceed 21 (the 21-point sheet, which scored as 0--100 understates
+workload about five-fold); no response at 0 on a zero-based instrument such as
+the IPQ or SSQ (a 1-based export in which nobody chose the top point); and no
+response at the top of a one-based instrument such as the SUS (a 0-based export
+in which nobody chose 0). The last two need at least five respondents. Passing
+`scale` explicitly confirms the coding and silences them.
+
+```{r}
+# The same 21-point responses, without saying so: RTLX comes out five times too low
+score_questionnaire(tlx, "nasa_tlx")$RTLX
+```
+
+A fractional response on an instrument answered in whole scale points (every
+built-in one except the NASA-TLX) warns too: it is an averaged, imputed or
+mis-exported column rather than a response.
+
 ### Adding scores to the data
 
 ```{r}
@@ -89,9 +143,18 @@ administered, not to the instrument in the abstract. Survey tools renumber
 items, translations reorder them, short forms drop them from the middle, and
 semantic differentials get printed with the poles the other way round. This
 package applies each instrument's *published* key — the right default, and still
-only a default. `score_questionnaire()` maps your columns onto the instrument's
-items *positionally*, so a shifted export produces scores that look entirely
-reasonable and are wrong.
+only a default. Whatever your columns are called, the instrument's item 3 is
+taken to be the question your participants saw third; if your sheet ordered,
+worded or poled them differently, the scores look entirely reasonable and are
+wrong. (An unnamed `items` vector is mapped by position, too.)
+
+AttrakDiff is the case in point. The `attrakdiff` key lists its 28 word pairs
+blocked by dimension, each with its negative term first -- the layout of data
+that has already been re-sorted and re-poled, not of the official form. Data
+stored as answered on the official sheet, which interleaves the pairs and
+prints 15 of them with the positive term on the left, belong to
+`"attrakdiff_official"`. Both keys use the same item codes for the same word
+pairs, so a named `items` mapping works with either.
 
 Nothing errors when that happens, which is why R says it out loud: the first
 time each distinct mapping is scored in a session, the mapping and a caution
@@ -109,8 +172,8 @@ whether it is reverse-coded, and the observed range of each column -- so a
 column of all-3s where you expected variation, or a 1--7 export where the
 instrument expects 1--5, is visible immediately.
 
-If your survey stored a pair the other way round, `reverse_items` toggles it.
-Naming an item that the key already reverses *un*-reverses it:
+If your survey printed a pair the other way round, `reverse_items` reverses it
+in addition to the key's own reversals:
 
 ```{r}
 # A survey that anchored NASA-TLX performance "Good" at the high end
@@ -119,6 +182,26 @@ scores <- score_questionnaire(tlx, "nasa_tlx",
   reverse_items = "performance"
 )
 scores$Performance
+```
+
+Do not pass an instrument's own reverse set there. `reverse_items` *toggles*,
+for backward compatibility, so `reverse_items = c(2, 4, 6, 8, 10)` on the SUS
+-- a line many tutorials contain -- un-reverses all five negatively worded
+items, and a perfect respondent scores 50. That now raises a warning. If an
+export genuinely stored items that the key reverses already reversed, say so
+with `unreverse_items`, which does the same on purpose and without a warning:
+
+```{r}
+perfect <- data.frame(t(c(5, 1, 5, 1, 5, 1, 5, 1, 5, 1)))
+names(perfect) <- paste0("sus_", 1:10)
+score_questionnaire(perfect, "sus", prefix = "sus_")$SUS
+
+# Items 2 and 4 were stored pre-reversed by the survey tool
+pre_reversed <- perfect
+pre_reversed[c("sus_2", "sus_4")] <- 5
+score_questionnaire(pre_reversed, "sus", prefix = "sus_",
+  unreverse_items = c("sus2", "sus4")
+)$SUS
 ```
 
 A named `items` argument avoids positional mapping altogether, and is the safer
@@ -150,14 +233,27 @@ score_questionnaire(gappy, "sus", prefix = "sus_")$SUS[1]
 score_questionnaire(gappy, "sus", prefix = "sus_", min_valid = 0.8)$SUS[1]
 ```
 
-With `min_valid` relaxed, a subscale is the mean of the items present, and a
-sum-scored instrument such as the SUS is scaled up proportionally so it stays on
-its published 0--100 range.
+With `min_valid` relaxed, the missing items are completed by the instrument's
+published rule. For the SUS that is Brooke's (1996): a respondent who cannot
+answer an item marks the centre point, so each missing item counts as 3 on
+1--5. One missing item in an otherwise perfect response gives 95, not 100. For
+every other instrument a subscale is the mean of the items present, with a
+summed score scaled up proportionally so it stays on its published range.
+`impute = "prorate"` or `impute = "midpoint"` chooses a rule explicitly --
+report which one you used:
+
+```{r}
+score_questionnaire(gappy, "sus", prefix = "sus_", min_valid = 0.8,
+  impute = "prorate"
+)$SUS[1]
+```
 
 ## Internal consistency
 
 `score_reliability()` computes Cronbach's alpha on the same recoded matrix that
-is aggregated, so reverse-coded items are already flipped:
+is aggregated, so reverse-coded items are already flipped. It reports every
+subscale, plus the whole scale where the instrument defines an overall score --
+the ten-item SUS alpha that SUS papers report:
 
 ```{r}
 score_reliability(study, "sus", prefix = "sus_")
@@ -167,11 +263,19 @@ Because the reversal has already happened, a negative alpha means a real
 problem -- the items of that subscale do not point the same way -- rather than a
 forgotten flip. It warns when one appears.
 
+McDonald's omega (total) comes from an unrotated one-factor solution
+(`psych::fa()`), so it needs 'psych' but not 'GPArotation', and -- unlike
+`psych::omega()` -- does not flip negatively loading items, which would hide
+the very reversal error a negative alpha exposes. For two-item scales, such as
+SUS Learnability, omega is not identified and alpha understates reliability
+whenever the two item variances differ; `spearman_brown` gives the coefficient
+Eisinga, te Grotenhuis and Pelzer (2013) recommend instead. The `note` column
+says why any coefficient is missing.
+
 Do not read the values above as anything: the example responses are random, so
-`Usability` is near zero as it should be, while the two-item `Learnability`
-looks respectable purely by chance. Eight participants is far too few to
-estimate alpha at all, which is itself worth remembering -- `n_complete` is
-reported next to it for that reason.
+any coefficient that looks respectable does so purely by chance. Eight
+participants is far too few to estimate reliability at all, which is itself
+worth remembering -- `n_complete` is reported next to it for that reason.
 
 ## Your own instruments
 
@@ -280,8 +384,10 @@ fit$text
 The sentence is LaTeX; `expand_latex_macros()` renders it as plain text if you
 want to read it here rather than paste it into a manuscript.
 
-Watch the classification when an outcome stays whole-numbered — a raw NASA-TLX
-subscale or a MISC rating is taken for a count unless you say
+Watch the classification when an outcome stays whole-numbered. A raw NASA-TLX
+subscale scored onto 0--100 moves in steps of 5 and is recognised as a bounded
+score (continuous), but a MISC rating or another whole-numbered rating is taken
+for a count -- with a message saying so -- unless you pass
 `outcome_type = "continuous"` or `"ordinal"`. SUS and RTLX are fractional, so
 they classify as continuous on their own.
 

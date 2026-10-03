@@ -26,7 +26,11 @@ named list of sentence vectors, or a single character vector.}
 Default \code{TRUE}.}
 
 \item{methods}{Methods to cite (passed to \code{\link[=cite_methods]{cite_methods()}}) for
-\code{references.bib}; \code{NULL} to skip the bibliography.}
+\code{references.bib}; \code{NULL} to skip the bibliography. Every entry is
+listed via \code{\\nocite{*}}, since the generated text cites nothing and
+BibTeX writes an empty bibliography without a citation. When none of the
+methods can be cited (their packages are not installed), no
+\code{references.bib} is written, with a warning.}
 
 \item{title}{Title used in the generated \code{main.tex}. Default
 \code{"Results"}.}
@@ -36,13 +40,21 @@ Default \code{TRUE}.}
 \code{getOption("colleyRstats.macros")} (i.e. plain when that is
 \code{FALSE}).}
 
-\item{columns}{Figure width preset passed to \code{\link[=save_paper_figure]{save_paper_figure()}}.}
+\item{columns}{Figure width preset passed to \code{\link[=save_paper_figure]{save_paper_figure()}}. A
+single-column figure is included at its natural size, because
+\code{\link[=save_paper_figure]{save_paper_figure()}} chose its type size for exactly that width (scaling
+it to the line width would enlarge the text with it); a full-width figure
+(\code{columns = 2}) goes into a \code{figure*} at \code{\\textwidth}.}
 
-\item{overwrite}{Overwrite existing files in \code{dir}? Default \code{FALSE}.}
+\item{overwrite}{Overwrite existing files in \code{dir}? Default
+\code{FALSE}: if any file the project consists of already exists, nothing
+is written.}
 }
 \value{
 Invisibly, a list with the paths written (\code{dir}, \code{main},
-\code{results}, \code{sections}, \code{figures}, \code{bib}, \code{sty}).
+\code{results}, \code{sections}, \code{figures}, \code{bib}, \code{sty},
+\code{names}); \code{bib}, \code{sty} and \code{names} are \code{NULL}
+when the file was not needed.
 }
 \description{
 Writes everything a manuscript needs into one directory you can drag into
@@ -51,6 +63,17 @@ Overleaf and compile immediately: a \code{main.tex} that already
 a \code{references.bib}, and -- unless macros are expanded inline --
 \code{colleyRstats.sty}. This is the one-call end of the "R analysis to
 compiled PDF" pipeline.
+}
+\details{
+Section keys become file names with only letters, digits and hyphens kept
+(\code{"tlx_1"} is written to \code{sections/tlx-1.tex}); keys that would
+share a file name -- including names differing only in case, which Windows
+and macOS treat as one file -- get a numbered suffix, so no section can
+overwrite another. The keys themselves are escaped with \code{\link[=latex_escape]{latex_escape()}}
+wherever they are typeset (headings, captions). Name macros in the text
+(\code{\\Video}) get \code{\\providecommand} stubs in \code{names.tex}, and a
+\code{{}} where a space follows them, because TeX would otherwise swallow
+that space ("\code{\\cyl on}" typesets as "cylon").
 }
 \examples{
 \donttest{

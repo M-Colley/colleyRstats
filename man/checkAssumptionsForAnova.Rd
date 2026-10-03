@@ -5,9 +5,9 @@
 \alias{check_assumptions_anova}
 \title{Check the assumptions for an ANOVA with a variable number of factors: Normality and Homogeneity of variance assumption.}
 \usage{
-checkAssumptionsForAnova(data, y, factors)
+checkAssumptionsForAnova(data, y, factors, subject = NULL)
 
-check_assumptions_anova(data, y, factors)
+check_assumptions_anova(data, y, factors, subject = NULL)
 }
 \arguments{
 \item{data}{the data frame}
@@ -15,12 +15,64 @@ check_assumptions_anova(data, y, factors)
 \item{y}{The dependent variable for which assumptions should be checked}
 
 \item{factors}{A character vector of factor names}
+
+\item{subject}{the participant-ID column for a design with within-subject
+factors, as a string; \code{NULL} (default) for a between-subjects design.}
 }
 \value{
-A message indicating whether to use parametric or non-parametric ANOVA
+The guidance text (also emitted as a message), invisibly, with
+attributes:
+\describe{
+\item{\code{parametric}}{\code{TRUE} if every check passed.}
+\item{\code{design}}{\code{"between"}, \code{"within"} or
+\code{"mixed"}.}
+\item{\code{method}}{named character vector naming the tests run
+(\code{residuals}, \code{groupwise}, \code{homogeneity}).}
+\item{\code{residuals}}{the Shapiro-Wilk result on the model residuals
+(columns as in \code{\link[=check_normality_by_group]{check_normality_by_group()}}'s \code{tests}).}
+\item{\code{groupwise}}{between subjects: the per-cell Shapiro-Wilk
+results with Holm-adjusted p-values; \code{NULL} otherwise.}
+\item{\code{homogeneity}}{the Brown-Forsythe result(s) (\code{df1},
+\code{df2}, \code{statistic}, \code{p}, \code{p_adjusted}), or
+\code{NULL} when no between-subject factor exists.}
+}
 }
 \description{
-Check the assumptions for an ANOVA with a variable number of factors: Normality and Homogeneity of variance assumption.
+Checks the normality and variance assumptions of a factorial ANOVA and
+recommends the parametric or the non-parametric analysis. Every factor is
+treated as categorical -- numeric condition codes (1, 2, 3) included, which
+\code{\link[stats:lm]{stats::lm()}} would otherwise fit as a single linear covariate -- and the
+message names the tests that were run and their results.
+}
+\details{
+\itemize{
+\item \strong{Between subjects} (\code{subject = NULL}, the default): a Shapiro-Wilk
+test on the residuals of the linear model \code{y ~ A * B * ...}; a
+Shapiro-Wilk test within every cell of the design, Holm-corrected across
+the cells (as in \code{\link[=check_normality_by_group]{check_normality_by_group()}}); and the Brown-Forsythe
+test (median-centred Levene's test) across the cells. This assumes one
+row per participant: a within-subject factor analysed this way is tested
+on residuals that still contain each participant's overall level, so pass
+\code{subject} for repeated measures.
+\item \strong{Within subjects or mixed} (\code{subject} given): a Shapiro-Wilk test on
+the residuals of \code{y ~ A * B * ... + subject}, with the participant
+as a fixed factor -- the residuals after removing each participant's
+overall level, which is what a repeated-measures ANOVA assumes to be
+normal. The raw scores per cell are not tested, as they also carry the
+between-participant spread. Variance homogeneity is checked only for
+between-subject factors (those constant within a participant), with the
+Brown-Forsythe test across their groups at each combination of the
+within-subject factors (Holm-corrected). For within-subject factors the
+corresponding assumption is sphericity, which \code{\link[rstatix:anova_test]{rstatix::anova_test()}}
+tests (Mauchly) and corrects (Greenhouse-Geisser) itself. More than one
+row per participant and cell is an error: aggregate repeated trials
+first.
+}
+
+A residual set or cell that cannot be tested -- fewer than three values, or
+no variance -- counts as \strong{not} normal, so the advice errs towards the
+non-parametric analysis. Rows with a missing value in \code{y},
+\code{factors} or \code{subject} are left out.
 }
 \section{Naming}{
 
@@ -48,6 +100,20 @@ checkAssumptionsForAnova(
   data    = main_df,
   y       = "tlx_mental",
   factors = c("Video", "DriverPosition")
+)
+
+# The same two factors measured within each of 10 participants
+within_df <- expand.grid(
+  id             = 1:10,
+  Video          = c("A", "B"),
+  DriverPosition = c("Left", "Right")
+)
+within_df$tlx_mental <- rnorm(10)[within_df$id] + rnorm(40)
+checkAssumptionsForAnova(
+  data    = within_df,
+  y       = "tlx_mental",
+  factors = c("Video", "DriverPosition"),
+  subject = "id"
 )
 }
 }

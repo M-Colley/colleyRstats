@@ -14,11 +14,29 @@ check_homogeneity_by_group(data, x, y)
 \item{y}{the dependent variable (column name as string)}
 }
 \value{
-TRUE if Levene's test is non-significant (p >= .05), FALSE otherwise.
-The Levene test result (columns \code{df1}, \code{df2}, \code{statistic},
-\code{p}) is attached in the \code{"test"} attribute, e.g. for use in a
-methods section via \code{\link[=assumption_methods_text]{assumption_methods_text()}}.
+TRUE if the test is non-significant (p >= .05), FALSE otherwise.
+Attributes: \code{"test"}, the test result (columns \code{df1},
+\code{df2}, \code{statistic}, \code{p}); \code{"method"}, the name of the
+test that was run (\code{"Brown-Forsythe test (median-centred Levene's
+  test)"}).
 }
 \description{
-Check homogeneity of variances across groups
+Runs the \strong{Brown-Forsythe test}: Levene's test computed on the absolute
+deviations from each group's \emph{median} rather than its mean
+(\code{\link[rstatix:levene_test]{rstatix::levene_test()}}'s default, \code{center = median}). The
+median-centred version keeps close to its nominal error rate when the data
+are skewed or heavy-tailed, as rating-scale data often are, where Levene's
+mean-centred original rejects too often (Brown & Forsythe, 1974). Report it
+under that name; the \code{"method"} attribute carries it, e.g. for
+\code{\link[=assumption_methods_text]{assumption_methods_text()}}.
+}
+\details{
+The grouping column is treated as a factor whatever its type, so numeric
+condition codes (1, 2, 3) define groups rather than a covariate, and
+non-syntactic column names such as \code{"Mental Demand"} work.
+}
+\references{
+Brown, M. B., & Forsythe, A. B. (1974). Robust tests for the
+equality of variances. \emph{Journal of the American Statistical
+Association, 69}(346), 364--367. \doi{10.1080/01621459.1974.10482955}
 }

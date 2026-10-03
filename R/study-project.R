@@ -71,9 +71,17 @@
 #'   e.g. \code{c("nasa_tlx", "sus")}. The scoring script is generated with one
 #'   call per instrument. See [list_questionnaires()].
 #' @param renv Logical. Initialise \pkg{renv} in the project, pinning the
-#'   package versions this analysis was run with. Default \code{TRUE} when
-#'   \pkg{renv} is installed. This is what makes the project still run in three
-#'   years, and what makes it a usable open-science artifact.
+#'   package versions this analysis was run with -- which is what makes the
+#'   project still run in three years, and what makes it a usable open-science
+#'   artifact. Default \code{FALSE}: initialising discovers every package the
+#'   scripts use and installs it into a project library, which can mean
+#'   network downloads, so it is opt-in. With \code{TRUE}, \code{renv::init()}
+#'   runs in a separate R process (via \pkg{callr} when installed, otherwise
+#'   \code{Rscript}), because activating a project rewrites the calling
+#'   session's library paths, environment variables (\code{R_LIBS_USER},
+#'   \code{PATH}, \code{RENV_PATHS_*}), repository options and sandbox; your
+#'   current session is left exactly as it was. Run \code{renv::init()}
+#'   yourself later to opt in after the fact.
 #' @param git Logical. Write a \code{.gitignore} suited to an R analysis
 #'   project. Default \code{TRUE}.
 #' @param overwrite Logical. Replace files that already exist. Default
@@ -94,7 +102,7 @@
 #' }
 use_study_project <- function(path, name = NULL,
                               questionnaires = c("nasa_tlx", "sus"),
-                              renv = requireNamespace("renv", quietly = TRUE),
+                              renv = FALSE,
                               git = TRUE, overwrite = FALSE, quiet = FALSE) {
   not_empty(path)
   if (!dir.exists(path)) {
@@ -196,23 +204,8 @@ use_study_project <- function(path, name = NULL,
       # lockfile is the wrong thing to test for "already initialised".
       if (!quiet) message("  skipped (exists): ", file.path(path, "renv"))
     } else {
-      if (!quiet) message("  initialising renv (this takes a moment)")
-      # renv::init() activates the project in the CALLING session: it setwd()s
-      # into the project and replaces .libPaths() with the new project library.
-      # Left alone, that silently repoints the user's session at an empty
-      # library, after which nothing they had loaded can be loaded again.
-      old_wd <- getwd()
-      old_libs <- .libPaths()
-      on.exit({
-        setwd(old_wd)
-        .libPaths(old_libs)
-      }, add = TRUE)
-
-      # Not bare: let renv discover what the generated scripts use and write a
-      # lockfile, which is the whole point of pinning. A bare init leaves an
-      # empty library and no renv.lock, so the project could not run its own
-      # pipeline.
-      renv::init(project = path, restart = FALSE)
+      if (!quiet) message("  initialising renv in a separate R process (this takes a moment)")
+      .renv_init_subprocess(path, quiet = quiet)
     }
   }
 
@@ -226,6 +219,69 @@ use_study_project <- function(path, name = NULL,
     )
   }
   invisible(path)
+}
+
+
+# Internal: initialise renv for `path` in a fresh R process.
+#
+# renv::init() activates the project in the session that calls it, and
+# activation is not only setwd() and .libPaths(): it sets R_LIBS_USER,
+# R_LIBS_SITE and PATH, RENV_PATHS_* and the sandbox, and options(repos). An
+# earlier version restored the working directory and library paths afterwards
+# and left the rest changed, so one scaffolding call quietly reconfigured the
+# user's session. A child process takes all of that with it when it exits.
+#
+# Not bare: renv discovers what the generated scripts use and writes a lockfile,
+# which is the whole point of pinning. A bare init leaves an empty library and
+# no renv.lock, so the project could not run its own pipeline.
+.renv_init_subprocess <- function(path, quiet = FALSE) {
+  init <- function(project) {
+    renv::init(project = project, restart = FALSE)
+    invisible(TRUE)
+  }
+
+  if (requireNamespace("callr", quietly = TRUE)) {
+    ok <- tryCatch(
+      {
+        callr::r(init, args = list(project = path), show = !quiet)
+        TRUE
+      },
+      error = function(e) {
+        warning(
+          "renv initialisation in a separate R process failed: ", conditionMessage(e),
+          " The project itself was written; run renv::init() inside it to retry.",
+          call. = FALSE
+        )
+        FALSE
+      }
+    )
+    return(invisible(ok))
+  }
+
+  # Without callr: a script file rather than `Rscript -e`, so the project path
+  # never has to survive shell quoting on any platform.
+  script <- tempfile(fileext = ".R")
+  on.exit(unlink(script), add = TRUE)
+  writeLines(
+    sprintf("renv::init(project = %s, restart = FALSE)", deparse(path)),
+    script
+  )
+  rscript <- file.path(
+    R.home("bin"),
+    if (.Platform$OS.type == "windows") "Rscript.exe" else "Rscript"
+  )
+  status <- system2(
+    rscript, shQuote(script),
+    stdout = if (quiet) FALSE else "", stderr = if (quiet) FALSE else ""
+  )
+  if (!identical(as.integer(status), 0L)) {
+    warning(
+      "renv initialisation in a separate R process failed (exit status ", status,
+      "). The project itself was written; run renv::init() inside it to retry.",
+      call. = FALSE
+    )
+  }
+  invisible(identical(as.integer(status), 0L))
 }
 
 
@@ -254,7 +310,10 @@ use_study_project <- function(path, name = NULL,
 # Internal: the score columns one instrument produces, unprefixed.
 .scaffold_raw_columns <- function(q) {
   def <- .q_get(q)
-  dummy <- as.data.frame(matrix(mean(def$scale), nrow = 1, ncol = nrow(def$items)))
+  # The top scale point is a valid response on every instrument; the midpoint
+  # is not (the SSQ's 0-3 has no 1.5), and scoring one would warn. (The bottom
+  # would trip the NASA-TLX check for 1-21 data scored as 0-100.)
+  dummy <- as.data.frame(matrix(def$scale[2], nrow = 1, ncol = nrow(def$items)))
   names(dummy) <- def$items$code
   names(score_questionnaire(dummy, q, items = def$items$code, verbose = FALSE))
 }
@@ -428,6 +487,17 @@ use_study_project <- function(path, name = NULL,
       ) + stats::rnorm(n, 0, span / 12)
       cols[[paste0(q, "_", i)]] <- pmin(pmax(round(raw), lo), hi)
     }
+
+    # Real responses of a whole study reach both ends of a rating scale, and
+    # score_questionnaire() warns when one end is never used, because that is
+    # what a shifted coding looks like (an IPQ exported 1-7, a SUS exported
+    # 0-4). Synthetic data drawn around the midpoint can miss an end, which
+    # would greet a new project with that warning; give the first respondent's
+    # first item each endpoint once instead.
+    item_cols <- paste0(q, "_", seq_len(nrow(def$items)))
+    values <- unlist(cols[item_cols], use.names = FALSE)
+    if (!any(values == lo)) cols[[item_cols[1]]][1] <- lo
+    if (!any(values == hi)) cols[[item_cols[1]]][2] <- hi
   }
 
   df <- as.data.frame(cols, stringsAsFactors = FALSE)

@@ -8,10 +8,14 @@
 #
 # IMPORTANT: item ORDER and item POLARITY are properties of the sheet a study
 # actually administered, not of the instrument in the abstract. Surveys reorder
-# items, translate them, and flip semantic differentials. Every definition here
-# reproduces the published form; check_questionnaire() prints the mapping that
-# will be used, so it can be compared against the real survey before any number
-# is believed.
+# items, translate them, and flip semantic differentials. The definitions here
+# follow the published item order and scoring key, with ONE exception: the
+# `attrakdiff` key lists its word pairs blocked by dimension with the negative
+# pole first, which is NOT the order or the polarity of the official sheet (see
+# its notes). It is kept unchanged so existing analyses keep scoring the same
+# columns the same way; `attrakdiff_official` encodes the sheet as administered.
+# check_questionnaire() prints the mapping that will be used, so it can be
+# compared against the real survey before any number is believed.
 
 
 # Internal: build one instrument definition. Items are given as parallel
@@ -20,13 +24,28 @@
 # `reverse` holds item *numbers* (positions), which is how published scoring
 # keys are written ("items 2, 4, 6, 8 and 10 are reverse-scored"), so a
 # definition can be diffed against the key without counting columns.
+#
+# The remaining fields describe how the published instrument is SCORED, beyond
+# its item key:
+#   overall      the instrument defines an overall score (used by
+#                score_reliability() to add a whole-scale row). Implied by
+#                `total`; set explicitly where a custom aggregator forms it.
+#   total_name   that overall score's column name, when it is not "Total".
+#   integer      responses are whole scale points (a Likert or semantic-
+#                differential format), so a fractional value signals an
+#                averaged or mis-exported column rather than a response.
+#   missing      the published rule for an item a respondent left out, applied
+#                when `min_valid` < 1 lets such a row be scored: "prorate" (the
+#                mean of the items answered) or "midpoint" (the scale centre).
 .q_def <- function(key, name, reference, scale, code, label, subscale,
                    reverse = integer(0), recode = "none", total = "mean",
                    aggregate = NULL, higher = NA_character_,
-                   notes = character()) {
+                   notes = character(), overall = !is.null(total),
+                   total_name = NULL, integer = TRUE, missing = "prorate") {
   n <- length(code)
   stopifnot(length(label) == n, length(subscale) == n)
   stopifnot(all(reverse %in% seq_len(n)))
+  stopifnot(missing %in% c("prorate", "midpoint"))
 
   list(
     key = key,
@@ -45,7 +64,11 @@
     total = total,
     aggregate = aggregate,
     higher = higher,
-    notes = notes
+    notes = notes,
+    overall = isTRUE(overall),
+    total_name = total_name,
+    integer = isTRUE(integer),
+    missing = missing
   )
 }
 
@@ -74,9 +97,11 @@
       recode = "none",
       total = "mean",
       higher = "worse",
+      # A 0-100 rating scale or slider: fractional values are legitimate.
+      integer = FALSE,
       notes = c(
         "Raw (unweighted) TLX: the overall score is the mean of the six subscales. The pairwise weighting procedure of the original TLX is not applied, so report it as raw TLX or RTLX.",
-        "Responses are rescaled to 0-100, so pass scale = c(1, 21) for the 21-point sheet, or scale = c(1, 20) for a 20-point slider.",
+        "Responses are rescaled to 0-100, so pass scale = c(1, 21) for the 21-point sheet, or scale = c(1, 20) for a 20-point slider. Scoring 1-21 responses as if they were 0-100 understates workload about five-fold, so score_questionnaire() warns when every response is 21 or less and no `scale` was given.",
         "Performance is NOT reversed by default: on the original sheet it runs Perfect (low) to Failure (high), so a high value already means poor performance, in the same direction as the other five subscales. If your survey anchored it Good at the high end, pass reverse_items = 'performance'."
       )
     ),
@@ -109,9 +134,16 @@
       total = NULL,
       aggregate = .q_aggregate_sus,
       higher = "better",
+      # The SUS score is an overall score, formed by the custom aggregator.
+      overall = TRUE,
+      total_name = "SUS",
+      # Brooke (1996): a respondent who cannot answer an item marks the centre.
+      missing = "midpoint",
       notes = c(
         "The SUS score is the sum of the ten recoded items multiplied by 2.5, giving 0-100. That is a percentage of the maximum, NOT a percentile: the mean SUS across studies is about 68, so 68 is average rather than poor.",
-        "Usability (8 items, x 3.125) and Learnability (2 items, x 12.5) follow Lewis & Sauro (2009) and are likewise on 0-100. The two are strongly correlated; report them only if the study has a reason to separate them."
+        "Usability (8 items, x 3.125) and Learnability (2 items, x 12.5) follow Lewis & Sauro (2009) and are likewise on 0-100. The two are strongly correlated; report them only if the study has a reason to separate them.",
+        "Missing items: Brooke (1996) instructs a respondent who cannot answer an item to mark the centre point of the scale, so when `min_valid` < 1 lets an incomplete row be scored, each missing item counts as the centre (3 on 1-5). One missing item in an otherwise perfect response therefore gives 95, not 100. Pass impute = \"prorate\" to scale up from the answered items instead, and say which rule you used.",
+        "Learnability has only two items. score_reliability() reports the Spearman-Brown coefficient for it, which Eisinga, te Grotenhuis & Pelzer (2013) recommend over alpha for two-item scales."
       )
     ),
 
@@ -183,7 +215,9 @@
     tia = .q_def(
       key = "tia",
       name = "Trust in Automation (TiA)",
-      reference = "Koerber (2018), Proc. IEA 2018, Advances in Intelligent Systems and Computing 823",
+      # The congress was IEA 2018, but AISC vol. 823 appeared in 2019, and the
+      # proceedings chapter is cited by its publication year.
+      reference = "Koerber (2019), Proc. IEA 2018, Advances in Intelligent Systems and Computing 823",
       scale = c(1, 5),
       code = c(
         "rc1", "up1", "f1", "i1", "pro1", "rc2", "up2", "i2", "t1", "rc3",
@@ -228,6 +262,7 @@
       notes = c(
         "Item order, subscale membership and the inverted set are transcribed from the author's own release (github.com/moritzkoerber/TiA_Trust_in_Automation_Questionnaire): Table 1 of TiA_Manual_Eng.pdf, which states that items 5, 7, 10, 15 and 16 are inverse items.",
         "Six subscales over 19 items. Trust in Automation (items 9 and 14) is the outcome scale and the other five are its proposed antecedents. The manual is explicit that a total score over all items is not produced: 'A total sum score derived from all items together is, given the multidimensionality, not unambiguously interpretable', so none is computed here.",
+        "Familiarity, Intention of Developers and Trust in Automation have two items each; score_reliability() reports the Spearman-Brown coefficient for them, which Eisinga, te Grotenhuis & Pelzer (2013) recommend over alpha for two-item scales.",
         "Propensity to Trust and Familiarity are dispositional: they describe the participant rather than the system, and are normally measured once, before exposure, rather than per condition.",
         "The 'no response' option on the printed sheet is a missing value, not a sixth scale point. Code it NA rather than 0 or 6."
       )
@@ -266,7 +301,68 @@
       higher = "better",
       notes = c(
         "Four dimensions of seven word pairs each, centred to -3 .. +3 and averaged. The published portfolio plot puts Pragmatic Quality on the x-axis against the mean of the two Hedonic dimensions on the y-axis.",
-        "The pairs are listed here BLOCKED by dimension with the negative term first, which is how most self-administered exports are laid out. The official form interleaves the pairs and flips the polarity of some of them; if you used it, reorder your columns or pass an explicit named `items` mapping."
+        "NOT the official sheet: the pairs are listed here BLOCKED by dimension, each with its NEGATIVE term first (so nothing is reversed), which suits data you have already re-sorted and re-poled. The official form interleaves the 28 pairs and prints 15 of them with the positive term on the left. Data collected with that form and stored as answered belong to instrument = \"attrakdiff_official\"; scoring them with this key silently mixes up the dimensions and leaves 15 items unreversed.",
+        "Within each dimension the pairs keep their order of appearance on the official sheet, so the codes (pq1 .. att7) are the same in both keys and name the same word pair."
+      )
+    ),
+
+    # ---------------------------------------------------------------------
+    # The 28 pairs in the order and with the poles of the sheet as administered.
+    # Verified against independent reproductions of the form: the English
+    # e-survey of attrakdiff.de/UID (copied into the protocol of trial
+    # NCT03599856), the nc-apps/quex survey app, and the French validation by
+    # Lallemand, Koenig, Gronier & Martin (2015), whose sheet lists the same
+    # order, assigns the same dimensions and names exactly these 15 reversed
+    # items (QP_1, ATT_1, QHS_1, QP_2, QHI_2, QP_3, ATT_3, QHI_3, QP_5, QHI_6,
+    # ATT_5, QHS_3, QHS_4, ATT_7, QHS_7).
+    attrakdiff_official = .q_def(
+      key = "attrakdiff_official",
+      name = "AttrakDiff 2 (official sheet order and poles)",
+      reference = "Hassenzahl, Burmester & Koller (2003), Mensch & Computer 2003; order and poles as administered (cf. Lallemand et al., 2015, Eur. Rev. Appl. Psychol. 65(5))",
+      scale = c(1, 7),
+      code = c(
+        "pq1", "hqi1", "att1", "hqs1", "pq2", "hqi2", "att2", "pq3", "att3", "pq4",
+        "hqi3", "pq5", "hqi4", "hqi5", "hqi6", "hqi7", "att4", "hqs2", "att5", "pq6",
+        "att6", "hqs3", "hqs4", "hqs5", "hqs6", "att7", "hqs7", "pq7"
+      ),
+      # Left - right, exactly as printed; the left term is response 1.
+      label = c(
+        "human - technical", "isolating - connective", "pleasant - unpleasant",
+        "inventive - conventional", "simple - complicated",
+        "professional - unprofessional", "ugly - attractive",
+        "practical - impractical", "likeable - disagreeable",
+        "cumbersome - straightforward", "stylish - tacky",
+        "predictable - unpredictable", "cheap - premium",
+        "alienating - integrating",
+        "brings me closer to people - separates me from people",
+        "unpresentable - presentable", "rejecting - inviting",
+        "unimaginative - creative", "good - bad",
+        "confusing - clearly structured", "repelling - appealing",
+        "bold - cautious", "innovative - conservative", "dull - captivating",
+        "undemanding - challenging", "motivating - discouraging",
+        "novel - ordinary", "unruly - manageable"
+      ),
+      subscale = c(
+        "Pragmatic Quality", "Hedonic Quality - Identity", "Attractiveness",
+        "Hedonic Quality - Stimulation", "Pragmatic Quality", "Hedonic Quality - Identity",
+        "Attractiveness", "Pragmatic Quality", "Attractiveness", "Pragmatic Quality",
+        "Hedonic Quality - Identity", "Pragmatic Quality", "Hedonic Quality - Identity",
+        "Hedonic Quality - Identity", "Hedonic Quality - Identity",
+        "Hedonic Quality - Identity", "Attractiveness", "Hedonic Quality - Stimulation",
+        "Attractiveness", "Pragmatic Quality", "Attractiveness",
+        "Hedonic Quality - Stimulation", "Hedonic Quality - Stimulation",
+        "Hedonic Quality - Stimulation", "Hedonic Quality - Stimulation",
+        "Attractiveness", "Hedonic Quality - Stimulation", "Pragmatic Quality"
+      ),
+      # The pairs printed with the POSITIVE term on the left.
+      reverse = c(1, 3, 4, 5, 6, 8, 9, 11, 12, 15, 19, 22, 23, 26, 27),
+      recode = "center",
+      total = NULL,
+      higher = "better",
+      notes = c(
+        "The 28 word pairs in the order and with the poles of the official sheet, coded 1 (left term) to 7 (right term) as answered. The 15 pairs printed with the positive term on the left (items 1, 3, 4, 5, 6, 8, 9, 11, 12, 15, 19, 22, 23, 26, 27) are reversed, then everything is centred to -3 .. +3 and averaged per dimension.",
+        "Order and poles were verified for the English sheet against independent reproductions of the form, including the French validation of Lallemand et al. (2015), which reverses the same 15 items. The German sheet agrees where it could be checked (items 1-10); compare the labels against your own form before relying on it.",
+        "Item codes match the `attrakdiff` key (pq1 .. att7 name the same word pairs), so a named `items` mapping works with either key. Use this key for data stored as answered on the official form, and `attrakdiff` for data already re-sorted and re-poled."
       )
     ),
 
@@ -336,6 +432,8 @@
       total = NULL,
       aggregate = .q_aggregate_ssq,
       higher = "worse",
+      # The Total Score is an overall score, formed by the custom aggregator.
+      overall = TRUE,
       notes = c(
         "Symptoms are rated 0 = none, 1 = slight, 2 = moderate, 3 = severe. Each subscale draws on seven items, and five of the sixteen items load on two subscales at once, which is why the subscale column names two scales for them.",
         "Weighted per Kennedy et al. (1993): Nausea x 9.54, Oculomotor x 7.58, Disorientation x 13.92, and Total = (raw N + raw O + raw D) x 3.74. The weights make the subscales comparable to one another but leave the scores unbounded above.",

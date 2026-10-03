@@ -2,27 +2,39 @@
 % Please edit documentation in R/utils.R
 \name{rFromWilcoxAdjusted}
 \alias{rFromWilcoxAdjusted}
-\title{rFromWilcoxAdjusted}
+\title{Effect size r from a multiplicity-inflated Wilcoxon p-value (deprecated)}
 \usage{
 rFromWilcoxAdjusted(wilcoxModel, N, adjustFactor)
 }
 \arguments{
-\item{wilcoxModel}{the Wilcox model}
+\item{wilcoxModel}{the Wilcox model; its \code{alternative} is taken into
+account as in \code{\link[=rFromWilcox]{rFromWilcox()}}.}
 
 \item{N}{number of measurements in the experiment}
 
-\item{adjustFactor}{ad adjustment factor}
+\item{adjustFactor}{the factor the p-value is multiplied by (the number of
+comparisons).}
 }
 \value{
 Invisibly returns a list with components:
 \itemize{
-\item \code{r}: adjusted effect size as a numeric scalar.
-\item \code{z}: adjusted z-statistic.
+\item \code{r}: the shrunken "effect size" as a numeric scalar.
+\item \code{z}: the z-statistic of the inflated p-value.
 \item \code{text}: character string that is also sent to the console.
 }
 }
 \description{
-rFromWilcoxAdjusted
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
+
+This function is deprecated because the quantity it returns is not an
+effect size. It multiplies the p-value by \code{adjustFactor} before
+converting it to \eqn{r}, which shrinks \eqn{r} towards zero as the number
+of comparisons grows (\eqn{r = 0.34} becomes 0.21 with six comparisons and 0
+with forty) although the effect itself is unchanged. Multiplicity
+corrections belong to the p-values, which decide significance; an effect
+size describes the magnitude of one comparison and is reported unadjusted.
+Adjust the p-values with \code{\link[stats:p.adjust]{stats::p.adjust()}} and compute \eqn{r} with
+\code{\link[=rFromWilcox]{rFromWilcox()}}. The old value is still returned for compatibility.
 }
 \examples{
 \donttest{
@@ -32,6 +44,8 @@ d <- data.frame(
   value = rnorm(20)
 )
 w <- stats::wilcox.test(value ~ group, data = d, exact = FALSE)
-rFromWilcoxAdjusted(w, N = nrow(d), adjustFactor = 2)
+# Instead of rFromWilcoxAdjusted(w, N = nrow(d), adjustFactor = 2):
+stats::p.adjust(w$p.value, method = "bonferroni", n = 2)
+rFromWilcox(w, N = nrow(d))
 }
 }

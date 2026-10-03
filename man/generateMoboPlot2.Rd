@@ -40,7 +40,7 @@ plot_mobo2(
 \arguments{
 \item{data}{A data frame containing the data to be plotted.}
 
-\item{x}{A string representing the column name in \code{data} to be used for the x-axis. Can be either numeric or factor. Default is \code{"Iteration"}.}
+\item{x}{A string representing the column name in \code{data} to be used for the x-axis. Can be either numeric or a factor whose labels are numbers; it is plotted on a continuous axis either way, so the data, the phase guides and the fitted equation all refer to the iteration values (not to factor positions). Default is \code{"Iteration"}.}
 
 \item{y}{A string representing the column name in \code{data} to be used for the y-axis. This should be a numeric variable.}
 

@@ -12,7 +12,8 @@ reportGLMM(
   include_intercept = FALSE,
   conf_level = 0.95,
   write_to_clipboard = FALSE,
-  sink_to = NULL
+  sink_to = NULL,
+  omnibus = TRUE
 )
 
 report_glmm(
@@ -22,17 +23,19 @@ report_glmm(
   include_intercept = FALSE,
   conf_level = 0.95,
   write_to_clipboard = FALSE,
-  sink_to = NULL
+  sink_to = NULL,
+  omnibus = TRUE
 )
 }
 \arguments{
 \item{model}{A fitted model (\code{lmer}, \code{glmer}, \code{glmmTMB},
-\code{lm}, or \code{glm}).}
+\code{lm}, \code{glm}, or \code{glm.nb}).}
 
 \item{dv}{Name of the dependent variable, used in the sentence text.}
 
-\item{exponentiate}{\code{"auto"} (default; exponentiate for binomial and
-count families), or \code{TRUE}/\code{FALSE} to force it.}
+\item{exponentiate}{\code{"auto"} (default; exponentiate for logit-link
+binomial and log-link count families), or \code{TRUE}/\code{FALSE} to
+force it.}
 
 \item{include_intercept}{Whether to also report the intercept. Default
 \code{FALSE}.}
@@ -43,24 +46,54 @@ count families), or \code{TRUE}/\code{FALSE} to force it.}
 
 \item{sink_to}{Optional path of a \code{.tex} file to write the sentences to,
 so a manuscript can \code{\\input{}} them.}
+
+\item{omnibus}{Logical. Report the Type III omnibus test of every model term
+before the coefficients. Default \code{TRUE}; needs \pkg{lmerTest} (linear
+mixed models) or \pkg{emmeans} (all other models).}
 }
 \value{
 Invisibly returns the reported sentence(s) as a character vector; the
 text is also emitted via \code{message()}.
 }
 \description{
-Turns a fitted mixed model into ready-to-paste manuscript sentences, one per
-fixed-effect term, with the coefficient (or odds/incidence-rate ratio for
-non-Gaussian families), its confidence interval, the test statistic, and the
-p-value. Works with linear mixed models (\code{lme4::lmer}), generalized
-linear mixed models (\code{lme4::glmer}, \code{glmmTMB::glmmTMB}) and, for
-convenience, ordinary \code{lm}/\code{glm} fits. Coefficients are
-exponentiated automatically for binomial (odds ratios) and Poisson/negative-
-binomial (incidence-rate ratios) families.
+Turns a fitted mixed model into ready-to-paste manuscript sentences: first a
+Type III omnibus test per model term (main effects and interactions), then
+one sentence per fixed-effect coefficient with its estimate (or odds /
+incidence-rate ratio), confidence interval, test statistic and p-value.
+Works with linear mixed models (\code{lme4::lmer}, \code{lmerTest::lmer}),
+generalized linear mixed models (\code{lme4::glmer},
+\code{glmmTMB::glmmTMB}) and, for convenience, ordinary \code{lm},
+\code{glm} and \code{MASS::glm.nb} fits.
 }
 \details{
+\strong{Omnibus tests.} With treatment (dummy) coding -- R's default -- a
+coefficient such as \code{aa2} in \code{y ~ a * b} is the a2 - a1
+difference \emph{at the reference level of b}, not "the effect of a", and a
+factor with three or more levels has no single coefficient at all. The
+omnibus tests answer the questions a results section asks: for linear mixed
+models, \pkg{lmerTest}'s Type III \eqn{F}-tests with Satterthwaite's degrees
+of freedom; for all other models, \code{emmeans::joint_tests()} (Type III
+Wald \eqn{F} for \code{lm}, Wald \eqn{\chi^2} otherwise). Both are
+independent of the contrast coding. The coefficient sentences that follow
+are labelled as what they are, e.g. "the contrast a2 vs. a1 of a (at b =
+b1)", "the slope of age (at cond = A)".
+
+\strong{Degrees of freedom.} Coefficient \eqn{t}-tests of linear mixed
+models use Satterthwaite's degrees of freedom (\pkg{lmerTest}; the
+asymptotic normal approximation when it is not installed), and the sentence
+says so -- never the residual degrees of freedom.
+
+\strong{Effect labels.} Coefficients are exponentiated automatically only
+where the ratio has a name: odds ratios (OR) for a logit link, risk ratios
+(RR) for a binomial log link, incidence-rate ratios (IRR) for a log-link
+count family (Poisson, negative binomial). Other links (probit, cloglog,
+identity) report the raw coefficient and name the link. Only the
+conditional-mean (location) coefficients are reported: zero-inflation,
+dispersion and scale parameters are not predictor effects on the mean.
+
 The reported statistics rely on the \pkg{parameters} package. The LaTeX
-output uses the \code{\\p}/\code{\\pminor} macros from \code{\link[=latex_preamble]{latex_preamble()}}.
+output uses the \code{\\p}/\code{\\pminor} and \code{\\F} macros from
+\code{\link[=latex_preamble]{latex_preamble()}}.
 }
 \section{Naming}{
 

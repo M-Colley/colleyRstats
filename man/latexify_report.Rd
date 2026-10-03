@@ -29,8 +29,11 @@ A single string with the LaTeX-friendly formatted report text.
 }
 \description{
 This function transforms the text output from \code{report::report()} by performing several substitutions
-to prepare the text for LaTeX typesetting. In particular, it replaces instances of \code{R2}, \verb{\%}, and \code{~} with
-the corresponding LaTeX code. Additionally, it provides options to:
+to prepare the text for LaTeX typesetting. Every LaTeX special character
+(\code{\\ \{ \} $ & # _ \% ^}) is escaped -- \code{report()} keeps variable and
+level names such as \code{tlx_mental} verbatim -- \code{~}, \code{<} and \code{>} become
+\code{$\\sim$}, \code{$<$} and \code{$>$}, and \code{R2} and \code{Rhat} become
+\code{$R^2$} and \code{$\\hat{R}$}. Additionally, it provides options to:
 \itemize{
 \item Omit bullet items marked as "non-significant" (when \code{only_sig = TRUE}).
 \item Remove a concluding note about standardized parameters (when \code{remove_std = TRUE}).

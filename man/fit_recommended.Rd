@@ -16,7 +16,8 @@ fit_recommended(
   contrasts = TRUE,
   adjust = "holm",
   sink_to = NULL,
-  verbose = TRUE
+  verbose = TRUE,
+  factors = NULL
 )
 }
 \arguments{
@@ -29,8 +30,8 @@ fit_recommended(
 \item{cluster}{Optional column identifying the subject or cluster for
 repeated-measures data -- the random-effect grouping factor.}
 
-\item{design}{One of \code{"auto"} (default; clustered when \code{cluster} is
-given), \code{"between"}, or \code{"within"}.}
+\item{design}{One of \code{"auto"} (default; clustered when some
+\code{cluster} has several rows), \code{"between"}, or \code{"within"}.}
 
 \item{outcome_type}{\code{"auto"} (default; use \code{\link[=classify_outcome]{classify_outcome()}}) or an
 explicit \code{"continuous"}, \code{"ordinal"}, \code{"binary"},
@@ -42,35 +43,51 @@ are genuinely ambiguous from the data alone.}
 
 \item{interaction}{Logical. With more than one predictor, fit the full
 factorial model (\code{TRUE}, default) or main effects only
-(\code{FALSE}).}
+(\code{FALSE}). The aligned rank transform always needs the full model, so
+\code{FALSE} is refused on that route.}
 
-\item{contrasts}{Logical. Compute pairwise post-hoc contrasts between the
-levels of the grouping predictors. Default \code{TRUE}.}
+\item{contrasts}{Logical. Compute post-hoc contrasts between the levels of
+the categorical predictors. Default \code{TRUE}.}
 
 \item{adjust}{Multiplicity adjustment for those contrasts, passed to
 \pkg{emmeans} or \pkg{ARTool}. Default \code{"holm"}.}
 
 \item{sink_to}{Optional path of a \code{.tex} file; the methods sentence and
-the result sentence are written there so a manuscript can
+the result sentence are written there (LaTeX-escaped) so a manuscript can
 \code{\\input{}} them.}
 
-\item{verbose}{Logical. If \code{TRUE} (default), report every coercion and
-the model being fitted.}
+\item{verbose}{Logical. If \code{TRUE} (default), report every coercion, the
+model being fitted, and every simplification of the random effects.}
+
+\item{factors}{Optional character vector naming the numeric predictors that
+are categorical (condition codes); see \code{\link[=recommend_test]{recommend_test()}}. \code{NULL}
+(default) decides from the data, and every resulting coercion is
+announced.}
 }
 \value{
 An object of class \code{"colley_fit"}: a list with
-\code{recommendation} (the \code{\link[=recommend_test]{recommend_test()}} object), \code{model} (the
-fitted object), \code{engine}, \code{emmeans} and \code{contrasts} (or
-\code{NULL}), \code{methods} and \code{text} (manuscript sentences), and
-\code{sentences} (both, in manuscript order). A \code{print} method
+\code{recommendation} (the \code{\link[=recommend_test]{recommend_test()}} object, updated to record
+the function, call and random effects actually used), \code{formula},
+\code{model} (the fitted object), \code{engine}, \code{model_function}
+(the function actually called, e.g. \code{"lmerTest::lmer"}),
+\code{random} (the random-effects term kept), \code{singular} and
+\code{converged} (flags), \code{anova} (the omnibus table: term, df1, df2,
+statistic, stat_name, p), \code{emmeans} (a named list of the estimated
+marginal means grids) and \code{contrasts} (a data frame with one row per
+comparison: \code{term}, \code{by}, \code{contrast}, \code{estimate},
+\code{scale}, \code{SE}, \code{df}, confidence limits, \code{statistic},
+\code{p.value}, \code{adjust}; or \code{NULL}), \code{methods} (plain
+text), \code{methods_tex} (LaTeX-escaped), \code{text} (result sentences,
+LaTeX), and \code{sentences} (\code{methods_tex} and \code{text}, in
+manuscript order -- what \code{sink_to} writes). A \code{print} method
 summarises it.
 }
 \description{
 Runs \code{\link[=recommend_test]{recommend_test()}} to choose an analysis, then actually fits it: coerces
 the outcome and predictors into the classes that model family needs, builds
-the random-effect term for a repeated-measures design, fits, computes
-pairwise post-hoc contrasts with the matching machinery, and produces the
-APA/LaTeX sentence via this package's reporter for that model family.
+the random-effect structure for a repeated-measures design, fits, computes
+post-hoc contrasts with the matching machinery, and produces the APA/LaTeX
+sentence via this package's reporter for that model family.
 }
 \details{
 The point is that the test you justify in the methods section and the model
@@ -82,11 +99,36 @@ therefore cannot drift apart -- the failure mode of a pipeline where
 
 Cumulative link models with and without random effects
 (\pkg{ordinal}), generalized and linear mixed models (\pkg{lme4},
-\pkg{lmerTest}), GLMs, the aligned rank transform (\pkg{ARTool}), rank-based
-repeated measures (\pkg{nparLD}), multinomial regression (\pkg{nnet}), and
-the classical ANOVA / Welch / Kruskal-Wallis / Wilcoxon tests. Model packages
-live in \code{Suggests}: a branch you use needs its package installed, and
-says which one if it is not.
+\pkg{lmerTest}, \pkg{glmmTMB} for negative-binomial counts), Poisson,
+negative-binomial (\pkg{MASS}) and logistic GLMs, Type III factorial ANOVA
+(\pkg{afex}, or \pkg{car}), heteroscedasticity-robust (HC3) factorial ANOVA
+(\pkg{car}), the aligned rank transform (\pkg{ARTool}), rank-based repeated
+measures (\pkg{nparLD}), multinomial regression (\pkg{nnet}) and its mixed
+counterpart (\pkg{mclogit}), and the classical one-way ANOVA / Welch /
+Kruskal-Wallis / Wilcoxon tests. Model packages live in \code{Suggests}: a
+branch you use needs its package installed, and says which one if it is
+not.
+}
+
+\section{Random effects}{
+
+A repeated-measures model starts from the maximal random-effects structure
+the design supports (Barr et al., 2013): by-cluster random slopes for every
+within-cluster factor whose levels are replicated within a cluster, and the
+interaction slope when there are several trials per cluster and cell. When
+that fit is singular or does not converge, the structure is simplified step
+by step down to random intercepts; what was dropped, and why, is announced
+and written into \code{$methods}. A singular final fit is flagged in
+\code{$singular}.
+}
+
+\section{Post-hoc contrasts}{
+
+Each categorical predictor gets its own family of pairwise comparisons of
+its marginal means (averaged over the other factors), adjusted with
+\code{adjust} within that family. Simple effects -- one factor compared
+within each level of the others -- are added only for interactions that
+are in the model and significant in the Type III omnibus test.
 }
 
 \examples{
@@ -102,6 +144,15 @@ if (requireNamespace("lme4", quietly = TRUE)) {
   fit
 }
 }
+}
+\references{
+Barr, D. J., Levy, R., Scheepers, C., & Tily, H. J. (2013).
+Random effects structure for confirmatory hypothesis testing: Keep it
+maximal. \emph{Journal of Memory and Language, 68}(3), 255--278.
+
+Matuschek, H., Kliegl, R., Vasishth, S., Baayen, H., & Bates, D. (2017).
+Balancing Type I error and power in linear mixed models. \emph{Journal of
+Memory and Language, 94}, 305--315.
 }
 \seealso{
 \code{\link[=recommend_test]{recommend_test()}} for the choice alone, \code{\link[=analyze_and_report]{analyze_and_report()}} for

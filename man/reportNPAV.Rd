@@ -4,7 +4,9 @@
 \alias{reportNPAV}
 \title{Generate the Latex-text based on the NPAV by Lüpsen (see \url{https://www.uni-koeln.de/~luepsen/R/}).
 Only significant main and interaction effects are reported.
-P-values are rounded for the third digit and partial eta squared values are provided when possible.
+P-values are rounded for the third digit and partial eta squared values,
+with a two-sided 95\% confidence interval, are provided when possible.
+A term is reported as an interaction when its name contains \code{":"}.
 Attention: the independent variables of the formula and the term specifying the participant must be factors (i.e., use as.factor()).}
 \usage{
 reportNPAV(

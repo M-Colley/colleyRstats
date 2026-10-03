@@ -12,7 +12,8 @@ reportArtCon(
   dv = "testdv",
   paired = FALSE,
   id = NULL,
-  sink_to = NULL
+  sink_to = NULL,
+  descriptives = c("auto", "mean", "median", "trimmed")
 )
 
 report_art_con(
@@ -22,7 +23,8 @@ report_art_con(
   dv = "testdv",
   paired = FALSE,
   id = NULL,
-  sink_to = NULL
+  sink_to = NULL,
+  descriptives = c("auto", "mean", "median", "trimmed")
 )
 }
 \arguments{
@@ -42,6 +44,11 @@ trials per subject and condition are averaged before pairing.}
 
 \item{sink_to}{optional path of a \code{.tex} file to write the sentences to,
 so a manuscript can \code{\\input{}} them}
+
+\item{descriptives}{which descriptives to print beside each level:
+\code{"auto"} (default, median and IQR for this rank-based test),
+\code{"mean"}, \code{"median"} or \code{"trimmed"} (20\% trimmed mean and
+20\% winsorized SD).}
 }
 \value{
 Invisibly returns the reported sentence(s) as a character vector;
@@ -50,23 +57,39 @@ the text is also emitted via \code{message()}.
 \description{
 Companion to \code{\link[=reportDunnTest]{reportDunnTest()}} for aligned-rank-transform (ART) models. It
 extracts the significant pairwise comparisons produced by \code{\link[ARTool:art.con]{ARTool::art.con()}}
-(an \pkg{emmeans} contrast grid), computes the mean and standard deviation of
-the groups involved from the raw data, and prints LaTeX-formatted sentences.
+(an \pkg{emmeans} contrast grid), describes the groups involved from the raw
+data, and prints LaTeX-formatted sentences such as "An ART-C post-hoc test
+(Holm-adjusted) found that ...".
 }
 \details{
 The p-values are taken as-is from the contrast object, i.e. they are already
-adjusted by whatever \code{adjust} was passed to \code{art.con()} (e.g. \code{"holm"}). The
-effect size is the rank-biserial correlation computed from the raw data. ART
-is most often used for within-subjects designs; pass \code{paired = TRUE} together
-with \code{id} (the subject column) to obtain the paired rank-biserial effect size.
+adjusted by whatever \code{adjust} was passed to \code{art.con()} (e.g. \code{"holm"}), and
+that correction -- read from the contrast summary -- is named in the
+sentence. With \code{adjust = "none"} the p-values are emitted as
+\code{\\p{}}/\code{\\pminor{}} rather than as \eqn{p_{adj}}. The effect size
+is the rank-biserial correlation computed from the raw data. ART is most
+often used for within-subjects designs; pass \code{paired = TRUE} together with
+\code{id} (the subject column) to obtain the paired rank-biserial effect size.
+
+Which level is "higher" follows the sign of the contrast estimate (first
+minus second level, on the aligned-rank scale). Until 0.3.0 it followed the
+raw means, which can disagree with the test. By default
+(\code{descriptives = "auto"}) the levels are described by their median and IQR,
+which match a rank-based test; \code{"mean"} restores \emph{M}/\emph{SD} and
+warns where the means order two levels against the contrast.
+
+The two levels of each contrast are read from the contrast coefficients, so
+level names that emmeans rewrites in its labels -- numbers ("mode1 - mode2")
+or names containing \code{-}, \code{+}, \code{*} or \code{/}
+("Both - (Hand-only)") -- are handled.
 
 Attention: \code{ac} must be a pairwise contrast over a single factor \code{iv}
 (e.g. \code{art.con(model, ~ interaction_mode, adjust = "holm")}).
 
-Required commands in LaTeX:
-\code{\\newcommand{\\padjminor}{\\textit{p$_{adj}<$}}}
-\code{\\newcommand{\\padj}{\\textit{p$_{adj}$=}}}
-\code{\\newcommand{\\rankbiserial}[1]{$r_{rb} = #1$}}
+Required commands in LaTeX (all part of \code{\link[=latex_preamble]{latex_preamble()}}):
+\code{\\padj}, \code{\\padjminor}, \code{\\p}, \code{\\pminor},
+\code{\\mdn}, \code{\\iqr}, \code{\\m}, \code{\\sd} and
+\code{\\newcommand{\\rankbiserial}[1]{$r_{rb} = #1$}}.
 }
 \section{Naming}{
 

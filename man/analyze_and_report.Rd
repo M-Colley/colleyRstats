@@ -12,16 +12,18 @@ analyze_and_report(
   ylab = dv,
   xlabels = NULL,
   plotType = "boxviolin",
-  sink_to = NULL
+  sink_to = NULL,
+  subject = NULL
 )
 }
 \arguments{
-\item{data}{the data frame}
+\item{data}{the data frame (long format for \code{design = "within"}: one
+row per participant and condition)}
 
 \item{dv}{the dependent variable (column name as string)}
 
-\item{iv}{the independent variable (column name as string); coerced to a
-factor if it is not one already}
+\item{iv}{the independent variable (column name as string); treated as a
+factor, so numeric condition codes are categories}
 
 \item{design}{\code{"between"} for between-subjects data (default) or
 \code{"within"} for repeated measures}
@@ -35,6 +37,13 @@ factor if it is not one already}
 \item{sink_to}{optional path of a \code{.tex} file; the methods sentence,
 omnibus result, and post-hoc sentences are written there so a manuscript
 can \code{\\input{}} them}
+
+\item{subject}{the participant-ID column (a string). Required for
+\code{design = "within"}, where it pairs the observations; without it they
+would be paired by row order. For \code{design = "between"} it is
+optional and only used to check that no participant contributes more than
+one row, which a between-subjects test would wrongly treat as independent
+observations.}
 }
 \value{
 Invisibly returns a list with components \code{plot} (the ggplot),
@@ -50,9 +59,27 @@ parametric/non-parametric selection, reports the omnibus test via
 \code{\link[=reportggstatsplot]{reportggstatsplot()}}, and -- for more than two groups -- reports the
 significant post-hoc comparisons via \code{\link[=reportggstatsplotPostHoc]{reportggstatsplotPostHoc()}}.
 }
+\details{
+Every part of the output is computed from one data set: the rows with both
+\code{dv} and \code{iv} observed and, for \code{design = "within"}, only
+the participants measured in every condition (the others are dropped with a
+message naming them; more than one row per participant and condition is an
+error). The methods sentence, the test, the figure and the means quoted in
+the post-hoc sentences therefore all describe the same participants.
+}
 \examples{
 \donttest{
 result <- analyze_and_report(mtcars, dv = "mpg", iv = "cyl")
 result$plot
+
+# Repeated measures: name the participant column
+set.seed(1)
+rm_df <- data.frame(
+  participant = rep(1:15, times = 3),
+  condition   = rep(c("A", "B", "C"), each = 15)
+)
+rm_df$score <- rnorm(45, mean = c(A = 5, B = 6, C = 7)[rm_df$condition])
+analyze_and_report(rm_df, dv = "score", iv = "condition",
+                   design = "within", subject = "participant")
 }
 }

@@ -11,10 +11,18 @@ define_result_macro(name, value, path = NULL)
 \code{\\tlxMentalOmnibus}).}
 
 \item{value}{The rendered result string, e.g. \code{"F(2, 57) = 4.50, p = .02"}.
-It is inserted verbatim (already-formatted LaTeX), not escaped.}
+It is inserted verbatim (already-formatted LaTeX), not escaped. Several
+strings are joined with spaces, and line breaks become spaces, so each
+definition occupies exactly one line.}
 
-\item{path}{Optional \code{.tex} path. When supplied and it already exists,
-the definition is appended (so many results can accumulate in one file).}
+\item{path}{Optional \code{.tex} path. When it already exists, the
+definition is added to it (so many results can accumulate in one file); a
+definition of the same command already in the file is replaced rather than
+duplicated, because a second \code{\\newcommand} for one name stops the
+build. Each line ends in a \code{\%} comment naming the label it came
+from, so that a different label mapping to the same command (\code{"tlx1"}
+and \code{"tlx_1"} are both \code{\\tlxOne}) is reported when it replaces
+the other's result.}
 }
 \value{
 Invisibly, a named character scalar: the \code{\\newcommand} line,
@@ -24,8 +32,13 @@ named by the generated command. Also emitted via \code{message()}.
 Emits \code{\\newcommand{\\<name>}{<value>}} so you can write \code{\\<name>}
 in your prose and have it always reflect the latest analysis -- re-run the R
 code and the number updates everywhere it is referenced, the gold standard
-for reproducible manuscripts. The \code{name} is sanitised to a valid
-letters-only LaTeX command name.
+for reproducible manuscripts. The \code{name} is sanitised to a letters-only
+LaTeX command name: other characters start a new camel-case word and digits
+are spelled out, so \code{"tlx_1"} and \code{"tlx_2"} become \code{\\tlxOne}
+and \code{\\tlxTwo} rather than colliding. A name that would redefine an
+existing LaTeX or \pkg{colleyRstats} command (e.g. \code{"p"}, which is the
+package's own \code{\\p}, or \code{"time"}) is refused with an error that
+suggests an alternative.
 }
 \examples{
 define_result_macro("tlx_mental_omnibus", "F(2, 57) = 4.50, p = .02")

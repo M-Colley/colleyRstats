@@ -20,7 +20,9 @@
 latex_preamble <- function(path = NULL) {
   as_sty <- !is.null(path) && grepl("\\.sty$", path, ignore.case = TRUE)
   macros <- if (as_sty) {
-    .colley_sty_lines()
+    # \ProvidesPackage must carry the file's own name, or LaTeX warns
+    # "You have requested package `x', but the package provides `colleyRstats'"
+    .colley_sty_lines(sub("\\.sty$", "", basename(path), ignore.case = TRUE))
   } else {
     c("% colleyRstats: LaTeX commands required by the report functions", .colley_macro_lines())
   }
@@ -52,18 +54,21 @@ latex_preamble <- function(path = NULL) {
     "\\newcommand{\\sd}{\\textit{SD=}}",
     "\\newcommand{\\df}{\\textit{df=}}",
     "\\newcommand{\\chisq}{$\\chi^2$}",
+    "\\newcommand{\\mdn}{\\textit{Mdn=}}",
+    "\\newcommand{\\iqr}{\\textit{IQR=}}",
     "\\newcommand{\\rankbiserial}[1]{$r_{rb} = #1$}",
     "\\newcommand{\\effectsize}{\\textit{r=}}"
   )
 }
 
-# Internal: the macro lines wrapped as a LaTeX package (colleyRstats.sty).
-.colley_sty_lines <- function() {
+# Internal: the macro lines wrapped as a LaTeX package (colleyRstats.sty, or
+# <name>.sty when latex_preamble() writes it under another name).
+.colley_sty_lines <- function(name = "colleyRstats") {
   c(
-    "% colleyRstats.sty -- macros required by the colleyRstats report functions.",
-    "% Upload to Overleaf and load with \\usepackage{colleyRstats}.",
+    paste0("% ", name, ".sty -- macros required by the colleyRstats report functions."),
+    paste0("% Upload to Overleaf and load with \\usepackage{", name, "}."),
     "\\NeedsTeXFormat{LaTeX2e}",
-    "\\ProvidesPackage{colleyRstats}[colleyRstats reporting macros]",
+    paste0("\\ProvidesPackage{", name, "}[colleyRstats reporting macros]"),
     .colley_macro_lines(),
     "\\endinput"
   )
@@ -110,11 +115,13 @@ latex_preamble <- function(path = NULL) {
 #' }
 save_paper_figure <- function(plot = ggplot2::last_plot(), filename, columns = 1, width = NULL, height = NULL, base_size = NULL, dpi = 300, device = NULL) {
   not_empty(filename)
-  if (!columns %in% c(1, 2)) {
-    stop("`columns` must be 1 (single column) or 2 (full width).")
-  }
 
+  # `columns` only matters when it decides the width; documented as ignored
+  # otherwise, so it is validated only then.
   if (is.null(width)) {
+    if (length(columns) != 1L || !columns %in% c(1, 2)) {
+      stop("`columns` must be 1 (single column) or 2 (full width).")
+    }
     width <- if (columns == 1) 3.33 else 7
   }
   if (is.null(height)) {
@@ -202,17 +209,42 @@ figure_base_size <- function(width, min_size = 6, max_size = 12) {
 
 #' Methods-section sentence justifying the test selection
 #'
-#' Runs the group-wise Shapiro-Wilk normality check (and optionally Levene's
-#' test for homogeneity of variances) and turns the outcome into a ready-made
-#' methods-section sentence, including the relevant statistics. This is the
-#' justification reviewers expect next to the choice of a parametric or
-#' non-parametric test.
+#' Runs [check_normality_by_group()] (and optionally a test for homogeneity of
+#' variances) and turns the outcome into a ready-made methods-section sentence
+#' that says what was tested and reports the statistic the decision rests on.
+#' This is the justification reviewers expect next to the choice of a
+#' parametric or non-parametric test.
+#'
+#' The sentence follows the check exactly:
+#' * **Between subjects**: one Shapiro--Wilk test per group, Holm-corrected
+#'   across the groups; the adjusted p-values are labelled
+#'   \eqn{p_{Holm}}{p_Holm}. A rejection names the group(s) with their
+#'   \eqn{W} and p; otherwise the group with the smallest p is reported.
+#' * **Within subjects** (\code{subject} given): one test on the paired
+#'   differences (two conditions) or on the residuals of the additive
+#'   participant + condition model (more conditions). Participants excluded for
+#'   lacking a condition are counted in the text.
+#' * A group that could not be tested (fewer than three values, or all values
+#'   identical -- e.g. everyone ticked the top of a rating scale) is named and
+#'   stated to have been treated as non-normal, which sends the analysis to the
+#'   non-parametric branch.
+#'
+#' p-values are printed so that rounding never moves them across .05, .01 or
+#' .10, and all statistics are plain LaTeX math (no custom macros needed).
 #'
 #' @param data the data frame
 #' @param x the grouping variable (column name as string)
 #' @param y the dependent variable (column name as string)
-#' @param include_homogeneity whether to also report Levene's test. Useful for
-#'   between-subjects designs. Default \code{FALSE}.
+#' @param include_homogeneity whether to also report the homogeneity-of-variance
+#'   test run by [check_homogeneity_by_group()] (named as that function reports
+#'   it: the Brown-Forsythe, i.e. median-centred Levene's, test). Between
+#'   subjects only: with \code{subject} given it is skipped with a message,
+#'   because equal variances across conditions are not an assumption of a
+#'   repeated-measures analysis (its counterpart, sphericity, is tested and
+#'   corrected by the ANOVA itself). Default \code{FALSE}.
+#' @param subject the participant-ID column for a within-subjects design, as a
+#'   string; \code{NULL} (default) for a between-subjects design. Passed to
+#'   [check_normality_by_group()].
 #'
 #' @return Invisibly returns the sentence(s) as a single string; the text is
 #'   also emitted via \code{message()}.
@@ -222,50 +254,224 @@ figure_base_size <- function(width, min_size = 6, max_size = 12) {
 #' set.seed(1)
 #' d <- data.frame(g = rep(c("A", "B"), each = 20), v = rnorm(40))
 #' assumption_methods_text(d, x = "g", y = "v")
-assumption_methods_text <- function(data, x, y, include_homogeneity = FALSE) {
+#'
+#' # within subjects: the paired differences are tested
+#' d$id <- rep(1:20, times = 2)
+#' assumption_methods_text(d, x = "g", y = "v", subject = "id")
+assumption_methods_text <- function(data, x, y, include_homogeneity = FALSE, subject = NULL) {
   not_empty(data)
   not_empty(x)
   not_empty(y)
 
-  normal <- check_normality_by_group(data, x, y)
-  tests <- attr(normal, "tests")
+  normal <- check_normality_by_group(data, x, y, subject = subject)
+  sentences <- .normality_sentence(normal, x)
 
-  if (is.null(tests) || all(is.na(tests$p_value))) {
-    sentences <- "Group-wise normality could not be assessed (e.g., too few observations per group); non-parametric tests were used as a precaution."
-  } else if (isTRUE(normal)) {
-    sentences <- "Shapiro--Wilk tests indicated no significant deviation from normality in any group (all $p \\geq 0.05$); therefore, parametric tests were used."
-  } else {
-    worst <- tests[which.min(tests$p_value), ]
-    p_txt <- if (worst$p_value < 0.001) "$p < 0.001$" else paste0("$p = ", .fmt_bounded(worst$p_value, 3), "$")
-    sentences <- paste0(
-      "Shapiro--Wilk tests indicated a significant deviation from normality for at least one group (minimum $W = ",
-      .fmt_bounded(worst$W), "$, ", p_txt,
-      "); therefore, non-parametric tests were used."
-    )
-  }
-
-  if (isTRUE(include_homogeneity)) {
+  if (isTRUE(include_homogeneity) && !is.null(subject)) {
+    # A variance test across conditions treats them as independent groups, and
+    # its "unequal variances" verdict would add a Welch clause that has no
+    # meaning for repeated measures.
+    message("assumption_methods_text(): `include_homogeneity` is ignored for a within-subjects ",
+            "design (`subject` given): equal variances across conditions are not an assumption ",
+            "of a repeated-measures analysis.")
+  } else if (isTRUE(include_homogeneity)) {
     homogeneous <- check_homogeneity_by_group(data, x, y)
-    lev <- attr(homogeneous, "test")
-    if (!is.null(lev) && !is.na(lev$p[1])) {
-      lev_stats <- paste0(
-        "$F(", lev$df1[1], ", ", lev$df2[1], ") = ", .fmt_num(lev$statistic[1]), "$, ",
-        if (lev$p[1] < 0.001) "$p < 0.001$" else paste0("$p = ", .fmt_bounded(lev$p[1], 3), "$")
-      )
-      sentences <- c(
-        sentences,
-        if (isTRUE(as.logical(homogeneous))) {
-          paste0("Levene's test indicated homogeneity of variances (", lev_stats, ").")
-        } else {
-          paste0("Levene's test indicated unequal variances (", lev_stats, "); Welch-corrected statistics were used where applicable.")
-        }
-      )
-    }
+    sentences <- c(sentences, .homogeneity_sentence(homogeneous, parametric = isTRUE(as.logical(normal))))
   }
 
   out <- paste(sentences, collapse = " ")
   message(out)
   invisible(out)
+}
+
+
+# Internal: a p-value as inline math, "$p = 0.012$" or "$p < 0.001$", with the
+# subscripted label of an adjusted p ("p_{\mathrm{Holm}}") where one applies.
+.p_math <- function(p, label = "p") {
+  vapply(p, function(pv) {
+    if (is.na(pv)) {
+      paste0("$", label, "$ not available")
+    } else if (pv < 0.001) {
+      paste0("$", label, " < ", .fmt_bounded(0.001, 3), "$")
+    } else {
+      paste0("$", label, " = ", .fmt_p_number(pv, 3), "$")
+    }
+  }, character(1), USE.NAMES = FALSE)
+}
+
+# Internal: Shapiro-Wilk W for display. W lies in (0, 1], so APA drops the
+# leading zero (via .fmt_bounded()); a W of 0.996 is shown with a third decimal
+# rather than rounded up to "1.00", which would read as a perfect fit.
+.fmt_w <- function(w) {
+  vapply(w, function(wv) {
+    d <- 2
+    while (d < 4 && !is.na(wv) && wv < 1 && round(wv, d) >= 1) d <- d + 1
+    .fmt_bounded(wv, d)
+  }, character(1), USE.NAMES = FALSE)
+}
+
+# Internal: "A and B", "A, B, and C".
+.and_list <- function(x) {
+  n <- length(x)
+  if (n <= 1) return(paste(x, collapse = ""))
+  if (n == 2) return(paste(x, collapse = " and "))
+  paste0(paste(x[-n], collapse = ", "), ", and ", x[n])
+}
+
+# Internal: the normality part of assumption_methods_text(), built from the
+# attributes of check_normality_by_group().
+.normality_sentence <- function(normal, x) {
+  tests <- attr(normal, "tests")
+  if (is.null(tests) || nrow(tests) == 0) {
+    return("Normality could not be assessed; non-parametric tests were used as a precaution.")
+  }
+  method <- attr(normal, "method")
+  if (is.null(method)) method <- "groupwise"
+  adjust <- attr(normal, "p_adjust")
+  adjusted <- !is.null(adjust) && !identical(adjust, "none")
+  adjust_name <- if (adjusted) {
+    switch(tolower(adjust),
+      holm = "Holm", bonferroni = "Bonferroni", hochberg = "Hochberg",
+      hommel = "Hommel", bh = , fdr = "BH", by = "BY", adjust
+    )
+  }
+  p_label <- if (adjusted) paste0("p_{\\mathrm{", adjust_name, "}}") else "p"
+  x_tex <- latex_escape(x)
+
+  testable <- tests[tests$testable %in% TRUE, , drop = FALSE]
+  untestable <- tests[!(tests$testable %in% TRUE), , drop = FALSE]
+  p_used <- if (adjusted) testable$p_adjusted else testable$p_value
+  stat <- function(i) paste0("$W = ", .fmt_w(testable$W[i]), "$, ", .p_math(p_used[i], p_label))
+  group <- function(g) paste("group", latex_escape(g))
+  reason <- function(n) ifelse(n < 3, "fewer than three values", "all values identical")
+
+  # what was tested, as the subject of the sentence
+  what <- switch(method,
+    differences = paste0(
+      "A Shapiro--Wilk test on the within-participant differences between the two levels of ",
+      x_tex, " ($n = ", tests$n[1], "$)"
+    ),
+    residuals = paste0(
+      "A Shapiro--Wilk test on the residuals of the additive model with participant and ",
+      x_tex, " as factors ($n = ", tests$n[1], "$)"
+    ),
+    {
+      k <- nrow(tests)
+      paste0(
+        if (k == 1) paste0("A Shapiro--Wilk test in the only group of ", x_tex)
+        else paste0("Shapiro--Wilk tests in each of the ", k, " groups of ", x_tex),
+        if (!adjusted) {
+          ""
+        } else if (nrow(testable) < k) {
+          paste0(" (", adjust_name, "-corrected across the ", nrow(testable), " testable groups)")
+        } else {
+          paste0(" (", adjust_name, "-corrected for ", k, " tests)")
+        }
+      )
+    }
+  )
+  # (within subjects there is a single test, so an untestable one leaves
+  # nothing testable and is handled below)
+  untestable_clause <- if (nrow(untestable) == 0) {
+    ""
+  } else {
+    paste0(
+      .and_list(paste0(group(untestable$group), " (", reason(untestable$n), ")")),
+      if (nrow(untestable) == 1) " could not be tested and was" else " could not be tested and were",
+      " therefore treated as non-normal"
+    )
+  }
+
+  dropped <- attr(normal, "dropped_subjects")
+  dropped_note <- if (length(dropped) > 0) {
+    paste0(
+      " Participants without a value in every level of ", x_tex,
+      " ($n = ", length(dropped), "$) were excluded from this check."
+    )
+  } else {
+    ""
+  }
+
+  sentence <- if (nrow(testable) == 0) {
+    target <- if (method == "differences") "the within-participant differences" else "the model residuals"
+    paste0(
+      "Normality could not be assessed with Shapiro--Wilk tests, because ",
+      if (method == "groupwise") {
+        .and_list(paste0(group(untestable$group), " (", reason(untestable$n), ")"))
+      } else {
+        paste0(target, " (", reason(untestable$n[1]), ")")
+      },
+      " could not be tested; non-parametric tests were used as a precaution."
+    )
+  } else {
+    rejected <- which(p_used < 0.05)
+    if (length(rejected) > 0) {
+      evidence <- if (method == "groupwise") {
+        paste0(" for ", .and_list(paste0(group(testable$group[rejected]), " (", stat(rejected), ")")))
+      } else {
+        paste0(" (", stat(1), ")")
+      }
+      paste0(
+        what, " indicated a significant deviation from normality", evidence,
+        if (nzchar(untestable_clause)) paste0(", and ", untestable_clause) else "",
+        "; therefore, non-parametric tests were used."
+      )
+    } else {
+      lowest <- which.min(p_used)
+      evidence <- if (method == "groupwise" && nrow(testable) > 1) {
+        paste0(" (smallest $p$: ", stat(lowest), " for ", group(testable$group[lowest]), ")")
+      } else if (method == "groupwise") {
+        paste0(" (", stat(lowest), " for ", group(testable$group[lowest]), ")")
+      } else {
+        paste0(" (", stat(1), ")")
+      }
+      if (nzchar(untestable_clause)) {
+        paste0(
+          what, " indicated no significant deviation from normality", evidence,
+          ", but ", untestable_clause, "; therefore, non-parametric tests were used."
+        )
+      } else {
+        paste0(
+          what, " indicated no significant deviation from normality", evidence,
+          "; therefore, parametric tests were used."
+        )
+      }
+    }
+  }
+  paste0(sentence, dropped_note)
+}
+
+# Internal: the homogeneity-of-variance part of assumption_methods_text(). The
+# test is named as check_homogeneity_by_group() reports it (its "method"
+# attribute; rstatix's levene_test() centres on the median, i.e. the
+# Brown--Forsythe variant). A result without that attribute is described
+# generically rather than given a name it may not deserve.
+.homogeneity_sentence <- function(homogeneous, parametric) {
+  lev <- attr(homogeneous, "test")
+  if (is.null(lev) || nrow(lev) == 0 || is.na(lev$p[1])) {
+    return(character(0))
+  }
+  test_name <- attr(homogeneous, "method")
+  test_name <- if (is.null(test_name) || !nzchar(test_name[1])) {
+    "a test of homogeneity of variance"
+  } else {
+    latex_escape(test_name[1])
+  }
+  test_name <- paste0(toupper(substring(test_name, 1, 1)), substring(test_name, 2))
+  stats <- paste0(
+    "$F(", .fmt_df(lev$df1[1]), ", ", .fmt_df(lev$df2[1]), ") = ",
+    .fmt_num(lev$statistic[1]), "$, ", .p_math(lev$p[1])
+  )
+  if (isTRUE(as.logical(homogeneous))) {
+    paste0(test_name, " did not indicate unequal variances (", stats, ").")
+  } else {
+    paste0(
+      test_name, " indicated unequal variances (", stats, ")",
+      # Welch's correction is a property of the parametric tests; claiming it
+      # for a rank-based analysis would describe something that did not happen
+      if (parametric) "; Welch-corrected statistics were used where applicable" else "",
+      "."
+    )
+  }
 }
 
 
@@ -283,7 +489,11 @@ assumption_methods_text <- function(data, x, y, include_homogeneity = FALSE) {
 #'
 #' @return Invisibly returns the generated lines as a character vector; the
 #'   text is also emitted via \code{message()}. Methods whose package is not
-#'   installed are skipped with a message.
+#'   installed are skipped with a message. Every BibTeX entry gets a citation
+#'   key -- the package name, with \code{-2}, \code{-3}, ... for a package's
+#'   further entries -- because R's citation entries carry none, and BibTeX
+#'   keeps only the first of several keyless entries ("Repeated entry"). The
+#'   methods phrase then cites those keys (\code{\\cite{ARTool,ARTool-2}}).
 #' @export
 #'
 #' @examples
@@ -318,7 +528,9 @@ cite_methods <- function(methods = c("ggstatsplot", "effectsize"), bibtex = TRUE
     )
   )
 
-  methods <- tolower(methods)
+  # A method named twice ("art", "ART") would otherwise be cited twice, with a
+  # second set of BibTeX entries under the same keys.
+  methods <- unique(tolower(methods))
   unknown <- setdiff(methods, names(catalog))
   if (length(unknown) > 0) {
     stop(
@@ -335,15 +547,41 @@ cite_methods <- function(methods = c("ggstatsplot", "effectsize"), bibtex = TRUE
       next
     }
 
-    out <- c(out, paste0("% ", entry$package, ": ", entry$note))
+    bib <- NULL
     if (isTRUE(bibtex)) {
       cit <- tryCatch(utils::citation(entry$package), error = function(e) NULL)
       if (!is.null(cit)) {
-        out <- c(out, as.character(utils::toBibtex(cit)), "")
+        bib <- .bibtex_with_keys(cit, entry$package)
       }
+    }
+    note <- entry$note
+    if (!is.null(bib) && length(bib$keys) > 0) {
+      note <- paste0(sub("\\.$", "", note), "~\\cite{", paste(bib$keys, collapse = ","), "}.")
+    }
+    out <- c(out, paste0("% ", entry$package, ": ", note))
+    if (!is.null(bib)) {
+      out <- c(out, bib$lines, "")
     }
   }
 
   message(paste(out, collapse = "\n"))
   invisible(out)
+}
+
+# Internal: a citation as BibTeX lines, each entry with a key. toBibtex() writes
+# "@Article{," for an entry without one, which is every entry R builds from a
+# package's CITATION file or DESCRIPTION; BibTeX then reports "Repeated entry"
+# for the second such entry in a file and drops it. Keys an entry already has
+# are kept.
+.bibtex_with_keys <- function(cit, package) {
+  lines <- as.character(utils::toBibtex(cit))
+  heads <- grep("^@[A-Za-z]+\\{", lines)
+  keys <- character(length(heads))
+  for (j in seq_along(heads)) {
+    existing <- trimws(sub("^@[A-Za-z]+\\{([^,]*),.*$", "\\1", lines[heads[j]]))
+    key <- if (nzchar(existing)) existing else if (j == 1) package else paste0(package, "-", j)
+    lines[heads[j]] <- paste0(sub("^(@[A-Za-z]+\\{)[^,]*,.*$", "\\1", lines[heads[j]]), key, ",")
+    keys[j] <- key
+  }
+  list(lines = lines, keys = keys)
 }

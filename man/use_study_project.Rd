@@ -8,7 +8,7 @@ use_study_project(
   path,
   name = NULL,
   questionnaires = c("nasa_tlx", "sus"),
-  renv = requireNamespace("renv", quietly = TRUE),
+  renv = FALSE,
   git = TRUE,
   overwrite = FALSE,
   quiet = FALSE
@@ -25,9 +25,17 @@ e.g. \code{c("nasa_tlx", "sus")}. The scoring script is generated with one
 call per instrument. See \code{\link[=list_questionnaires]{list_questionnaires()}}.}
 
 \item{renv}{Logical. Initialise \pkg{renv} in the project, pinning the
-package versions this analysis was run with. Default \code{TRUE} when
-\pkg{renv} is installed. This is what makes the project still run in three
-years, and what makes it a usable open-science artifact.}
+package versions this analysis was run with -- which is what makes the
+project still run in three years, and what makes it a usable open-science
+artifact. Default \code{FALSE}: initialising discovers every package the
+scripts use and installs it into a project library, which can mean
+network downloads, so it is opt-in. With \code{TRUE}, \code{renv::init()}
+runs in a separate R process (via \pkg{callr} when installed, otherwise
+\code{Rscript}), because activating a project rewrites the calling
+session's library paths, environment variables (\code{R_LIBS_USER},
+\code{PATH}, \code{RENV_PATHS_*}), repository options and sandbox; your
+current session is left exactly as it was. Run \code{renv::init()}
+yourself later to opt in after the fact.}
 
 \item{git}{Logical. Write a \code{.gitignore} suited to an R analysis
 project. Default \code{TRUE}.}

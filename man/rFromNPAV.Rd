@@ -4,12 +4,19 @@
 \alias{rFromNPAV}
 \title{Calculation based on Rosenthal's formula (1994). N stands for the \emph{number of measurements}.}
 \usage{
-rFromNPAV(pvalue, N)
+rFromNPAV(pvalue, N, alternative = "two.sided", df1 = NULL)
 }
 \arguments{
 \item{pvalue}{p value}
 
 \item{N}{number of measurements in the experiment}
+
+\item{alternative}{\code{"two.sided"} (default), \code{"less"} or
+\code{"greater"}: the alternative of the test that produced
+\code{pvalue}.}
+
+\item{df1}{optional numerator degrees of freedom of the \eqn{F} test that
+produced \code{pvalue}; a value above 1 triggers a warning (see Details).}
 }
 \value{
 Invisibly returns a list with components:
@@ -21,9 +28,30 @@ to the console.
 }
 }
 \description{
+Computes \eqn{r = |z| / \sqrt{N}} with \eqn{z = \Phi^{-1}(p/2)} for a
+two-sided p-value, or \eqn{z = \Phi^{-1}(p)} for a one-sided one
+(\code{alternative = "less"} or \code{"greater"}).
+}
+\details{
+The conversion is defined for \emph{focused} tests with a single degree of
+freedom (Rosenthal, 1994). The p-value of an \eqn{F} test with one numerator
+degree of freedom equals the two-sided p-value of the matching \eqn{t} test,
+so the default is right for such effects. An omnibus \eqn{F} test with more
+than one numerator degree of freedom -- a main effect of a three-level
+factor, say -- has no single
+direction and no \eqn{z} equivalent: its p-value converts to a number, but
+not to the effect size \eqn{r} of anything. Pass \code{df1} to be warned in
+that case, and report partial eta squared for such effects instead (as
+\code{\link[=reportNPAV]{reportNPAV()}} and \code{\link[=reportART]{reportART()}} do).
+
 Necessary LaTeX command:
 \code{\\newcommand{\\effectsize}{\\textit{r=}}}
 }
 \examples{
 rFromNPAV(0.02, N = 180)
+}
+\references{
+Rosenthal, R. (1994). Parametric measures of effect size. In
+H. Cooper & L. V. Hedges (Eds.), \emph{The handbook of research
+synthesis} (pp. 231--244). Russell Sage Foundation.
 }

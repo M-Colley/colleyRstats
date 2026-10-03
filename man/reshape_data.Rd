@@ -31,6 +31,9 @@ This function takes an Excel file with data in a wide format and transforms it t
 It includes a customizable "ID" column in the first position and repeats it for each slice.
 The function identifies sections of columns between markers that start with a user-defined string (default is "videoinfo")
 and appends those sections under the first section, aligning by column index.
+Columns before the first marker (e.g. a survey export's metadata or
+demographics) are not a section: like the ID column, they are repeated for
+every slice. The marker columns themselves are dropped.
 }
 \details{
 Relevant if you receive data in wide-format but cannot use built-in functionality due to naming (e.g., in LimeSurvey)

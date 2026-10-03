@@ -1,3 +1,84 @@
+# colleyRstats 0.3.0
+
+This release fixes a set of defects that could put a wrong number, a wrong direction or a wrong label into a manuscript without any error. **Re-run within-subjects analyses, post-hoc sentences from rank-based tests, mixed-model reports and `prefix =` questionnaire scoring made with earlier versions.**
+
+## BREAKING CHANGES
+
+- `ggwithinstatsWithPriorNormalityCheck()` / `plot_within_stats()`, the asterisk variant, and `analyze_and_report()` / `report_all()` with `design = "within"` require a new `subject =` argument naming the participant column. Without it, `ggstatsplot` paired the k-th row of each condition: shuffling one condition's rows moved p from 3e-7 to 0.30, and one participant missing a condition shifted every later pair. Participants lacking a condition are now dropped with a message naming them, and more than one row per participant and condition is an error (aggregate repeated trials first). `subject` is the last argument, so existing positional calls are not silently remapped.
+- R (>= 4.3.0) is required: the declared `ggstatsplot` (>= 1.0.0) and `statsExpressions` (>= 2.0.0) need it, so the previous R (>= 4.2.0) could not be satisfied. `ggplot2` (>= 3.5.0) is required for the inside-legend placement used by the themes and plots.
+- `score_questionnaire()` stops with an error when an item column holds text ("Strongly agree", "5 - Strongly agree", "2,5"), names duplicate columns, or gets a `prefix` whose column names do not identify the items. All three used to score silently and wrongly.
+- `use_study_project()` no longer initialises renv by default; pass `renv = TRUE`, which now runs `renv::init()` in a separate R process so the calling session's library paths, environment variables and options are untouched.
+- `not_empty()` rejects a data frame without rows.
+
+## BUG FIXES
+
+### Within-subjects analyses
+
+- `check_normality_by_group()` gains `subject =` and then tests what a repeated-measures analysis assumes to be normal: the per-participant differences (two conditions) or the residuals of `y ~ condition + participant` (more), not the raw scores per condition. Between subjects, the per-group p-values are now Holm-corrected (six normal groups used to send about one analysis in four to the non-parametric branch), and a group that cannot be tested -- fewer than three values, or a rating item at ceiling -- counts as non-normal instead of passing silently.
+- `assumption_methods_text()` gains `subject` and describes the check that was actually run, names untestable groups, labels adjusted p-values as such, and names the variance test as run (Brown-Forsythe, the median-centred Levene test `rstatix` uses). With `subject`, `include_homogeneity` is ignored with a message: equal variances across conditions are not a repeated-measures assumption, and the Welch clause it could add has no meaning there.
+- `checkAssumptionsForAnova()` treats every factor as categorical (numeric condition codes were fitted as one linear covariate, so identical data got opposite advice depending on the coding), Holm-corrects its per-cell tests, reports cells too small to test instead of crashing, and gains `subject =` to test the residuals a repeated-measures ANOVA assumes.
+- With a single two-level within-subject factor, `checkAssumptionsForAnova()` and `recommend_test()` test the per-participant differences, as `check_normality_by_group()` does, rather than the model residuals: each participant's two residuals are mirror images, a symmetrised sample in which Shapiro-Wilk missed skewed differences about half the time.
+- Every within-subjects entry point -- the plot wrappers, `check_normality_by_group()`, `checkAssumptionsForAnova()`, the post-hoc descriptives and `generateEffectPlot()`'s within-subject intervals -- now decides who is analysed by one shared rule (one row per participant and condition; participants lacking a condition are left out), so the methods sentence, the test, the figure and the descriptives always describe the same participants.
+- `generateEffectPlot()`'s main-effect line uses unweighted marginal means (it drew 9 vs 1 where the cell means average 5 vs 5 in an unbalanced design); a new `subject` gives within-subject (Cousineau-Morey) intervals matching `afex`.
+
+### Post-hoc and omnibus sentences
+
+- `reportDunnTest()`, `reportArtCon()` and `reportggstatsplotPostHoc()` decided which level "was significantly higher" from the raw means, which contradicts a rank-based test exactly when outliers or skew made one necessary: a Dunn test with Z = -4.05 was reported as "A was significantly higher (M = 10.87)". The direction now comes from the test (sign of Z, the ART-C estimate, mean ranks, within-participant rank sums, or trimmed means), and the descriptives match it by default -- `\mdn{}`/`\iqr{}` for rank-based tests -- via a new `descriptives` argument, with a warning when forced means would contradict the test.
+- Dunn and ART-C results computed without a correction were labelled $p_{adj}$ and "p-adjusted"; they now use `\p{}` and "p", and the sentences name the test and the correction ("A Dunn post-hoc test (Holm-adjusted) found ...").
+- `reportArtCon()` crashed (and `reportArtConTable()` printed NA effect sizes) for numeric-looking levels or levels containing `-`, `+`, `*` or `/`, which emmeans rewrites in its labels.
+- The partial eta squared "95% CI" of `reportART()` and `reportNPAV()` was one-sided (upper bound always 1.00); it is now two-sided.
+- `reportggstatsplotPostHoc()` gains `subject`, so its descriptives describe the participants `ggwithinstats()` tested; it writes `sink_to` when nothing is significant, so a stale significant result no longer survives in the manuscript; and it refuses Bayesian tables instead of calling them non-significant. `reportggstatsplot()` reports Bayes factors and Yuen's t(df), and no longer writes "An A heteroscedastic ...".
+- p-values are never rounded across .10, .05 or .01: p = 0.0496 used to print as "p = .050" inside a sentence calling the result significant. Beyond eight digits they are truncated (0.0499999999 prints as 0.04999999).
+- `reportggstatsplotPostHoc()` warns whenever a within-subjects plot is reported without `subject` (equal row counts per level do not show that every participant is complete); its direction warning under `descriptives = "auto"` no longer recommends the setting already in use. Between-subjects Yuen plots are no longer mistaken for within-subjects ones ("independent samples" contains "dependent samples"). Bayes factors below 1 keep two significant digits (0.014, not 0.01).
+
+### Mixed models, `recommend_test()` and `fit_recommended()`
+
+- `reportGLMM()` reported linear mixed models with the residual df: t(116), p = .030 where lmerTest's Satterthwaite test gives t(10), p = .053. LMM coefficients now use Satterthwaite df, and the sentence says so.
+- `reportGLMM()` / `reportCLMM()` report a Type III omnibus test for every model term (Satterthwaite F for LMMs, Wald chi-square via `emmeans::joint_tests()` otherwise) before the coefficients, which are labelled as the treatment contrasts they are ("B vs. A of cond, at b = b1") instead of "the effect of condB" -- in a model with an interaction that coefficient is a simple effect, and a 2x2 example had read "significant, p < .001" where the Type III test gave p = .26. New argument `omnibus = TRUE`.
+- Odds-ratio and IRR labels follow the link (a probit model printed "OR"); thresholds, scale effects and zero-inflation coefficients are no longer reported as predictor effects.
+- Count outcomes are checked for over-dispersion and fitted as negative binomial when needed (Poisson had given p = .037 where the negative-binomial model gives p = .43). `classify_outcome()` no longer silently treats bounded scores as counts (raw NASA-TLX in steps of 5 is continuous, and every count classification is announced) or a two-valued non-0/1 item as binary.
+- `recommend_test()` tests normality on the residuals of the model it recommends and homogeneity across all design cells; recommends HC3-robust Type III ANOVA instead of a one-way Welch test for heteroscedastic factorial designs; and only recommends models that can be fitted (no ART with covariates, no nparLD without a within factor). A clustered nominal outcome is fitted with `mclogit::mblogit()` instead of a `multinom()` that ignored the clustering.
+- `fit_recommended()` uses order-independent Type III sums of squares for unbalanced between-subjects factorials (Type I gave F = 2.03 or 0.14 depending on predictor order); fits by-participant random slopes when trials repeat within a condition, simplifying them when the fit is singular; computes post-hoc contrasts per factor, with simple effects only for a significant interaction in the model; no longer turns a numeric covariate with few values into a factor (new `factors =` argument declares categorical predictors); handles column names with spaces; records singular and non-converged fits and the function actually called; and escapes its LaTeX methods sentence.
+
+### Questionnaire scoring
+
+- `score_questionnaire(prefix =)` matched columns to items by sort order: NASA-TLX Mental Demand was filled from the Effort column, TiA and IPQ reversals landed on the wrong items, AttrakDiff PQ and ATT swapped, and `SUS_10_1` was read as item 2. Columns are now matched by name or by an unambiguous item number running 1..n.
+- The scoring message shows the observed response range; NASA-TLX data that never exceed 21, and codings that look shifted by one point, draw a warning unless `scale` is given.
+- `reverse_items` warns when it un-reverses an item the published key already reverses (passing `c(2, 4, 6, 8, 10)` for the SUS gave a perfect respondent 50); new `unreverse_items` does that on purpose.
+- With `min_valid < 1`, missing SUS items count as the centre point, as Brooke (1996) instructs; new `impute =` chooses the rule explicitly.
+- `score_reliability()` adds a whole-scale row, a Spearman-Brown coefficient for two-item scales, and a `note` column; omega comes from an unrotated one-factor solution, so it no longer silently returns `NA` without 'GPArotation'.
+
+### Utilities
+
+- `rFromWilcox()` and `rFromNPAV()` no longer halve one-sided p-values, which overstated r; `rFromNPAV()` warns for omnibus F tests with more than one numerator df.
+- `remove_outliers_REI()` takes proportions over the items each respondent answered, as Tawa (2021) defines the index; matches `variables` by exact name rather than as regular expressions; and flags nobody, instead of everybody, when all indices are equal.
+- `add_pareto_moocore_column()` and `add_pareto_emoa_column()` agree on tied points (moocore kept only the first copy); emoa accepts integer columns; rows with a missing objective get `NA`.
+- `check_homogeneity_by_group()` and the plot wrappers accept column names with spaces and numeric condition codes. `debug_contr_error()` reported unobserved factor levels as real when a character column came first. `reshape_data()` stacked the columns before the first marker as a data slice.
+
+## LATEX OUTPUT
+
+- Variable names that are already LaTeX commands (`time`, `L`, `small`, `value`, ...) are written as text instead of `\time` (a compile error), `\L` (the letter Ł) or `\small` (a font switch). The list of reserved names is generated from TeX itself (`data-raw/latex_reserved.R`). Name macros are written as `\Name{}`, so TeX no longer swallows the following space ("cylon mpg").
+- `reportNparLD()` output did not compile (nested math in `\F{..}{$\infty$}{..}`), rounded the ATS df to an integer, and promised a relative treatment effect that real fits never carry. `reportART()`, `reportNPAV()` and `reportNparLD()` decided "interaction" by searching for a capital X (a main effect `UX` became an interaction) and emitted names like `Video_Type` as uncompilable macros.
+- `emit_overleaf()` no longer lets sections overwrite each other (`Q1` and `Q2` both became `Q.tex`), checks every path before writing anything, and produces a non-empty bibliography (`\nocite{*}`, and `cite_methods()` now gives each BibTeX entry a key). `define_result_macro()` spells digits out (`tlx_1` becomes `\tlxOne`), refuses names that would redefine a command, and replaces an existing definition instead of duplicating it. `cite_methods()` cites a method named twice (`c("art", "ART")`) only once.
+- `reportMeanAndSD()` wrote only LaTeX comments, and `latexify_report()` left `_ & # ^ < >` unescaped.
+- New `\mdn{}` and `\iqr{}` macros in `latex_preamble()` and `colleyRstats.sty`; re-copy the `.sty` into existing Overleaf projects with `use_colleyrstats_sty(overwrite = TRUE)`.
+
+## NEW FEATURES
+
+- New questionnaire key `attrakdiff_official`: the AttrakDiff 2 word pairs in the order and with the poles of the administered sheet. The existing `attrakdiff` key (blocked by dimension, negative pole first) is unchanged.
+- `showPairwiseComp` and `plotType` work again (ignored since 'ggstatsplot' 0.12.0); non-parametric figures label medians; two-group asterisk brackets use the test shown in the subtitle.
+- A factor iteration axis in `generateMoboPlot()` / `generateMoboPlot2()` lines up with its phase guides and fitted equation.
+
+## DEPRECATIONS
+
+- `rFromWilcoxAdjusted()` is deprecated: inflating p by the number of comparisons shrank r (0.34 to 0.21 with six comparisons) although the effect was unchanged. Effect sizes are not multiplicity-adjusted; use `rFromWilcox()`.
+- `generateEffectPlot(numberColors =)` is deprecated; it was never used.
+
+## PACKAGING
+
+- Removed ten suggested packages that nothing used, and the unused `roxyglobals` configuration. Added 'callr', 'MASS', 'mclogit', 'performance' and 'WRS2' to Suggests.
+- CI also checks on the previous R release. The spell-check workflow passes again.
+
 # colleyRstats 0.2.1
 
 ## NEW FEATURES

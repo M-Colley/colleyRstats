@@ -37,7 +37,10 @@ plot_between_stats(
 
 \item{xlabels}{labels to be used for the x-axis}
 
-\item{showPairwiseComp}{whether to show pairwise comparisons, TRUE as default}
+\item{showPairwiseComp}{whether to show the significant pairwise comparisons
+(\code{TRUE}, default) or none (\code{FALSE}). With \code{FALSE} no
+pairwise table is computed either, so \code{\link[=reportggstatsplotPostHoc]{reportggstatsplotPostHoc()}} has
+nothing to report from the plot.}
 
 \item{plotType}{either "box", "violin", or "boxviolin" (default)}
 }
@@ -45,8 +48,15 @@ plot_between_stats(
 A \code{ggplot} object produced by \code{ggstatsplot::ggbetweenstats}, which can be printed or further modified with \code{+}.
 }
 \description{
-Check the data's distribution. If non-normal, take the non-parametric variant of \emph{ggbetweenstats}.
-x and y have to be in parentheses, e.g., "ConditionID".
+For independent groups: one row per participant. If the group-wise
+normality check (\code{\link[=check_normality_by_group]{check_normality_by_group()}}) passes, ggstatsplot runs
+Welch's t-test (two groups) or Welch's one-way ANOVA with Games-Howell
+post-hoc tests and labels the means; none of these assume equal variances,
+which is why no Levene test is run. Otherwise it runs a Wilcoxon rank-sum
+(Mann-Whitney) or Kruskal-Wallis test with Dunn post-hoc tests and labels
+the medians. Post-hoc p-values are Holm-adjusted. Rows without a group or an
+outcome are dropped, and the grouping column is treated as a factor, so
+numeric condition codes are categories.
 }
 \section{Naming}{
 
@@ -65,10 +75,9 @@ for removal, and existing scripts keep working unchanged.
 
 set.seed(123)
 
-# Toy within-subject style data
+# Toy between-subject data: each participant sees one condition
 main_df <- data.frame(
-  Participant = factor(rep(1:20, each = 3)),
-  CondID      = factor(rep(c("A", "B", "C"), times = 20)),
+  CondID      = factor(rep(c("A", "B", "C"), each = 20)),
   tlx_mental  = rnorm(60, mean = 50, sd = 10)
 )
 

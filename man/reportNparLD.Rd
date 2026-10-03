@@ -34,14 +34,17 @@ Invisibly returns the reported sentence(s) as a character vector;
 the text is also emitted via \code{message()}.
 }
 \description{
-#' Only significant main and interaction effects are reported.
-P-values are rounded for the third digit and relative treatment effects (RTE) are included when available.
+Only significant main and interaction effects of the ANOVA-type statistic
+(ATS) are reported, as \eqn{F(df, \infty)}{F(df, Inf)} with the estimated (fractional)
+numerator degrees of freedom. P-values are rounded for the third digit. No
+effect size is attached: the relative treatment effects 'nparLD' estimates
+describe factor-level combinations, not the terms of the ATS table.
+A term is reported as an interaction when its name contains \code{":"}.
 Attention: the independent variables of the formula and the term specifying the participant must be factors (i.e., use as.factor()).
 }
 \details{
-#' To easily copy and paste the results to your manuscript, the following commands must be defined in Latex:
-\code{\\newcommand{\\F}{\\textit{F=}}}
-\code{\\newcommand{\\df}{\\textit{df=}}}
+To easily copy and paste the results to your manuscript, the following commands must be defined in Latex:
+\code{\\newcommand{\\F}[3]{$F({#1},{#2})={#3}$}}
 \code{\\newcommand{\\p}{\\textit{p=}}}
 \code{\\newcommand{\\pminor}{\\textit{p$<$}}}
 }

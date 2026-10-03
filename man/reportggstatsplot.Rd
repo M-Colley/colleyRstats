@@ -38,7 +38,14 @@ Invisibly returns the reported sentence(s) as a character vector;
 the text is also emitted via \code{message()}.
 }
 \description{
-Report statistical details for ggstatsplot.
+Writes the omnibus test of a \code{ggbetweenstats()}/\code{ggwithinstats()}
+plot as a sentence, naming the test statsExpressions ran and the effect size
+it produced. Rank-based tests are reported with their \eqn{\chi^2}{chi^2},
+\emph{V} or \emph{W} statistic, t tests (including Yuen's trimmed-means
+test) as \emph{t(df)}, and ANOVA-type tests as \emph{F(df1, df2)}. A plot
+made with \code{type = "bayes"} carries a Bayes factor instead of a p-value;
+it is reported as \eqn{BF_{10}} together with the evidence category of
+Jeffreys (1961), as classified by \code{\link[effectsize:interpret_bf]{effectsize::interpret_bf()}}.
 }
 \section{Naming}{
 

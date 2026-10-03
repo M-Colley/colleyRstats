@@ -1,0 +1,18 @@
+% Dumps every all-letter control sequence that is defined (and not merely
+% \relax) once a typical manuscript preamble has been read. Run by
+% data-raw/latex_reserved.R under each document class in turn.
+\documentclass[CLASSOPTS]{CLASSNAME}
+% Load each package only if this TeX installation has it, so the dump runs on
+% a partial TeX Live as well; the R script records which ones were missing.
+\newcommand\maybeuse[1]{\IfFileExists{#1.sty}{\usepackage{#1}}{\typeout{MISSING-PACKAGE #1}}}
+\maybeuse{amsmath}\maybeuse{amssymb}\maybeuse{mathtools}\maybeuse{amsthm}
+\maybeuse{graphicx}\maybeuse{xcolor}\maybeuse{booktabs}\maybeuse{multirow}
+\maybeuse{array}\maybeuse{tabularx}\maybeuse{longtable}\maybeuse{caption}
+\maybeuse{subcaption}\maybeuse{enumitem}\maybeuse{url}\maybeuse{microtype}
+\maybeuse{siunitx}\maybeuse{tikz}\maybeuse{pgfplots}\maybeuse{natbib}
+\maybeuse{hyperref}\maybeuse{cleveref}
+\begin{document}
+\directlua{dofile("latex_reserved.lua")}
+\end{document}
+
+

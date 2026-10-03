@@ -19,4 +19,9 @@
 #'
 #' A named `items` argument (`items = c(mental = "tlx_md", ...)`) removes the
 #' positional assumption altogether and is the safer choice for an export you
-#' did not lay out yourself.
+#' did not lay out yourself. A `prefix` maps columns by what their names say
+#' -- an item code or label, or one item number per column running 1 to the
+#' number of items -- never by sort order, and stops when the names do not
+#' identify the items. Note that the `attrakdiff` key is blocked by dimension
+#' with the negative pole first; data stored as answered on the official
+#' AttrakDiff sheet belong to `attrakdiff_official`.

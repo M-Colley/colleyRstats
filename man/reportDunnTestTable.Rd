@@ -3,10 +3,7 @@
 \name{reportDunnTestTable}
 \alias{reportDunnTestTable}
 \alias{report_dunn_test_table}
-\title{report Dunn test as a table. Customizable with sensible defaults. Required commands in LaTeX:
-\code{\\newcommand{\\padjminor}{\\textit{p$_{adj}<$}}}
-\code{\\newcommand{\\padj}{\\textit{p$_{adj}$=}}}
-\code{\\newcommand{\\rankbiserial}[1]{$r_{rb} = #1$}}}
+\title{report Dunn test as a table. Customizable with sensible defaults.}
 \usage{
 reportDunnTestTable(
   d = NULL,
@@ -64,10 +61,12 @@ Invisibly returns the rendered LaTeX table as a string (or
 \code{NULL} when xtable is unavailable); the table is also printed.
 }
 \description{
-report Dunn test as a table. Customizable with sensible defaults. Required commands in LaTeX:
-\code{\\newcommand{\\padjminor}{\\textit{p$_{adj}<$}}}
-\code{\\newcommand{\\padj}{\\textit{p$_{adj}$=}}}
-\code{\\newcommand{\\rankbiserial}[1]{$r_{rb} = #1$}}
+The table lists the significant comparisons with their \eqn{Z}, p-value and
+rank-biserial correlation. FSA's \eqn{Z} for "A - B" is positive when A has
+the higher mean rank, which the caption states. The p-value column is headed
+"p-adjusted" and the caption names the correction read from the test object;
+a test run with \code{method = "none"} gets the header "p" and a caption saying
+the p-values are not adjusted. P-values are never rounded across .05 or .01.
 }
 \section{Naming}{
 

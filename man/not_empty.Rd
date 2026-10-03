@@ -16,5 +16,6 @@ argument, e.g. \code{"`data` must not be empty."}.}
 Invisible TRUE if valid.
 }
 \description{
-Stops execution if x is NULL, empty, or contains only NAs.
+Stops execution if x is NULL, empty, contains only NAs, or is a data frame
+without rows.
 }

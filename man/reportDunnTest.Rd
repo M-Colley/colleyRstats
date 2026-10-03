@@ -3,14 +3,25 @@
 \name{reportDunnTest}
 \alias{reportDunnTest}
 \alias{report_dunn_test}
-\title{Report dunnTest as text. Required commands in LaTeX:
-\code{\\newcommand{\\padjminor}{\\textit{p$_{adj}<$}}}
-\code{\\newcommand{\\padj}{\\textit{p$_{adj}$=}}}
-\code{\\newcommand{\\rankbiserial}[1]{$r_{rb} = #1$}}}
+\title{Report dunnTest as text}
 \usage{
-reportDunnTest(d, data, iv = "testiv", dv = "testdv", sink_to = NULL)
+reportDunnTest(
+  d,
+  data,
+  iv = "testiv",
+  dv = "testdv",
+  sink_to = NULL,
+  descriptives = c("auto", "mean", "median", "trimmed")
+)
 
-report_dunn_test(d, data, iv = "testiv", dv = "testdv", sink_to = NULL)
+report_dunn_test(
+  d,
+  data,
+  iv = "testiv",
+  dv = "testdv",
+  sink_to = NULL,
+  descriptives = c("auto", "mean", "median", "trimmed")
+)
 }
 \arguments{
 \item{d}{the dunn test object}
@@ -23,16 +34,43 @@ report_dunn_test(d, data, iv = "testiv", dv = "testdv", sink_to = NULL)
 
 \item{sink_to}{optional path of a \code{.tex} file to write the sentences to,
 so a manuscript can \code{\\input{}} them}
+
+\item{descriptives}{which descriptives to print beside each level:
+\code{"auto"} (default, median and IQR for this rank-based test),
+\code{"mean"}, \code{"median"} or \code{"trimmed"} (20\% trimmed mean and
+20\% winsorized SD).}
 }
 \value{
 Invisibly returns the reported sentence(s) as a character vector;
 the text is also emitted via \code{message()}.
 }
 \description{
-Report dunnTest as text. Required commands in LaTeX:
-\code{\\newcommand{\\padjminor}{\\textit{p$_{adj}<$}}}
-\code{\\newcommand{\\padj}{\\textit{p$_{adj}$=}}}
-\code{\\newcommand{\\rankbiserial}[1]{$r_{rb} = #1$}}
+Reports the significant comparisons of an \code{\link[FSA:dunnTest]{FSA::dunnTest()}} result as
+sentences such as "A Dunn post-hoc test (Holm-adjusted) found that ... for
+the Species virginica was significantly higher (Mdn=..., IQR=...) than for
+setosa (Mdn=..., IQR=...; p_adj<.001, r_rb=...)". The multiplicity
+correction is read from the test object; with \code{method = "none"} the
+p-values are uncorrected and are emitted as \code{\\p{}}/\code{\\pminor{}},
+not as \eqn{p_{adj}}.
+}
+\details{
+Which level is "higher" follows the sign of the test's \eqn{Z} (FSA labels a
+comparison "A - B"; \eqn{Z > 0} means A has the higher mean rank). Until 0.3.0
+it followed the raw means, which can point the other way: with a few large
+outliers a level can have the larger mean but the significantly lower mean
+rank. As a consistency check, the mean ranks are recomputed from \code{data} and
+a warning is given when they disagree with \eqn{Z} (i.e. when \code{data} is not
+the data the test was computed on).
+
+By default (\code{descriptives = "auto"}) each level is described by its median
+and IQR, the location measure that matches a rank-based test; \code{"mean"}
+restores \emph{M}/\emph{SD} and warns where the means order two levels
+against the test.
+
+Required commands in LaTeX (all part of \code{\link[=latex_preamble]{latex_preamble()}}):
+\code{\\padj}, \code{\\padjminor}, \code{\\p}, \code{\\pminor},
+\code{\\mdn}, \code{\\iqr}, \code{\\m}, \code{\\sd} and
+\code{\\newcommand{\\rankbiserial}[1]{$r_{rb} = #1$}}.
 }
 \section{Naming}{
 

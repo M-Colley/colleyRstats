@@ -23,6 +23,10 @@ longer need to pass negated copies of your own columns.}
 }
 \value{
 A data frame with the same columns as \code{data}, along with an additional column, \code{PARETO_EMOA}, which is \code{TRUE} for rows that are on the Pareto front and \code{FALSE} otherwise.
+Identical rows share one verdict (a copy of a non-dominated point is
+non-dominated too), as in \code{\link[=add_pareto_moocore_column]{add_pareto_moocore_column()}}. Rows with a
+missing objective value get \code{NA}, with a warning, and the front is
+computed from the complete rows.
 }
 \description{
 This function calculates the Pareto front using emoa for a given set of objectives in a data frame and adds a new column, \code{PARETO_EMOA}, which indicates whether each row in the data frame belongs to the Pareto front.

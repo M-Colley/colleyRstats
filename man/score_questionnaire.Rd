@@ -14,7 +14,9 @@ score_questionnaire(
   min_valid = 1,
   append = FALSE,
   prefix_out = NULL,
-  verbose = TRUE
+  verbose = TRUE,
+  unreverse_items = NULL,
+  impute = c("default", "prorate", "midpoint")
 )
 }
 \arguments{
@@ -30,27 +32,41 @@ or a character vector \emph{named} after the item codes
 and the safer choice for a survey export you did not lay out yourself.}
 
 \item{prefix}{Optional column-name prefix selecting the item columns, e.g.
-\code{"sus_"}. Matching columns are sorted numerically, so \code{sus_2}
-comes before \code{sus_10}. Must select exactly as many columns as the
-instrument has items.}
+\code{"sus_"}. Must select exactly as many columns as the instrument has
+items. The columns are then matched to items \emph{by their names}, never
+by sort order: either what follows the prefix is the item's code, label or
+(for a single-item subscale) subscale name, compared without case or
+punctuation (\code{tlx_mental}, \code{tlx_Mental_Demand}, \code{tia_rc1},
+\code{ipq_SP2}); or it carries one item number per column, and those
+numbers are exactly \code{1..n} (\code{sus_2}, \code{SUS[2]},
+\code{Q5_2}; in \code{SUS_2_1} the number that varies across the columns
+is the item). Anything else -- numbering from 0, numbers that do not run
+\code{1..n}, names that only partly match -- is an error asking for a
+named \code{items} mapping, rather than a guess.}
 
 \item{scale}{Optional two-element vector giving the response range your
 survey used, e.g. \code{c(1, 21)} for the 21-point NASA-TLX sheet or
 \code{c(0, 4)} for a zero-based SUS. Responses are rescaled onto the
 instrument's own range before scoring. Defaults to the instrument's range;
-responses outside it are an error rather than a silent rescale.}
+responses outside it are an error rather than a silent rescale. Without
+\code{scale}, a coding that fits the range but looks shifted against it
+draws a warning (see Details); passing \code{scale} explicitly confirms
+the coding and silences it.}
 
-\item{reverse_items}{Optional items to \emph{toggle} the reverse-coding of,
-given as item numbers or item codes. Naming an item the scoring key already
-reverses un-reverses it, which is what an export that stores a pair the
-other way round needs.}
+\item{reverse_items}{Optional items to reverse-code in addition to the
+scoring key's own, given as item numbers or item codes -- for a survey that
+printed a pair the other way round. For backward compatibility it
+\emph{toggles}: naming an item the key already reverses un-reverses it,
+and because passing an instrument's own reverse set (e.g.
+\code{c(2, 4, 6, 8, 10)} for the SUS) is a common mistake that would do
+exactly that, it raises a warning. Use \code{unreverse_items} to undo a
+key reversal on purpose.}
 
 \item{min_valid}{Minimum proportion of a subscale's items that must be
 answered for a score to be produced. The default \code{1} scores only
 complete subscales and returns \code{NA} otherwise -- no silent imputation.
-Relax it (e.g. \code{0.8}) to score partially complete responses, in which
-case a subscale is the mean of the items present, and a sum-scored
-instrument is scaled up proportionally so it stays on its published range.}
+Relax it (e.g. \code{0.8}) to score partially complete responses; how the
+missing items are then completed is set by \code{impute}.}
 
 \item{append}{Logical. If \code{TRUE}, return \code{data} with the score
 columns added; if \code{FALSE} (default), return only the scores.}
@@ -61,6 +77,20 @@ block per condition).}
 
 \item{verbose}{Logical. If \code{TRUE} (default), emit the one-time mapping
 message described above.}
+
+\item{unreverse_items}{Optional items the scoring key reverses that should
+\emph{not} be reversed, because the export already stored them
+reverse-coded. Naming an item the key does not reverse is an error.}
+
+\item{impute}{How the missing items of a row that clears \code{min_valid}
+are completed. \code{"default"} applies the instrument's published rule:
+for the SUS, each missing item counts as the scale's centre point, as
+Brooke (1996) instructs respondents who cannot answer an item; for every
+other instrument, a subscale is the mean of the items present (a summed
+score is scaled up proportionally, so it stays on its published range).
+\code{"prorate"} uses the mean of the items present everywhere, and
+\code{"midpoint"} the scale centre everywhere. Irrelevant with the default
+\code{min_valid = 1}.}
 }
 \value{
 A data frame with one row per row of \code{data} and one column per
@@ -75,6 +105,23 @@ recoding it prescribes (centring a semantic differential to \eqn{-3..+3},
 zero-basing the SUS), the subscale structure, and the published weights or
 multipliers. Supported instruments are listed by \code{\link[=list_questionnaires]{list_questionnaires()}};
 register your own with \code{\link[=define_questionnaire]{define_questionnaire()}}.
+}
+\details{
+Item columns must hold numbers. Factors are read by their labels when the
+labels are numbers, and by level order only when the factor is ordered. Text
+that is not a number (\code{"Strongly agree"}, \code{"5 - Strongly agree"},
+a decimal comma) is an error naming the values, because converting it would
+silently turn responses into missing values; blank cells are missing. A
+fractional response on an instrument answered in whole scale points draws a
+warning.
+
+The scoring message reports the observed response range next to the assumed
+one. Without an explicit \code{scale}, three codings that fit the assumed
+range but look shifted draw a warning: NASA-TLX responses that never exceed
+21 on the 0--100 scale (the 21-point sheet); and, for multi-item whole-point
+instruments with at least five respondents, no response at 0 on a zero-based
+scale (a 1-based export, e.g. IPQ 1--7) or no response at the top of a
+one-based scale (a 0-based export, e.g. SUS 0--4).
 }
 \section{Caution -- verify the mapping against your own survey}{
 
@@ -98,7 +145,12 @@ scored in a session (silence it with
 
 A named \code{items} argument (\code{items = c(mental = "tlx_md", ...)}) removes the
 positional assumption altogether and is the safer choice for an export you
-did not lay out yourself.
+did not lay out yourself. A \code{prefix} maps columns by what their names say
+-- an item code or label, or one item number per column running 1 to the
+number of items -- never by sort order, and stops when the names do not
+identify the items. Note that the \code{attrakdiff} key is blocked by dimension
+with the negative pole first; data stored as answered on the official
+AttrakDiff sheet belong to \code{attrakdiff_official}.
 }
 
 \examples{

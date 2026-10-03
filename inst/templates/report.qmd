@@ -91,7 +91,7 @@ for (dv in names(results$fits)) {
 #| fig-width: 7
 #| fig-height: 4
 for (dv in names(results$fits)) {
-  print(plot_within_stats(data = scored, x = "condition", y = dv, ylab = dv))
+  print(plot_within_stats(data = scored, x = "condition", y = dv, ylab = dv, subject = "participant"))
 }
 ```
 

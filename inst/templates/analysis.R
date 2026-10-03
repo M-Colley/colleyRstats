@@ -14,9 +14,10 @@ OUTCOMES <- c(
 )
 
 # How each outcome should be modelled. This is not redundant with the data: an
-# outcome whose scores stay whole numbers -- a raw NASA-TLX subscale, a single
-# MISC rating -- would otherwise be taken for a count and fitted with a Poisson
-# model. A summed or averaged scale is analysed as continuous; a single Likert
+# outcome whose scores stay whole numbers -- a single MISC rating, a summed
+# Likert scale -- would otherwise be taken for a count and fitted with a count
+# model. (Raw NASA-TLX subscales on 0-100, in steps of 5, are recognised as
+# continuous, but stating it costs nothing.) A summed or averaged scale is analysed as continuous; a single Likert
 # item is "ordinal". Delete an entry to let the data decide, or add one for a
 # behavioural measure that needs it.
 OUTCOME_TYPES <- c(

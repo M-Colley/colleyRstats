@@ -1,5 +1,5 @@
 # A within-subjects study of three conditions whose continuous outcome passes
-# the group-wise normality check, so the recommendation lands on a linear mixed
+# the residual normality check, so the recommendation lands on a linear mixed
 # model rather than its rank-based fallback. The seed is part of the fixture:
 # with another one these tests would assert the wrong branch.
 make_study <- function(seed = 1) {
@@ -80,10 +80,14 @@ test_that("outcome_type overrides the automatic classification", {
   skip_if_not_installed("lme4")
   d <- make_study()
   # Whole numbers on 0-100: classified as a count unless told otherwise, which
-  # is how a questionnaire subscale ends up in a Poisson model.
+  # is how a questionnaire subscale ends up in a Poisson model -- now with a
+  # warning that names the override.
   d$subscale <- round(50 + 10 * d$score)
 
-  auto <- fit_recommended(d, "subscale", "cond", cluster = "id", verbose = FALSE)
+  expect_warning(
+    auto <- suppressMessages(fit_recommended(d, "subscale", "cond", cluster = "id", verbose = FALSE)),
+    "outcome_type = \"continuous\""
+  )
   told <- fit_recommended(d, "subscale", "cond",
     cluster = "id",
     outcome_type = "continuous", verbose = FALSE
@@ -105,7 +109,9 @@ test_that("post-hoc contrasts come back adjusted", {
 
   expect_equal(nrow(con), 3L) # A-B, A-C, B-C
   expect_true(all(con$p.value >= 0 & con$p.value <= 1))
+  expect_true(all(con$adjust == "holm"))
   expect_false(is.null(fit$emmeans))
+  expect_match(fit$methods, "Holm-adjusted")
 })
 
 
@@ -130,6 +136,7 @@ test_that("a between-subjects continuous outcome takes the classical route", {
 
   expect_equal(fit$engine, "aov")
   expect_s3_class(fit$model, "aov")
+  expect_match(paste(fit$text, collapse = " "), "one-way ANOVA")
 })
 
 
@@ -166,6 +173,11 @@ test_that("the formula builder places the random effect and the interaction", {
     "y ~ a + b + (1 | id)"
   )
   expect_equal(deparse(colleyRstats:::.fit_formula("y", NULL, NULL)), "y ~ 1")
+  # Non-syntactic names are backtick-quoted rather than breaking the formula.
+  expect_equal(
+    deparse(colleyRstats:::.fit_formula("tlx-mental", "Condition ID", "Participant ID")),
+    "`tlx-mental` ~ `Condition ID` + (1 | `Participant ID`)"
+  )
 })
 
 
@@ -208,16 +220,86 @@ test_that("the stored recommendation describes the model actually fitted", {
 })
 
 
+test_that("the recorded call names the real function and keeps the family", {
+  skip_if_not_installed("lme4")
+  skip_if_not_installed("lmerTest")
+  d <- make_study()
+  # An lmerTest fit used to be recorded as lme4::lmer, and a logistic GLM as
+  # "stats::glm(hit ~ cond, data = your_data)" -- a Gaussian model if re-run.
+  fit <- fit_recommended(d, "score", "cond", cluster = "id", verbose = FALSE)
+  expect_match(fit$recommendation$fit_call, "^lmerTest::lmer\\(")
+  expect_identical(fit$model_function, "lmerTest::lmer")
+  expect_match(fit$methods, "`lmerTest::lmer`", fixed = TRUE)
+
+  glm_fit <- fit_recommended(d, "hit", "cond", verbose = FALSE)
+  expect_match(glm_fit$recommendation$fit_call, "family = binomial", fixed = TRUE)
+})
+
+
 test_that("a one-way test refuses a factorial design instead of collapsing it", {
   # stats::oneway.test() does not reject a multi-term RHS: it silently collapses
   # the predictors with interaction() and analyses the resulting cells, which is
   # a different question from the one the recommendation describes.
+  # recommend_test() no longer proposes it for a factorial design (see the HC3
+  # test below), so the dispatcher's guard is exercised directly.
   set.seed(11)
   w <- expand.grid(g = factor(c("x", "y", "z")), h = factor(c("p", "q")), rep = 1:15)
   w$v <- stats::rnorm(nrow(w), 0, ifelse(w$g == "x", 0.2, 3))
+  rec <- suppressWarnings(recommend_test(w, "v", c("g", "h")))
+  rec$model_function <- "stats::oneway.test"
+  expect_error(colleyRstats:::.fit_dispatch(rec, w), "one-way test")
+})
 
-  skip_if_not(identical(recommend_test(w, "v", c("g", "h"))$model_function, "stats::oneway.test"))
-  expect_error(fit_recommended(w, "v", c("g", "h"), verbose = FALSE), "one-way test")
+
+test_that("a heteroscedastic factorial design gets HC3-robust Type III tests, not a collapsed Welch test", {
+  skip_if_not_installed("car")
+  # Welch's ANOVA has no factorial form: the old fit_call oneway.test(v ~ g + h)
+  # analysed the six collapsed cells as one factor.
+  set.seed(2)
+  d <- expand.grid(g = factor(c("x", "y", "z")), h = factor(c("p", "q")), rep = 1:20)
+  d$v <- stats::rnorm(nrow(d), mean = (d$h == "q") * 0.5, sd = ifelse(d$g == "x", 1, 1.8))
+
+  rec <- recommend_test(d, "v", c("g", "h"))
+  expect_identical(rec$model_function, "car::Anova")
+  expect_false(rec$assumptions$homogeneous)
+
+  fit <- fit_recommended(d, "v", c("g", "h"), verbose = FALSE)
+  expect_identical(fit$engine, "lm_hc3")
+  ref <- car::Anova(
+    stats::lm(v ~ g * h, data = d, contrasts = list(g = "contr.sum", h = "contr.sum")),
+    type = 3, white.adjust = "hc3"
+  )
+  expect_equal(fit$anova$term, c("g", "h", "g:h"))
+  expect_equal(fit$anova$statistic, ref[c("g", "h", "g:h"), "F"], tolerance = 1e-8)
+  expect_match(fit$recommendation$fit_call, "white.adjust = \"hc3\"", fixed = TRUE)
+  expect_match(paste(fit$text, collapse = " "), "HC3")
+})
+
+
+test_that("an unbalanced between-subjects factorial uses order-independent Type III tests", {
+  skip_if_not_installed("afex")
+  # stats::aov() gave F = 2.03 / p = .158 or F = 0.14 / p = .709 for the same
+  # effect depending on the order of the predictors (sequential sums of squares).
+  set.seed(14)
+  ub <- data.frame(
+    a = factor(sample(c("a1", "a2"), 90, TRUE, prob = c(.75, .25))),
+    b = factor(sample(c("b1", "b2"), 90, TRUE))
+  )
+  ub$b[ub$a == "a2"] <- factor(sample(c("b1", "b2"), sum(ub$a == "a2"), TRUE, prob = c(.85, .15)),
+    levels = c("b1", "b2")
+  )
+  ub$y <- stats::rnorm(90) + 0.6 * (ub$b == "b2")
+
+  f1 <- fit_recommended(ub, "y", c("a", "b"), verbose = FALSE)
+  f2 <- fit_recommended(ub, "y", c("b", "a"), verbose = FALSE)
+  expect_identical(f1$engine, "afex")
+  expect_equal(f1$anova$statistic[f1$anova$term == "a"], f2$anova$statistic[f2$anova$term == "a"])
+  expect_equal(f1$anova$statistic[f1$anova$term == "b"], f2$anova$statistic[f2$anova$term == "b"])
+  ref <- car::Anova(
+    stats::lm(y ~ a * b, data = ub, contrasts = list(a = "contr.sum", b = "contr.sum")),
+    type = 3
+  )
+  expect_equal(f1$anova$statistic[f1$anova$term == "a"], ref["a", "F value"], tolerance = 1e-8)
 })
 
 
@@ -235,6 +317,282 @@ test_that("fit_recommended refuses shapes it cannot honestly fit", {
     fit_recommended(b, "v", "g", design = "within", verbose = FALSE),
     "`cluster` must name"
   )
+})
+
+
+test_that("the aligned rank transform is refused without the full factorial model", {
+  skip_if_not_installed("ARTool")
+  # ARTool: "Model must include all combinations of interactions".
+  set.seed(5)
+  d <- expand.grid(a = factor(c("a1", "a2")), b = factor(c("b1", "b2")), id = factor(1:15))
+  d$y <- stats::rexp(nrow(d)) + as.integer(d$a)
+  skip_if_not(identical(recommend_test(d, "y", c("a", "b"), cluster = "id")$model_function, "ARTool::art"))
+  expect_error(
+    fit_recommended(d, "y", c("a", "b"), cluster = "id", interaction = FALSE, verbose = FALSE),
+    "full factorial"
+  )
+})
+
+
+test_that("recommended rank-based and mixed routes can actually be fitted", {
+  skip_if_not_installed("ARTool")
+  skip_if_not_installed("lme4")
+  # Between-subjects factor + repeated rows per participant: used to go to
+  # nparLD ("There is no subplot factor provided").
+  set.seed(3)
+  nb <- data.frame(id = factor(rep(1:20, each = 3)))
+  nb$grp <- factor(ifelse(as.integer(nb$id) <= 10, "ctrl", "trt"))
+  nb$y <- stats::rexp(60) * ifelse(nb$grp == "trt", 2.5, 1)
+  f_nb <- fit_recommended(nb, "y", "grp", cluster = "id", verbose = FALSE)
+  expect_identical(f_nb$engine, "art")
+  expect_true(length(f_nb$text) > 0)
+
+  # nparLD is refused for a predictor that does not vary within the cluster.
+  rec <- recommend_test(nb, "y", "grp", cluster = "id")
+  rec$model_function <- "nparLD::nparLD"
+  expect_error(colleyRstats:::.fit_dispatch(rec, nb), "within-subject factor")
+
+  # Factor + continuous covariate, non-normal: used to go to ART ("All fixed
+  # effect terms must be factors").
+  set.seed(11)
+  cv <- data.frame(id = factor(rep(1:20, each = 3)), cond = factor(rep(c("A", "B", "C"), 20)))
+  cv$age <- rep(round(stats::runif(20, 18, 65), 1), each = 3)
+  cv$y <- stats::rexp(60)
+  f_cv <- fit_recommended(cv, "y", c("cond", "age"), cluster = "id", verbose = FALSE)
+  expect_identical(f_cv$engine, "lmer")
+})
+
+
+test_that("numeric covariates are not silently turned into factors", {
+  skip_if_not_installed("lme4")
+  # Eight participants with eight distinct ages: as an eight-level factor, age
+  # was aliased with the participant random effect and lmer failed.
+  set.seed(12)
+  sm <- data.frame(id = factor(rep(1:8, each = 3)), cond = factor(rep(c("A", "B", "C"), 8)))
+  sm$age <- rep(c(21, 23, 24, 27, 30, 31, 35, 42), each = 3)
+  sm$y <- stats::rnorm(24)
+  expect_message(
+    fit <- fit_recommended(sm, "y", c("cond", "age"), cluster = "id"),
+    "Kept numeric predictor `age`"
+  )
+  expect_true(is.numeric(stats::model.frame(fit$model)$age))
+
+  # Integer condition codes are treated as categorical -- announced -- unless
+  # `factors` says otherwise.
+  set.seed(2)
+  cd <- data.frame(id = factor(rep(1:12, each = 3)), cond = rep(1:3, 12))
+  cd$y <- stats::rnorm(36) + cd$cond
+  expect_message(
+    f_codes <- fit_recommended(cd, "y", "cond", cluster = "id"),
+    "Treating numeric predictor `cond`"
+  )
+  expect_true(is.factor(stats::model.frame(f_codes$model)$cond))
+  f_num <- fit_recommended(cd, "y", "cond", cluster = "id", factors = character(0), verbose = FALSE)
+  expect_true(is.numeric(stats::model.frame(f_num$model)$cond))
+})
+
+
+test_that("column names with spaces and hyphens can be fitted", {
+  skip_if_not_installed("lme4")
+  set.seed(4)
+  sc <- data.frame(
+    `Participant ID` = factor(rep(1:20, each = 3)),
+    `Condition ID` = factor(rep(c("A", "B", "C"), 20)),
+    check.names = FALSE
+  )
+  sc$`tlx-mental` <- stats::rnorm(60) + stats::rnorm(20)[as.integer(sc$`Participant ID`)]
+  fit <- fit_recommended(sc, "tlx-mental", "Condition ID", cluster = "Participant ID", verbose = FALSE)
+  expect_identical(fit$engine, "lmer")
+  expect_match(paste(fit$text, collapse = " "), "\\textit{Condition ID}", fixed = TRUE)
+  expect_equal(nrow(fit$contrasts), 3L)
+
+  # The rank-based engines cannot take backticked names; they are fitted on
+  # syntactic copies and reported under the original names.
+  skip_if_not_installed("ARTool")
+  set.seed(5)
+  sa <- expand.grid(a = factor(c("a1", "a2")), b = factor(c("b1", "b2")), p = factor(1:15))
+  names(sa) <- c("Fac A", "Fac-b", "Participant ID")
+  sa$`tlx-mental` <- stats::rexp(nrow(sa)) + as.integer(sa$`Fac A`)
+  fa <- fit_recommended(sa, "tlx-mental", c("Fac A", "Fac-b"), cluster = "Participant ID", verbose = FALSE)
+  skip_if_not(identical(fa$engine, "art"))
+  expect_true(all(c("Fac A", "Fac-b", "Fac A:Fac-b") %in% fa$anova$term))
+  expect_true(all(c("Fac A", "Fac-b") %in% fa$contrasts$term))
+
+  skip_if_not_installed("nparLD")
+  set.seed(3)
+  np <- data.frame(
+    `Participant ID` = factor(rep(1:20, each = 3)),
+    `Time point` = factor(rep(c("T1", "T2", "T3"), 20)), check.names = FALSE
+  )
+  np$`tlx-mental` <- stats::rexp(60) * c(1, 1.5, 3)[as.integer(np$`Time point`)]
+  fn <- fit_recommended(np, "tlx-mental", "Time point", cluster = "Participant ID", verbose = FALSE)
+  expect_identical(fn$engine, "nparld")
+})
+
+
+test_that("a clustered nominal outcome is fitted with a random intercept, not as independent", {
+  skip_if_not_installed("mclogit")
+  # 20 subjects x 6 choices went into multinom(choice ~ cond) with no warning,
+  # while the methods text said "clustered within id".
+  set.seed(8)
+  nm <- data.frame(id = factor(rep(1:20, each = 6)), cond = factor(rep(c("A", "B"), 60)))
+  nm$choice <- factor(sample(c("p", "q", "r"), 120, TRUE))
+  fit <- suppressWarnings(fit_recommended(nm, "choice", "cond", cluster = "id", verbose = FALSE))
+  expect_identical(fit$engine, "mblogit")
+  expect_s3_class(fit$model, "mblogit")
+  expect_match(fit$recommendation$fit_call, "random = ~ 1 | id", fixed = TRUE)
+})
+
+
+test_that("over-dispersed counts are fitted as negative binomial and reported as IRRs", {
+  skip_if_not_installed("MASS")
+  skip_if_not_installed("parameters")
+  set.seed(6)
+  oc <- data.frame(g = factor(rep(c("x", "y"), each = 40)))
+  oc$errors <- MASS::rnegbin(80, mu = ifelse(oc$g == "x", 4, 5.5), theta = 0.8)
+
+  fit <- suppressMessages(fit_recommended(oc, "errors", "g", verbose = FALSE))
+  expect_identical(fit$engine, "glmnb")
+  ref <- summary(MASS::glm.nb(errors ~ g, data = oc))$coefficients["gy", "Pr(>|z|)"]
+  txt <- paste(fit$text, collapse = " ")
+  expect_match(txt, "$IRR = ", fixed = TRUE)
+  expect_match(txt, colleyRstats:::.fmt_p_macro(ref), fixed = TRUE)
+  expect_match(fit$methods, "negative-binomial")
+
+  # Clustered: a negative-binomial GLMM (glmmTMB nbinom2), still reported as IRRs.
+  skip_if_not_installed("lme4")
+  skip_if_not_installed("glmmTMB")
+  set.seed(6)
+  oc_cl <- data.frame(id = factor(rep(1:20, each = 4)), g = factor(rep(c("x", "y"), 40)))
+  oc_cl$errors <- MASS::rnegbin(80, mu = ifelse(oc_cl$g == "x", 4, 5.5), theta = 0.8)
+  fit_cl <- suppressWarnings(suppressMessages(
+    fit_recommended(oc_cl, "errors", "g", cluster = "id", verbose = FALSE)
+  ))
+  expect_identical(fit_cl$engine, "glmmtmb")
+  expect_match(fit_cl$recommendation$fit_call, "family = glmmTMB::nbinom2", fixed = TRUE)
+  expect_match(paste(fit_cl$text, collapse = " "), "$IRR = ", fixed = TRUE)
+})
+
+
+test_that("sink_to writes LaTeX that escapes the methods sentence", {
+  skip_if_not_installed("lme4")
+  skip_if_not_installed("parameters")
+  # The methods sentence carried `tlx_mental` with a bare underscore, which
+  # does not compile.
+  d <- make_study()
+  d$tlx_mental <- d$score
+  d$participant_id <- d$id
+  path <- withr::local_tempfile(fileext = ".tex")
+  fit <- suppressMessages(fit_recommended(d, "tlx_mental", "cond",
+    cluster = "participant_id", sink_to = path, verbose = FALSE
+  ))
+  tex <- readLines(path)
+  expect_match(tex[[1]], "\\texttt{tlx\\_mental}", fixed = TRUE)
+  expect_false(any(grepl("`", tex, fixed = TRUE)))
+  expect_false(any(grepl("(?<!\\\\)_", tex, perl = TRUE)))
+  # The console version stays readable.
+  expect_match(fit$methods, "`tlx_mental`", fixed = TRUE)
+})
+
+
+test_that("contrast failures are reported instead of silently returning NULL", {
+  skip_if_not_installed("emmeans")
+  d <- make_study()
+  rec <- recommend_test(d, "score", "cond")
+  broken <- list(model = "not a model", engine = "lm")
+  expect_message(
+    res <- colleyRstats:::.fit_contrasts(broken, rec, d),
+    "could not be computed"
+  )
+  expect_null(res)
+})
+
+
+test_that("a singular fit is flagged and written into the methods", {
+  skip_if_not_installed("lme4")
+  # No between-participant variance at all: the random intercept is estimated
+  # at zero. lme4 says so on the console, but nothing reached the result.
+  set.seed(9)
+  sg <- data.frame(id = factor(rep(1:10, each = 3)), cond = factor(rep(c("A", "B", "C"), 10)))
+  sg$y <- stats::rnorm(30)
+  fit <- fit_recommended(sg, "y", "cond", cluster = "id", verbose = FALSE)
+  expect_true(fit$singular)
+  expect_match(fit$methods, "singular")
+})
+
+
+test_that("repeated trials are fitted with random slopes, simplified when singular", {
+  skip_if_not_installed("lme4")
+  # Several trials per participant and condition: without by-participant
+  # slopes the condition effect is tested against the trial-level residual,
+  # which is anti-conservative (Barr et al., 2013).
+  set.seed(17)
+  sl <- expand.grid(trial = 1:6, cond = factor(c("A", "B")), id = factor(1:20))
+  u <- stats::rnorm(20)
+  s <- stats::rnorm(20, sd = 0.8)
+  sl$y <- u[as.integer(sl$id)] + (sl$cond == "B") * (0.3 + s[as.integer(sl$id)]) + stats::rnorm(nrow(sl))
+  fit <- fit_recommended(sl, "y", "cond", cluster = "id", verbose = FALSE)
+  expect_identical(fit$random, "(1 + cond | id)")
+  expect_match(fit$recommendation$fit_call, "(1 + cond | id)", fixed = TRUE)
+  # The denominator df reflect the 20 participants, not the 240 trials.
+  expect_lt(fit$anova$df2[[1]], 30)
+
+  # No true slope variance in a 2 x 2 within design: the slope model is
+  # singular and is simplified, and the methods say so.
+  set.seed(2)
+  d <- expand.grid(a = factor(c("a1", "a2")), b = factor(c("b1", "b2")), id = factor(1:20))
+  d$y <- stats::rnorm(nrow(d)) + stats::rnorm(20)[as.integer(d$id)]
+  expect_message(
+    f2 <- fit_recommended(d, "y", c("a", "b"), cluster = "id"),
+    "simplified"
+  )
+  expect_identical(f2$random, "(1 | id)")
+  expect_match(f2$methods, "simplified to `(1 | id)`", fixed = TRUE)
+})
+
+
+test_that("post-hoc contrasts are per factor, with simple effects only for a significant interaction", {
+  skip_if_not_installed("emmeans")
+  skip_if_not_installed("afex")
+  # emmeans compared every a x b cell: 15 tests for a 2 x 3 design, even with
+  # interaction = FALSE or a null interaction.
+  set.seed(18)
+  ph <- expand.grid(a = factor(c("a1", "a2")), b = factor(c("b1", "b2", "b3")), rep = 1:15)
+  ph$y <- stats::rnorm(nrow(ph)) + (ph$b == "b3")
+  # Balanced design: the sequential interaction test equals the Type III one.
+  skip_if_not(stats::anova(stats::lm(y ~ a * b, data = ph))["a:b", "Pr(>F)"] >= 0.05)
+  fit <- fit_recommended(ph, "y", c("a", "b"), verbose = FALSE)
+  expect_equal(nrow(fit$contrasts), 4L) # a: 1, b: 3
+  expect_setequal(unique(fit$contrasts$term), c("a", "b"))
+  main <- fit_recommended(ph, "y", c("a", "b"), interaction = FALSE, verbose = FALSE)
+  expect_equal(nrow(main$contrasts), 4L)
+
+  # A significant crossover interaction adds simple effects, adjusted within
+  # each level of the other factor.
+  set.seed(19)
+  cx <- expand.grid(a = factor(c("a1", "a2")), b = factor(c("b1", "b2", "b3")), rep = 1:15)
+  cx$y <- stats::rnorm(nrow(cx)) + ifelse(cx$b == "b3", -1, 1) * (cx$a == "a2")
+  fx <- fit_recommended(cx, "y", c("a", "b"), verbose = FALSE)
+  expect_lt(fx$anova$p[fx$anova$term == "a:b"], 0.05)
+  simple <- fx$contrasts[fx$contrasts$term == "b | a", ]
+  expect_equal(nrow(simple), 6L)
+  ref <- as.data.frame(emmeans::contrast(
+    emmeans::emmeans(stats::lm(y ~ a * b, data = cx), ~ b | a),
+    "pairwise", adjust = "holm"
+  ))
+  expect_equal(simple$p.value, ref$p.value, tolerance = 1e-8)
+  expect_match(fx$methods, "simple effects")
+})
+
+
+test_that("contrasts are computed for a cumulative link mixed model", {
+  skip_if_not_installed("ordinal")
+  skip_if_not_installed("emmeans")
+  # emmeans could not find the data of a model fitted inside fit_recommended(),
+  # so CLMM contrasts silently came back NULL.
+  d <- make_study()
+  fit <- fit_recommended(d, "rating", "cond", cluster = "id", verbose = FALSE)
+  expect_equal(nrow(fit$contrasts), 3L)
 })
 
 
@@ -276,6 +634,24 @@ test_that("the ART engine produces a report sentence", {
   skip_if_not(identical(fit$engine, "art"))
   expect_true(length(fit$text) > 0)
   expect_match(paste(fit$text, collapse = " "), "ART")
+})
+
+
+test_that("ART simple effects use ART-C within the levels of the other factor", {
+  skip_if_not_installed("ARTool")
+  set.seed(1)
+  ad <- expand.grid(a = factor(c("a1", "a2")), b = factor(c("b1", "b2", "b3")), id = factor(1:16))
+  ad$y <- stats::rexp(nrow(ad)) * exp(0.9 * (ad$a == "a2") * (ad$b == "b3"))
+  fit <- suppressWarnings(fit_recommended(ad, "y", c("a", "b"), cluster = "id", verbose = FALSE))
+  skip_if_not(identical(fit$engine, "art"))
+  art_tab <- suppressMessages(stats::anova(fit$model))
+  skip_if_not(art_tab[["Pr(>F)"]][trimws(art_tab$Term) == "a:b"] < 0.05)
+  # Not the 15 cell-by-cell comparisons of a:b: 1 (a) + 3 (b) + 3 (a | b) + 6 (b | a).
+  expect_equal(nrow(fit$contrasts), 13L)
+  simple <- fit$contrasts[fit$contrasts$term == "a | b", ]
+  expect_equal(nrow(simple), 3L)
+  expect_setequal(simple$by, c("b = b1", "b = b2", "b = b3"))
+  expect_match(fit$methods, "ART-C")
 })
 
 

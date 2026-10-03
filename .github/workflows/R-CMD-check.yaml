@@ -33,7 +33,9 @@ jobs:
           #- { os: ubuntu-latest, r: "next" }
           #- { os: ubuntu-latest, r: "devel" }
           - { os: ubuntu-latest, r: "release" }
-          #- { os: ubuntu-latest, r: "oldrel" }
+          # The previous R release, so that a feature newer than the R floor in
+          # DESCRIPTION is caught here rather than by a user.
+          - { os: ubuntu-latest, r: "oldrel-1" }
           #- { os: ubuntu-latest, r: "oldrel-2" }
 
     env:

@@ -11,7 +11,9 @@ reportggstatsplotPostHoc(
   iv = "testiv",
   dv = "testdv",
   label_mappings = NULL,
-  sink_to = NULL
+  sink_to = NULL,
+  descriptives = c("auto", "mean", "median", "trimmed"),
+  subject = NULL
 )
 
 report_ggstatsplot_posthoc(
@@ -20,7 +22,9 @@ report_ggstatsplot_posthoc(
   iv = "testiv",
   dv = "testdv",
   label_mappings = NULL,
-  sink_to = NULL
+  sink_to = NULL,
+  descriptives = c("auto", "mean", "median", "trimmed"),
+  subject = NULL
 )
 }
 \arguments{
@@ -36,7 +40,19 @@ report_ggstatsplot_posthoc(
 (e.g., \code{list("old_name" = "New Label")}).}
 
 \item{sink_to}{optional path of a \code{.tex} file to write the sentences to,
-so a manuscript can \code{\\input{}} them}
+so a manuscript can \code{\\input{}} them. It is written in every case,
+including when nothing is significant, so a manuscript never keeps a
+stale result.}
+
+\item{descriptives}{which descriptives to print beside each level:
+\code{"auto"} (default; the ones matching the test, see Details),
+\code{"mean"} (\emph{M}, \emph{SD}), \code{"median"} (\emph{Mdn},
+\emph{IQR}) or \code{"trimmed"} (20\% trimmed mean, 20\% winsorized SD).}
+
+\item{subject}{optional column name identifying participants in a
+within-subjects (\code{ggwithinstats()}) plot. When given, the descriptives and
+any direction statistic are computed only from participants observed in
+every level of \code{iv}, one row per participant and level.}
 }
 \value{
 Invisibly returns the reported sentence(s) as a character vector;
@@ -44,8 +60,8 @@ the text is also emitted via \code{message()}.
 }
 \description{
 This function extracts significant pairwise comparisons from a \code{ggstatsplot} object,
-calculates the mean and standard deviation for the groups involved using the raw data,
-and prints LaTeX-formatted sentences reporting the results.
+describes the groups involved from the raw data, and prints LaTeX-formatted
+sentences reporting the results.
 }
 \details{
 Each sentence names the post-hoc test that produced the comparison and the
@@ -58,23 +74,42 @@ reporting rather than assuming. When the plot carries no such information
 (an older \code{ggstatsplot}, or a hand-built table) the sentence falls back to a
 plain "A post-hoc test ...".
 }
-\section{LaTeX Requirements}{
+\section{Direction and descriptives}{
 
-To easily copy and paste the results to your manuscript, the following commands
-(or similar) must be defined in your LaTeX preamble, as the function outputs
-commands taking arguments (e.g., \verb{\\m\{value\}}):
+Which level "was significantly higher" is decided by the quantity the test
+compares, computed from \code{data}: the means for Student's t and Games-Howell,
+the mean ranks of the pooled ranking for Dunn, the within-participant rank
+sums for Durbin-Conover, and the 20\% trimmed means for Yuen's test (taken
+from the sign of the \code{estimate} column of the pairwise table when it is
+present). Until 0.3.0 the direction always came from the raw means, which
+contradicts a rank-based test whenever outliers or skew pull a mean -- the
+situation in which such a test is chosen.
 
-\preformatted{
-  \newcommand{\m}[1]{\\textit{M}=#1}
-  \newcommand{\sd}[1]{\\textit{SD}=#1}
-  \newcommand{\padj}[1]{$p_{adj}=#1$}
-  \newcommand{\padjminor}[1]{$p_{adj}<#1$}
-  \newcommand{\p}[1]{$p=#1$}
-  \newcommand{\pminor}[1]{$p<#1$}
+The descriptives printed beside each level match the test by default
+(\code{descriptives = "auto"}): \code{\\m{}}/\code{\\sd{}} for the mean-based
+tests, \code{\\mdn{}}/\code{\\iqr{}} for the rank-based ones, and the 20\%
+trimmed mean \eqn{M_t} with the 20\% winsorized standard deviation
+\eqn{SD_w} for Yuen's test. Any of these can be forced; a warning is given
+when the forced descriptives order two levels against the test's direction.
+
+For a within-subjects plot pass \code{subject}: \code{ggwithinstats()} tests only the
+participants observed in every level, and with \code{subject} the descriptives
+(and the Durbin-Conover rank sums) are computed from exactly those
+participants. Without it, all rows are described, and a Durbin-Conover
+table pairs observations by row order within each level -- what
+\code{ggwithinstats()} itself does without \code{subject.id} -- with a warning.
 }
 
-The last two are used only when the plot reports \code{p.adjust.method = "None"}:
-those p-values are uncorrected and must not be labelled \eqn{p_{adj}}.
+\section{LaTeX Requirements}{
+
+To easily copy and paste the results to your manuscript, the commands of
+\code{\link[=latex_preamble]{latex_preamble()}} (or the shipped \code{colleyRstats.sty}) must be defined:
+\code{\\m}, \code{\\sd}, \code{\\mdn}, \code{\\iqr}, \code{\\padj},
+\code{\\padjminor}, \code{\\p} and \code{\\pminor}.
+
+\code{\\p}/\code{\\pminor} are used only when the plot reports
+\code{p.adjust.method = "None"}: those p-values are uncorrected and must not be
+labelled \eqn{p_{adj}}.
 }
 
 \section{Naming}{
@@ -94,16 +129,16 @@ for removal, and existing scripts keep working unchanged.
 library(ggstatsplot)
 library(dplyr)
 
-# Generate a plot
-plt <- ggbetweenstats(mtcars, am, mpg)
+# Generate a plot (a factor with three levels, so there are pairwise tests)
+plt <- ggbetweenstats(mtcars, cyl, mpg)
 
 # Report stats
 reportggstatsplotPostHoc(
   data = mtcars,
   p = plt,
-  iv = "am",
+  iv = "cyl",
   dv = "mpg",
-  label_mappings = list("0" = "Automatic", "1" = "Manual")
+  label_mappings = list("4" = "four cylinders")
 )
 }
 }

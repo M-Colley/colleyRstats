@@ -12,3 +12,4 @@
 ^docs$
 ^pkgdown$
 ^Rplots\.pdf$
+^data-raw$

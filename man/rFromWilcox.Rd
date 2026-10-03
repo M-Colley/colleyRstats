@@ -7,7 +7,8 @@
 rFromWilcox(wilcoxModel, N)
 }
 \arguments{
-\item{wilcoxModel}{the Wilcox model}
+\item{wilcoxModel}{the Wilcox model (an \code{htest} object from
+\code{\link[stats:wilcox.test]{stats::wilcox.test()}}); its \code{alternative} is taken into account.}
 
 \item{N}{number of measurements in the experiment}
 }
@@ -20,7 +21,18 @@ Invisibly returns a list with components:
 }
 }
 \description{
-Calculation based on Rosenthal's formula (1994). N stands for the \emph{number of measurements}.
+Computes \eqn{r = |z| / \sqrt{N}}, recovering \eqn{z} from the test's
+p-value. A two-sided p-value splits its probability over both tails, so
+\eqn{z = \Phi^{-1}(p/2)}; a one-sided test (\code{alternative = "less"} or
+\code{"greater"}, read from the test object) has it all in one tail, so
+\eqn{z = \Phi^{-1}(p)}. Halving a one-sided p-value, as this function did
+before 0.3.0, overstates \eqn{|z|} and therefore \eqn{r}.
+}
+\details{
+\eqn{r} is returned as a magnitude (non-negative); read the direction of the
+effect from the data. With an exact p-value (small samples without ties) the
+recovered \eqn{z} is the normal deviate matching that p-value rather than
+the test's normal-approximation statistic.
 }
 \examples{
 set.seed(1)
@@ -30,4 +42,9 @@ d <- data.frame(
 )
 w <- stats::wilcox.test(value ~ group, data = d, exact = FALSE)
 rFromWilcox(w, N = nrow(d))
+}
+\references{
+Rosenthal, R. (1994). Parametric measures of effect size. In
+H. Cooper & L. V. Hedges (Eds.), \emph{The handbook of research
+synthesis} (pp. 231--244). Russell Sage Foundation.
 }

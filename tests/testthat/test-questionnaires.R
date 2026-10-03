@@ -130,10 +130,11 @@ test_that("every built-in instrument is well formed", {
 test_that("every instrument scores a midpoint response without error", {
   for (key in list_questionnaires()$key) {
     def <- colleyRstats:::.q_get(key)
-    d <- as.data.frame(matrix(mean(def$scale), nrow = 2, ncol = nrow(def$items)))
+    # floor(): the SSQ's 0-3 has no 1.5, and a fractional response would warn.
+    d <- as.data.frame(matrix(floor(mean(def$scale)), nrow = 2, ncol = nrow(def$items)))
     names(d) <- def$items$code
 
-    out <- score_questionnaire(d, key, items = def$items$code)
+    out <- expect_no_warning(score_questionnaire(d, key, items = def$items$code))
 
     expect_equal(nrow(out), 2L, info = key)
     expect_true(all(vapply(out, is.numeric, logical(1))), info = key)
@@ -258,6 +259,61 @@ test_that("subscale counts match the published structure", {
   ad <- colleyRstats:::.q_get("attrakdiff")
   expect_equal(nrow(ad$items), 28L)
   expect_true(all(table(ad$items$subscale) == 7L))
+
+  ado <- colleyRstats:::.q_get("attrakdiff_official")
+  expect_equal(nrow(ado$items), 28L)
+  expect_true(all(table(ado$items$subscale) == 7L))
+})
+
+
+test_that("attrakdiff_official reproduces the administered sheet", {
+  # Order, dimensions and the 15 positive-left pairs as printed on the form;
+  # Lallemand et al. (2015) reverse exactly QP_1, ATT_1, QHS_1, QP_2, QHI_2,
+  # QP_3, ATT_3, QHI_3, QP_5, QHI_6, ATT_5, QHS_3, QHS_4, ATT_7, QHS_7.
+  def <- colleyRstats:::.q_get("attrakdiff_official")
+
+  expect_equal(
+    which(def$items$reverse),
+    c(1L, 3L, 4L, 5L, 6L, 8L, 9L, 11L, 12L, 15L, 19L, 22L, 23L, 26L, 27L)
+  )
+  expect_equal(
+    def$items$code[def$items$reverse],
+    c(
+      "pq1", "att1", "hqs1", "pq2", "hqi2", "pq3", "att3", "hqi3", "pq5", "hqi6",
+      "att5", "hqs3", "hqs4", "att7", "hqs7"
+    )
+  )
+  expect_equal(which(def$items$subscale == "Pragmatic Quality"), c(1L, 5L, 8L, 10L, 12L, 20L, 28L))
+  expect_equal(which(def$items$subscale == "Hedonic Quality - Identity"), c(2L, 6L, 11L, 13L, 14L, 15L, 16L))
+  expect_equal(which(def$items$subscale == "Hedonic Quality - Stimulation"), c(4L, 18L, 22L, 23L, 24L, 25L, 27L))
+  expect_equal(which(def$items$subscale == "Attractiveness"), c(3L, 7L, 9L, 17L, 19L, 21L, 26L))
+  expect_equal(def$items$label[c(1, 15, 28)], c(
+    "human - technical", "brings me closer to people - separates me from people",
+    "unruly - manageable"
+  ))
+
+  # Answering the positive term of every pair -- written out, not derived from
+  # def$items$reverse, which would make this pass under any reverse set.
+  positive_pole <- c(
+    1, 7, 1, 1, 1, 1, 7, 1, 1, 7, 1, 1, 7, 7,
+    1, 7, 7, 7, 1, 7, 7, 1, 1, 7, 7, 1, 1, 7
+  )
+  d <- make_items(positive_pole, "ad", 28)
+  out <- score_questionnaire(d, "attrakdiff_official", items = names(d))
+  expect_true(all(vapply(out, function(v) isTRUE(all.equal(v, 3)), logical(1))))
+})
+
+
+test_that("the two AttrakDiff keys share codes, so they name the same word pairs", {
+  blocked <- colleyRstats:::.q_get("attrakdiff")
+  official <- colleyRstats:::.q_get("attrakdiff_official")
+
+  expect_setequal(blocked$items$code, official$items$code)
+  m <- match(official$items$code, blocked$items$code)
+  expect_equal(official$items$subscale, blocked$items$subscale[m])
+  # Same pair, poles possibly swapped: the two words agree as a set.
+  words <- function(x) lapply(strsplit(x, " - ", fixed = TRUE), sort)
+  expect_equal(words(official$items$label), words(blocked$items$label[m]))
 })
 
 
@@ -319,15 +375,42 @@ test_that("out-of-range responses stop rather than being rescaled silently", {
 # Reverse coding
 # -------------------------------------------------------------------------
 
-test_that("reverse_items toggles rather than sets", {
+test_that("reverse_items still toggles, but warns when it un-reverses the key", {
   d <- make_items(c(5, 1, 5, 1, 5, 1, 5, 1, 5, 1), "sus_", 10)
 
-  # Un-reversing all five negatively worded items must undo the scoring key.
-  out <- score_questionnaire(d, "sus", prefix = "sus_", reverse_items = c(2, 4, 6, 8, 10))
+  # Passing the SUS's own reverse set, as tutorials do, un-reverses all five
+  # negatively worded items: a perfect respondent scores 50. Kept for backward
+  # compatibility, but no longer behind a suppressible note -- it is a warning.
+  expect_warning(
+    out <- score_questionnaire(d, "sus", prefix = "sus_", reverse_items = c(2, 4, 6, 8, 10)),
+    "exactly the items the published key"
+  )
   expect_equal(out$SUS, 50)
+  expect_false(any(attr(out, "mapping")$reverse))
 
-  reversed <- attr(out, "mapping")$reverse
-  expect_false(any(reversed))
+  # Reversing an item the key leaves alone is the documented use: no warning.
+  expect_no_warning(score_questionnaire(d, "sus", prefix = "sus_", reverse_items = 1))
+})
+
+
+test_that("unreverse_items undoes a key reversal on purpose, without a warning", {
+  d <- make_items(c(5, 1, 5, 1, 5, 1, 5, 1, 5, 1), "sus_", 10)
+
+  out <- expect_no_warning(
+    score_questionnaire(d, "sus", prefix = "sus_", unreverse_items = c("sus2", "sus4"))
+  )
+  expect_equal(which(attr(out, "mapping")$reverse), c(6L, 8L, 10L))
+  # Items 2 and 4 (raw 1) now count as 0 instead of 4: 100 - 2 * 4 * 2.5.
+  expect_equal(out$SUS, 80)
+
+  expect_error(
+    score_questionnaire(d, "sus", prefix = "sus_", unreverse_items = 1),
+    "does not reverse"
+  )
+  expect_error(
+    score_questionnaire(d, "sus", prefix = "sus_", reverse_items = 2, unreverse_items = 2),
+    "cannot be in both"
+  )
 })
 
 
@@ -351,10 +434,43 @@ test_that("min_valid governs whether an incomplete subscale is scored", {
   strict <- score_questionnaire(d, "sus", prefix = "sus_")
   expect_true(is.na(strict$SUS))
 
-  # Relaxed: the sum is scaled up proportionally, so the score stays on 0-100.
+  # Relaxed: the SUS follows Brooke (1996) -- a missing item is marked at the
+  # centre point (2 of 4 after zero-basing) -- so the score stays on 0-100.
   relaxed <- score_questionnaire(d, "sus", prefix = "sus_", min_valid = 0.8)
-  expect_equal(relaxed$SUS, 100)
+  expect_equal(relaxed$SUS, (9 * 4 + 2) * 2.5)
   expect_false(is.na(relaxed$Learnability))
+})
+
+
+test_that("a missing SUS item is scored at the centre, as Brooke (1996) instructs", {
+  # One missing item 10 in an otherwise perfect response: 95 under Brooke's
+  # rule, where the old mean-imputation gave 100.
+  d <- make_items(c(5, 1, 5, 1, 5, 1, 5, 1, 5, 1), "sus_", 10)
+  d$sus_10 <- NA
+
+  out <- score_questionnaire(d, "sus", prefix = "sus_", min_valid = 0.9)
+  expect_equal(out$SUS, 95)
+
+  # Proration remains available on request, and scales the sum back up.
+  prorated <- score_questionnaire(d, "sus", prefix = "sus_", min_valid = 0.9, impute = "prorate")
+  expect_equal(prorated$SUS, 100)
+
+  # Learnability (items 4 and 10) with one of two items: the centre fills in.
+  half <- score_questionnaire(d, "sus", prefix = "sus_", min_valid = 0.5)
+  expect_equal(half$Learnability, (4 + 2) * 12.5)
+})
+
+
+test_that("impute applies to every instrument, and defaults to proration elsewhere", {
+  d <- make_items(c(7, 7, 7, NA, 7, 7, 7, 7), "ueqs", 8)
+
+  # UEQ-S has no published missing-item rule: the mean of the items present.
+  expect_equal(score_questionnaire(d, "ueq_s", min_valid = 0.5)$Pragmatic_Quality, 3)
+  # The centre of a centred 1-7 scale is 0.
+  expect_equal(
+    score_questionnaire(d, "ueq_s", min_valid = 0.5, impute = "midpoint")$Pragmatic_Quality,
+    9 / 4
+  )
 })
 
 
@@ -374,7 +490,7 @@ test_that("alpha is computed on the reverse-coded items", {
   rel <- score_reliability(d, "sus", prefix = "sus_")
 
   expect_true(all(rel$alpha > 0.7))
-  expect_equal(rel$n_items, c(8L, 2L))
+  expect_equal(rel$n_items, c(8L, 2L, 10L))
 })
 
 
@@ -547,14 +663,14 @@ test_that("factor item columns are read by label, not by level index", {
 
 test_that("the item index need not be the last thing in a column name", {
   # LimeSurvey and Qualtrics both emit indices with a suffix after them.
-  expect_equal(
-    colleyRstats:::.natural_order(c("SUS[1]", "SUS[10]", "SUS[2]")),
-    c(1L, 3L, 2L)
-  )
-  expect_equal(
-    colleyRstats:::.natural_order(c("q1_1_TEXT", "q1_10_TEXT", "q1_2_TEXT")),
-    c(1L, 3L, 2L)
-  )
+  expect_equal(colleyRstats:::.q_item_index(c("1]", "10]", "2]")), c(1, 10, 2))
+  expect_equal(colleyRstats:::.q_item_index(c("1_TEXT", "10_TEXT", "2_TEXT")), c(1, 10, 2))
+
+  best <- c(5, 1, 5, 1, 5, 1, 5, 1, 5, 1)
+  d <- as.data.frame(as.list(best))
+  names(d) <- paste0("q1_", 1:10, "_TEXT")
+  d <- d[order(names(d))] # q1_1_TEXT, q1_10_TEXT, q1_2_TEXT, ...
+  expect_equal(score_questionnaire(d, "sus", prefix = "q1_")$SUS, 100)
 })
 
 
@@ -687,4 +803,412 @@ test_that("a pipeline can silence the note without silencing errors", {
   # The option quiets a note, not a real problem.
   d$sus_1 <- 99
   expect_error(score_questionnaire(d, "sus", prefix = "sus_"), "outside the assumed response range")
+})
+
+
+# -------------------------------------------------------------------------
+# Regressions: a prefix maps columns by name, never by sort order
+# -------------------------------------------------------------------------
+
+test_that("prefixed NASA-TLX columns are matched by dimension name", {
+  # Sorted, tlx_effort comes first and used to fill Mental Demand.
+  tlx <- data.frame(
+    tlx_mental = 10, tlx_physical = 20, tlx_temporal = 30,
+    tlx_performance = 40, tlx_effort = 50, tlx_frustration = 60
+  )
+  out <- score_questionnaire(tlx, "nasa_tlx", prefix = "tlx_")
+  expect_equal(unlist(out[1, 1:6], use.names = FALSE), c(10, 20, 30, 40, 50, 60))
+  expect_equal(attr(out, "mapping")$column, names(tlx))
+
+  # The labels work too, without regard to case or punctuation.
+  names(tlx) <- c(
+    "TLX_Mental_Demand", "TLX_physical demand", "TLX_Temporal.Demand",
+    "TLX_Performance", "TLX_EFFORT", "TLX_frustration"
+  )
+  out <- score_questionnaire(tlx[rev(names(tlx))], "nasa_tlx", prefix = "TLX_")
+  expect_equal(out$Mental_Demand, 10)
+  expect_equal(out$Frustration, 60)
+})
+
+
+test_that("prefixed TiA columns are matched by item code, so reversals land right", {
+  def <- colleyRstats:::.q_get("tia")
+  # The most trusting answer to every item: 1 on the five inverted items.
+  d <- as.data.frame(as.list(ifelse(def$items$reverse, 1, 5)))
+  names(d) <- paste0("tia_", def$items$code)
+
+  out <- score_questionnaire(d, "tia", prefix = "tia_")
+
+  # Sorted by name the reversals fell on the wrong items: R/C scored 3.67.
+  expect_true(all(unlist(out) == 5))
+})
+
+
+test_that("prefixed IPQ columns are matched by item code", {
+  def <- colleyRstats:::.q_get("ipq")
+  d <- as.data.frame(as.list(ifelse(def$items$reverse, 0, 6)))
+  names(d) <- paste0("ipq_", def$items$code)
+
+  out <- score_questionnaire(d, "ipq", prefix = "ipq_")
+
+  # Sorted by name, Spatial Presence scored 2.4 instead of 6.
+  expect_equal(out$Spatial_Presence, 6)
+  expect_true(all(unlist(out) == 6))
+})
+
+
+test_that("prefixed AttrakDiff columns keep PQ and ATT apart", {
+  def <- colleyRstats:::.q_get("attrakdiff")
+  values <- c(pq = 7, hqi = 6, hqs = 2, att = 1)[sub("[0-9]+$", "", def$items$code)]
+  d <- as.data.frame(as.list(unname(values)))
+  names(d) <- paste0("ad_", def$items$code)
+
+  out <- score_questionnaire(d, "attrakdiff", prefix = "ad_")
+
+  # Sorted, the att* columns filled Pragmatic Quality and the pq* ones
+  # Attractiveness.
+  expect_equal(out$Pragmatic_Quality, 3)
+  expect_equal(out$Hedonic_Quality_Identity, 2)
+  expect_equal(out$Hedonic_Quality_Stimulation, -2)
+  expect_equal(out$Attractiveness, -3)
+})
+
+
+test_that("an export numbering every column SUS_<item>_1 maps by the item number", {
+  d <- as.data.frame(as.list(c(5, 1, 5, 1, 5, 1, 5, 1, 5, 1)))
+  names(d) <- paste0("SUS_", 1:10, "_1")
+  d <- d[order(names(d))] # SUS_1_1, SUS_10_1, SUS_2_1, ...
+
+  out <- score_questionnaire(d, "sus", prefix = "SUS_")
+
+  # Sorted 1, 10, 2, ... this scored 20.
+  expect_equal(out$SUS, 100)
+  expect_equal(attr(out, "mapping")$column, paste0("SUS_", 1:10, "_1"))
+})
+
+
+test_that("a prefix whose names do not identify the items is an error, not a guess", {
+  sus0 <- as.data.frame(as.list(rep(3, 10)))
+  names(sus0) <- paste0("sus_", 0:9)
+  expect_error(score_questionnaire(sus0, "sus", prefix = "sus_"), "rather than 1-10")
+
+  tlx <- data.frame(
+    tlx_mental = 10, tlx_phys = 20, tlx_temp = 30,
+    tlx_perf = 40, tlx_effort = 50, tlx_frust = 60
+  )
+  expect_error(score_questionnaire(tlx, "nasa_tlx", prefix = "tlx_"), "only some of them name an item")
+
+  # Two numbers that both vary (item x condition) leave the item ambiguous.
+  define_questionnaire("grid4", "Grid", scale = c(1, 5), subscale = rep("S", 4))
+  on.exit(rm("grid4", envir = colleyRstats:::.q_user), add = TRUE)
+  g <- data.frame(x1_1 = 3, x1_2 = 3, x2_1 = 3, x2_2 = 3)
+  expect_error(score_questionnaire(g, "grid4", prefix = "x"), "Pass `items` named by item code")
+})
+
+
+test_that("one column cannot be given for several items", {
+  d <- make_items(rep(3, 10), "sus_", 10)
+
+  expect_error(score_questionnaire(d, "sus", items = rep("sus_1", 10)), "its own column")
+  named <- stats::setNames(c(rep("sus_1", 2), paste0("sus_", 3:10)), paste0("sus", 1:10))
+  expect_error(score_questionnaire(d, "sus", items = named), "its own column")
+  expect_error(
+    score_questionnaire(d, "sus", items = c(stats::setNames(paste0("sus_", 1:10), paste0("sus", 1:10)), extra = "x")),
+    "not an item code"
+  )
+
+  # Partly named used to fall back to position, ignoring the names given.
+  part <- paste0("sus_", c(2, 1, 3:10))
+  names(part) <- c("sus2", "sus1", rep("", 8))
+  expect_error(score_questionnaire(d, "sus", items = part), "partly named")
+  twice <- stats::setNames(paste0("sus_", c(1:10, 1)), c(paste0("sus", 1:10), "sus1"))
+  expect_error(score_questionnaire(d, "sus", items = twice), "more than once")
+})
+
+
+# -------------------------------------------------------------------------
+# Regressions: text is refused, not silently dropped
+# -------------------------------------------------------------------------
+
+test_that("text responses stop scoring instead of becoming NA", {
+  d <- make_items(c(5, 1, 5, 1, 5, 1, 5, 1, 5, 1), "sus_", 10)
+
+  d$sus_3 <- "Strongly agree"
+  # With min_valid = 0.8 this used to score the row over the other nine items.
+  expect_error(
+    score_questionnaire(d, "sus", prefix = "sus_", min_valid = 0.8),
+    "'Strongly agree'"
+  )
+
+  d$sus_3 <- "5 - Strongly agree"
+  expect_error(score_questionnaire(d, "sus", prefix = "sus_"), "followed by its label")
+
+  d$sus_3 <- "2,5"
+  expect_error(score_questionnaire(d, "sus", prefix = "sus_"), "decimal commas")
+
+  # Numbers stored as text, padded or blank, are fine: a blank is missing.
+  d$sus_3 <- " 5 "
+  expect_equal(score_questionnaire(d, "sus", prefix = "sus_")$SUS, 100)
+  d$sus_3 <- ""
+  expect_true(is.na(score_questionnaire(d, "sus", prefix = "sus_")$SUS))
+})
+
+
+test_that("check_questionnaire reports an unreadable column instead of hiding it", {
+  d <- make_items(rep(3, 10), "sus_", 10)
+  d$sus_2 <- "agree"
+
+  expect_warning(
+    out <- suppressMessages(check_questionnaire(d, "sus", prefix = "sus_")),
+    "not numbers"
+  )
+  expect_true(is.na(out$observed_min[2]))
+})
+
+
+test_that("summarize_sickness refuses text ratings rather than dropping them", {
+  d <- data.frame(pid = "p1", minute = 0:2, fms = c("0", "moderate", "5"))
+  expect_error(
+    summarize_sickness(d, value = "fms", id = "pid", time = "minute"),
+    "'moderate'"
+  )
+})
+
+
+test_that("fractional responses on a whole-point instrument warn", {
+  d <- make_items(c(5, 1, 5, 1, 5, 1, 5, 1, 5, 1), "sus_", 10)
+  d$sus_1 <- 4.5
+  expect_warning(score_questionnaire(d, "sus", prefix = "sus_"), "fractional values")
+
+  # A 0-100 rating scale is not a whole-point format.
+  tlx <- data.frame(
+    mental = 47.5, physical = 30, temporal = 60,
+    performance = 25, effort = 55, frustration = 40
+  )
+  expect_no_warning(score_questionnaire(tlx, "nasa_tlx"))
+
+  define_questionnaire("vas2", "VAS", scale = c(0, 10), subscale = c("S", "S"), integer_responses = FALSE)
+  on.exit(rm("vas2", envir = colleyRstats:::.q_user), add = TRUE)
+  expect_no_warning(score_questionnaire(data.frame(item1 = 2.5, item2 = 7.25), "vas2"))
+})
+
+
+# -------------------------------------------------------------------------
+# Regressions: a coding that fits the range but looks shifted
+# -------------------------------------------------------------------------
+
+test_that("NASA-TLX responses that never exceed 21 warn unless `scale` is given", {
+  tlx <- data.frame(
+    mental = 14, physical = 2, temporal = 11,
+    performance = 6, effort = 13, frustration = 9
+  )
+  # Scored as 0-100 this gives RTLX 9.17; on the 1-21 sheet it is 40.8.
+  expect_warning(score_questionnaire(tlx, "nasa_tlx"), "21-point paper sheet")
+  expect_equal(
+    expect_no_warning(score_questionnaire(tlx, "nasa_tlx", scale = c(1, 21)))$RTLX,
+    mean((c(14, 2, 11, 6, 13, 9) - 1) / 20 * 100)
+  )
+  expect_no_warning(score_questionnaire(tlx, "nasa_tlx", scale = c(0, 100)))
+})
+
+
+test_that("a zero-based instrument on which nobody chose 0 warns of a 1-based export", {
+  set.seed(5)
+  def <- colleyRstats:::.q_get("ipq")
+  # A 1-7 export in which nobody happened to choose 7.
+  d <- as.data.frame(matrix(sample(1:6, 6 * 14, TRUE), nrow = 6))
+  names(d) <- def$items$code
+
+  expect_warning(score_questionnaire(d, "ipq"), "no respondent chose 0")
+  expect_no_warning(score_questionnaire(d, "ipq", scale = c(0, 6)))
+  expect_no_warning(score_questionnaire(d, "ipq", scale = c(1, 7)))
+})
+
+
+test_that("a one-based instrument on which nobody chose the top warns of a 0-based export", {
+  set.seed(6)
+  d <- as.data.frame(matrix(sample(1:4, 6 * 10, TRUE), nrow = 6))
+  names(d) <- paste0("sus_", 1:10)
+
+  expect_warning(score_questionnaire(d, "sus", prefix = "sus_"), "no respondent chose 5")
+  expect_no_warning(score_questionnaire(d, "sus", prefix = "sus_", scale = c(1, 5)))
+
+  # Too few respondents for an unused endpoint to mean anything.
+  expect_no_warning(score_questionnaire(d[1:3, ], "sus", prefix = "sus_"))
+  # Responses spanning the whole scale raise nothing.
+  d[1, 1] <- 5
+  expect_no_warning(score_questionnaire(d, "sus", prefix = "sus_"))
+})
+
+
+test_that("the scoring message reports the observed range next to the assumed one", {
+  withr::local_options(colleyRstats.quiet_questionnaires = FALSE)
+  suppressWarnings(rm(list = "sus", envir = colleyRstats:::.q_announced))
+  d <- make_items(c(5, 1, 5, 1, 5, 1, 5, 1, 5, 1, rep(3, 10)), "sus_", 10)
+
+  expect_message(
+    score_questionnaire(d, "sus", prefix = "sus_"),
+    "responses observed 1 to 5 on the assumed range 1 to 5"
+  )
+})
+
+
+# -------------------------------------------------------------------------
+# Regressions: reliability
+# -------------------------------------------------------------------------
+
+sus_reliability_data <- function(seed = 11, n = 80) {
+  set.seed(seed)
+  trait <- rnorm(n)
+  d <- as.data.frame(lapply(1:10, function(i) round(pmin(pmax(3 + trait + rnorm(n, sd = 0.6), 1), 5))))
+  names(d) <- paste0("sus_", 1:10)
+  neg <- paste0("sus_", c(2, 4, 6, 8, 10))
+  d[neg] <- 6 - d[neg]
+  d
+}
+
+
+test_that("score_reliability adds the whole-scale row where an overall score exists", {
+  rel <- score_reliability(sus_reliability_data(), "sus", prefix = "sus_")
+
+  expect_equal(rel$subscale, c("Usability", "Learnability", "SUS"))
+  expect_equal(rel$n_items[3], 10L)
+  expect_true(rel$alpha[3] > rel$alpha[2])
+
+  ssq <- colleyRstats:::.q_get("ssq")
+  d <- as.data.frame(matrix(sample(0:3, 20 * 16, TRUE), nrow = 20))
+  names(d) <- ssq$items$code
+  rel_ssq <- suppressWarnings(score_reliability(d, "ssq"))
+  expect_equal(rel_ssq$subscale[4], "Total")
+  expect_equal(rel_ssq$n_items[4], 16L)
+
+  # TiA defines no total, so none is invented.
+  tia <- colleyRstats:::.q_get("tia")
+  d <- as.data.frame(matrix(sample(1:5, 20 * 19, TRUE), nrow = 20))
+  names(d) <- tia$items$code
+  rel_tia <- suppressWarnings(score_reliability(d, "tia"))
+  expect_false(any(rel_tia$n_items == 19L))
+})
+
+
+test_that("two-item scales report the Spearman-Brown coefficient", {
+  d <- sus_reliability_data()
+  rel <- score_reliability(d, "sus", prefix = "sus_")
+
+  learn <- rel[rel$subscale == "Learnability", ]
+  r <- stats::cor(d$sus_4, d$sus_10)
+  expect_equal(learn$spearman_brown, 2 * r / (1 + r))
+  expect_true(is.na(learn$omega))
+  expect_match(learn$note, "Eisinga")
+  expect_true(all(is.na(rel$spearman_brown[rel$n_items != 2])))
+})
+
+
+test_that("omega does not depend on GPArotation or psych::omega()", {
+  skip_if_not_installed("psych")
+  d <- sus_reliability_data()
+
+  # psych::omega() routes through schmid(), which stops without GPArotation;
+  # the error used to be swallowed and omega came back NA without a reason.
+  local_mocked_bindings(
+    omega = function(...) stop("you need to have the GPArotation package installed"),
+    schmid = function(...) stop("you need to have the GPArotation package installed"),
+    .package = "psych"
+  )
+  rel <- score_reliability(d, "sus", prefix = "sus_")
+
+  expect_true(all(is.finite(rel$omega[rel$n_items >= 3])))
+  expect_true(all(rel$omega[rel$n_items >= 3] > 0.8))
+})
+
+
+test_that("omega total agrees with psych::omega() on the same items", {
+  skip_if_not_installed("psych")
+  skip_if_not_installed("GPArotation")
+  d <- sus_reliability_data()
+  rel <- score_reliability(d, "sus", prefix = "sus_")
+
+  x <- colleyRstats:::.q_prepare(d, colleyRstats:::.q_get("sus"), paste0("sus_", 1:10))
+  usability <- x[, c(1, 2, 3, 5, 6, 7, 8, 9)]
+  ref <- suppressWarnings(suppressMessages(psych::omega(usability, nfactors = 1, plot = FALSE)))$omega.tot
+
+  expect_equal(rel$omega[rel$subscale == "Usability"], ref, tolerance = 1e-6)
+})
+
+
+test_that("omega is not rescued by flipping items, so a forgotten reversal still shows", {
+  skip_if_not_installed("psych")
+  set.seed(12)
+  trait <- rnorm(60)
+  d <- as.data.frame(lapply(1:10, function(i) round(pmin(pmax(3 + trait + rnorm(60, sd = 0.3), 1), 5))))
+  names(d) <- paste0("sus_", 1:10)
+
+  rel <- suppressWarnings(score_reliability(d, "sus", prefix = "sus_"))
+
+  expect_lt(rel$omega[rel$subscale == "SUS"], 0.5)
+})
+
+
+# -------------------------------------------------------------------------
+# Regressions: argument validation and citations
+# -------------------------------------------------------------------------
+
+test_that("`scale` is validated wherever it is accepted", {
+  d <- make_items(rep(3, 10), "sus_", 10)
+
+  # check_questionnaire(scale = 5) used to report a "range 5-NA".
+  expect_error(suppressMessages(check_questionnaire(d, "sus", prefix = "sus_", scale = 5)), "increasing")
+  expect_error(suppressMessages(check_questionnaire(d, "sus", prefix = "sus_", scale = c(5, 1))), "increasing")
+  expect_error(score_questionnaire(d, "sus", prefix = "sus_", scale = c("1", "5")), "increasing")
+  expect_error(score_reliability(d, "sus", prefix = "sus_", scale = NA), "increasing")
+  expect_error(define_questionnaire("x", "X", scale = 5, subscale = "a"), "increasing")
+})
+
+
+test_that("define_questionnaire explains a bad `reverse`, and accepts codes", {
+  expect_error(
+    define_questionnaire("bad1", "B", scale = c(1, 5), subscale = c("a", "a"), reverse = "a2"),
+    "not an item code"
+  )
+  expect_error(
+    define_questionnaire("bad2", "B", scale = c(1, 5), subscale = c("a", "a"), reverse = 3),
+    "between 1 and 2"
+  )
+
+  define_questionnaire("rev2", "R", scale = c(1, 5), subscale = c("a", "a"), reverse = "item2")
+  on.exit(rm("rev2", envir = colleyRstats:::.q_user), add = TRUE)
+  expect_equal(which(colleyRstats:::.q_get("rev2")$items$reverse), 2L)
+  expect_equal(score_questionnaire(data.frame(item1 = 5, item2 = 1), "rev2")$a, 5)
+})
+
+
+test_that("min_valid is not made stricter by floating-point noise", {
+  define_questionnaire("ten", "Ten", scale = c(1, 5), subscale = rep("S", 10))
+  on.exit(rm("ten", envir = colleyRstats:::.q_user), add = TRUE)
+  d <- as.data.frame(as.list(c(rep(4, 7), NA, NA, NA)))
+  names(d) <- paste0("item", 1:10)
+
+  # (1 - 0.3) * 10 is 7.000000000000001; seven answered items must suffice.
+  expect_equal(score_questionnaire(d, "ten", min_valid = 1 - 0.3)$S, 4)
+})
+
+
+test_that("item codes differing only in case are refused", {
+  # Items are looked up case-insensitively, so "a1" would resolve to "A1".
+  expect_error(
+    define_questionnaire("case2", "C", scale = c(1, 5), subscale = c("S", "S"), code = c("A1", "a1")),
+    "ignoring case"
+  )
+})
+
+
+test_that("check_questionnaire handles a single-item instrument", {
+  d <- data.frame(fms = c(0, 3, 8, 12, 2, 5))
+  out <- expect_no_warning(suppressMessages(check_questionnaire(d, "fms")))
+  expect_equal(out$observed_max, 12)
+})
+
+
+test_that("the TiA is cited by the publication year of AISC vol. 823", {
+  expect_match(colleyRstats:::.q_get("tia")$reference, "Koerber \\(2019\\)")
 })

@@ -5,9 +5,21 @@
 \alias{report_mean_sd}
 \title{Report the mean and standard deviation of a dependent variable for all levels of an independent variable rounded to the 2nd digit.}
 \usage{
-reportMeanAndSD(data, iv = "testiv", dv = "testdv", sink_to = NULL)
+reportMeanAndSD(
+  data,
+  iv = "testiv",
+  dv = "testdv",
+  sink_to = NULL,
+  as_comment = FALSE
+)
 
-report_mean_sd(data, iv = "testiv", dv = "testdv", sink_to = NULL)
+report_mean_sd(
+  data,
+  iv = "testiv",
+  dv = "testdv",
+  sink_to = NULL,
+  as_comment = FALSE
+)
 }
 \arguments{
 \item{data}{the data frame}
@@ -18,13 +30,25 @@ report_mean_sd(data, iv = "testiv", dv = "testdv", sink_to = NULL)
 
 \item{sink_to}{optional path of a \code{.tex} file to write the lines to,
 so a manuscript can \code{\\input{}} them}
+
+\item{as_comment}{if \code{TRUE}, every line is prefixed with a percent
+sign (a LaTeX comment) and written one per line, as before 0.3.0.
+Defaults to \code{FALSE}: real text.}
 }
 \value{
-Invisibly returns the formatted lines as a character vector;
-the text is also emitted via \code{message()}.
+Invisibly returns the formatted lines (one per level) as a character
+vector; the text is also emitted via \code{message()}.
 }
 \description{
-#' To easily copy and paste the results to your manuscript, the following commands must be defined in Latex:
+Each level yields one line such as \code{A: \\m{4.21}, \\sd{1.03}}, with the
+level name escaped for LaTeX. Written to \code{sink_to}, the lines are joined
+into one compilable sentence ("A: ...; B: ...."). Until 0.3.0 every line was a
+LaTeX comment (it began with a percent sign), so an \code{\\input{}} of the
+file typeset nothing; \code{as_comment = TRUE} restores that form for notes
+kept next to a manuscript.
+}
+\details{
+To easily copy and paste the results to your manuscript, the following commands must be defined in Latex:
 \code{\\newcommand{\\m}{\\textit{M=}}}
 \code{\\newcommand{\\sd}{\\textit{SD=}}}
 }

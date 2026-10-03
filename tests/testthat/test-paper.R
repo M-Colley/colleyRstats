@@ -225,6 +225,135 @@ test_that("assumption_methods_text can include Levene's test", {
   expect_match(txt, "Levene")
 })
 
+test_that("assumption_methods_text names an untestable group instead of calling it normal", {
+  # The regression this guards: a rating item where everyone in one condition
+  # ticked the top box (all 7s) cannot be tested, yet the sentence used to read
+  # "no significant deviation from normality in any group ... parametric tests
+  # were used".
+  q <- qnorm(seq(0.05, 0.95, length.out = 10))
+  d <- data.frame(g = rep(c("A", "B", "C"), each = 10), v = c(rep(7, 10), q + 4, q + 3))
+  txt <- suppressMessages(assumption_methods_text(d, x = "g", y = "v"))
+
+  expect_match(txt, "group A (all values identical) could not be tested", fixed = TRUE)
+  expect_match(txt, "treated as non-normal", fixed = TRUE)
+  expect_match(txt, "non-parametric tests were used", fixed = TRUE)
+  expect_false(grepl("in any group", txt, fixed = TRUE))
+  expect_false(grepl("significant deviation from normality for", txt, fixed = TRUE))
+  # Holm runs over the two groups that could be tested
+  expect_match(txt, "Holm-corrected across the 2 testable groups", fixed = TRUE)
+})
+
+test_that("assumption_methods_text reports the decisive group with its adjusted p", {
+  q <- qnorm(seq(0.05, 0.95, length.out = 20))
+  d <- data.frame(g = rep(c("A", "B", "C"), each = 20), v = c(q, q, (1:20)^4))
+  txt <- suppressMessages(assumption_methods_text(d, x = "g", y = "v"))
+
+  expect_match(txt, "each of the 3 groups of g (Holm-corrected for 3 tests)", fixed = TRUE)
+  # the statistic belongs to the named group and its p is labelled as adjusted;
+  # no "minimum W" (the W shown is that of the rejected group, not a minimum)
+  expect_match(txt, "for group C ($W = 0.", fixed = TRUE)
+  expect_match(txt, "$p_{\\mathrm{Holm}}", fixed = TRUE)
+  expect_false(grepl("minimum", txt, fixed = TRUE))
+
+  d_ok <- data.frame(g = rep(c("A", "B"), each = 20), v = c(q, q + 1))
+  txt_ok <- suppressMessages(assumption_methods_text(d_ok, x = "g", y = "v"))
+  expect_match(txt_ok, "smallest $p$: $W = ", fixed = TRUE)
+  expect_match(txt_ok, "for group A)", fixed = TRUE)
+  expect_match(txt_ok, "; therefore, parametric tests were used.", fixed = TRUE)
+})
+
+test_that("assumption_methods_text tests what a within-subjects analysis assumes", {
+  set.seed(3)
+  d <- data.frame(id = rep(1:20, 2), cond = rep(c("A", "B"), each = 20), score = rnorm(40))
+  d <- d[-1, ] # participant 1 has no value for A
+  txt <- suppressMessages(assumption_methods_text(d, x = "cond", y = "score", subject = "id"))
+  expect_match(txt, "within-participant differences between the two levels of cond ($n = 19$)", fixed = TRUE)
+  expect_match(txt, "($n = 1$) were excluded", fixed = TRUE)
+  expect_false(grepl("Holm", txt, fixed = TRUE)) # a single test is not corrected
+
+  d3 <- data.frame(id = rep(1:20, 3), cond = rep(c("A", "B", "C"), each = 20), score = rnorm(60))
+  txt3 <- suppressMessages(assumption_methods_text(d3, x = "cond", y = "score", subject = "id"))
+  expect_match(txt3, "residuals of the additive model with participant and cond as factors", fixed = TRUE)
+})
+
+test_that("assumption_methods_text never rounds a p-value across .05", {
+  fake <- FALSE
+  attr(fake, "tests") <- data.frame(
+    group = c("A", "B"), n = c(20, 20), W = c(0.9, 0.97),
+    p_value = c(0.0248, 0.6), p_adjusted = c(0.0496, 0.6), testable = c(TRUE, TRUE)
+  )
+  attr(fake, "method") <- "groupwise"
+  attr(fake, "p_adjust") <- "holm"
+  attr(fake, "untestable") <- character(0)
+  local_mocked_bindings(check_normality_by_group = function(...) fake, .package = "colleyRstats")
+
+  txt <- suppressMessages(assumption_methods_text(data.frame(g = 1, v = 1), x = "g", y = "v"))
+  # .fmt_bounded(0.0496, 3) would print "0.050" inside a "significant" sentence
+  expect_match(txt, "p_{\\mathrm{Holm}} = 0.0496", fixed = TRUE)
+  expect_match(txt, "significant deviation from normality for group A", fixed = TRUE)
+})
+
+test_that("assumption_methods_text names the variance test that was run", {
+  fake_lev <- function(method = NULL) {
+    function(...) {
+      res <- FALSE
+      attr(res, "test") <- data.frame(df1 = 2, df2 = 27.4999999, statistic = 9.55, p = 0.0007)
+      attr(res, "method") <- method
+      res
+    }
+  }
+  q <- qnorm(seq(0.05, 0.95, length.out = 20))
+  d <- data.frame(g = rep(c("A", "B"), each = 20), v = c(q, 3 * q))
+
+  local_mocked_bindings(check_homogeneity_by_group = fake_lev("Brown--Forsythe test"), .package = "colleyRstats")
+  txt <- suppressMessages(assumption_methods_text(d, x = "g", y = "v", include_homogeneity = TRUE))
+  expect_match(txt, "Brown--Forsythe test indicated unequal variances ($F(2, 27.5) = 9.55$, $p < 0.001$)", fixed = TRUE)
+  # parametric branch: the Welch clause applies
+  expect_match(txt, "Welch-corrected", fixed = TRUE)
+
+  local_mocked_bindings(check_homogeneity_by_group = fake_lev(NULL), .package = "colleyRstats")
+  txt2 <- suppressMessages(assumption_methods_text(d, x = "g", y = "v", include_homogeneity = TRUE))
+  # an unnamed result is described, not given a name it may not deserve
+  expect_match(txt2, "A test of homogeneity of variance indicated unequal variances", fixed = TRUE)
+  expect_no_match(txt2, "Levene", fixed = TRUE)
+
+  # a rank-based analysis is not Welch-corrected, so the sentence must not say so
+  d_skew <- data.frame(g = rep(c("A", "B"), each = 20), v = c((1:20)^4, (1:20)^4))
+  txt3 <- suppressMessages(assumption_methods_text(d_skew, x = "g", y = "v", include_homogeneity = TRUE))
+  expect_false(grepl("Welch", txt3, fixed = TRUE))
+})
+
+test_that("cite_methods gives every BibTeX entry its own key", {
+  skip_if_not_installed("ARTool")
+  skip_if_not_installed("ggstatsplot")
+
+  out <- suppressMessages(cite_methods(c("art", "ggstatsplot")))
+  heads <- grep("^@", out, value = TRUE)
+  keys <- sub("^@[A-Za-z]+\\{([^,]*),$", "\\1", heads)
+  # R's citations carry no key ("@Manual{,"), and BibTeX drops every keyless
+  # entry after the first as a "Repeated entry"
+  expect_true(all(nzchar(keys)))
+  expect_false(anyDuplicated(keys) > 0)
+  expect_true("ggstatsplot" %in% keys)
+  # the methods phrase cites the keys it wrote
+  expect_true(any(grepl("\\cite{ggstatsplot}", out, fixed = TRUE)))
+})
+
+test_that("latex_preamble names the package after the .sty file it writes", {
+  f <- file.path(tempdir(), "mymacros.sty")
+  on.exit(unlink(f), add = TRUE)
+  suppressMessages(latex_preamble(f))
+  expect_true(any(grepl("\\ProvidesPackage{mymacros}", readLines(f), fixed = TRUE)))
+})
+
+test_that("save_paper_figure ignores `columns` when `width` is given", {
+  p <- ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + ggplot2::geom_point()
+  path <- file.path(tempdir(), "fig-width-test", "w.pdf")
+  on.exit(unlink(dirname(path), recursive = TRUE), add = TRUE)
+  expect_no_error(suppressMessages(save_paper_figure(p, path, columns = 3, width = 4)))
+  expect_true(file.exists(path))
+})
+
 test_that("cite_methods prints boilerplate and BibTeX", {
   skip_if_not_installed("ARTool")
 
@@ -367,4 +496,22 @@ test_that("a single plot still resizes through the plain `+` path", {
     as.numeric(resized$theme$axis.text$size),
     7 * colleyRstats:::.COLLEY_TEXT_RATIOS[["axis.text"]]
   )
+})
+
+
+test_that("assumption_methods_text skips the variance test for a within design", {
+  set.seed(1)
+  d <- data.frame(id = rep(1:20, 2), g = rep(c("A", "B"), each = 20), v = rnorm(40))
+  expect_message(
+    out <- assumption_methods_text(d, x = "g", y = "v", include_homogeneity = TRUE, subject = "id"),
+    "`include_homogeneity` is ignored", fixed = TRUE
+  )
+  expect_no_match(out, "Brown|Levene|variance")
+})
+
+test_that("cite_methods cites a method named twice only once", {
+  skip_if_not_installed("ggstatsplot")
+  once <- suppressMessages(cite_methods("ggstatsplot"))
+  twice <- suppressMessages(cite_methods(c("ggstatsplot", "GGSTATSPLOT")))
+  expect_identical(twice, once)
 })

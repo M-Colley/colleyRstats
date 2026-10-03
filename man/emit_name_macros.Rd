@@ -9,7 +9,8 @@ emit_name_macros(vars, path = NULL, labels = NULL)
 \arguments{
 \item{vars}{Character vector of variable/level names (e.g. the columns you
 pass as \code{iv}/\code{dv}), or a named character vector / list mapping a
-name to the display label it should expand to.}
+name to the display label it should expand to (unnamed elements are their
+own label).}
 
 \item{path}{Optional \code{.tex}/\code{.sty} path to write the definitions to.}
 
@@ -17,17 +18,21 @@ name to the display label it should expand to.}
 label (overrides names taken from \code{vars}).}
 }
 \value{
-Invisibly, the \code{\\newcommand} lines as a character vector; also
-emitted via \code{message()}.
+Invisibly, the \code{\\newcommand} lines as a character vector (one
+per distinct name); also emitted via \code{message()}.
 }
 \description{
 The report functions can emit variable and factor-level names as LaTeX
 commands (e.g. \code{\\Video}) so their typography is controlled centrally.
 This writes the matching \code{\\newcommand} definitions so those commands are
 never undefined -- the classic "Undefined control sequence" that stops an
-Overleaf build. Only names that are valid LaTeX command names (letters only)
-get a macro; others are reported as skipped (the reporters emit those as
-escaped plain text instead).
+Overleaf build. A name gets a macro only when it can safely become a new
+command: letters only, and not already a LaTeX command. \code{time},
+\code{L} or \code{small}, for instance, are TeX/LaTeX commands already, so
+\code{\\newcommand{\\time}} would stop the build ("Command \\time already
+defined") and redefining them would break LaTeX itself; names starting with
+\code{end} are refused by LaTeX too. Such names are skipped with a warning,
+and the reporters emit them as escaped plain text instead.
 }
 \examples{
 emit_name_macros(c("Video", "DriverPosition"))

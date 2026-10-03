@@ -51,6 +51,10 @@ test_that("the generated pipeline runs end to end on its own example data", {
   tex <- env$write_manuscript_tex(results, scored)
   expect_true(all(file.exists(tex)))
   expect_true(any(grepl("SUS", readLines(file.path("paper", "generated", "SUS.tex")))))
+
+  # The figure stage too: its within-subject plots need the participant column.
+  figures <- suppressWarnings(suppressMessages(env$make_figures(scored)))
+  expect_true(all(file.exists(figures)))
 })
 
 
@@ -146,10 +150,12 @@ test_that("instruments that score a column of the same name are disambiguated", 
 })
 
 
-test_that("all ten instruments scaffold into one runnable project", {
+test_that("every instrument scaffolds into one runnable project", {
   path <- scaffold(questionnaires = list_questionnaires()$key)
 
-  env <- run_scoring(path)
+  # No warnings either: the example data must not trip the coding checks
+  # (an unused scale end, fractional responses) that real data are held to.
+  expect_no_warning(env <- run_scoring(path))
 
   expect_equal(anyDuplicated(env$OUTCOMES), 0L)
   expect_true(all(setdiff(env$OUTCOMES, "completion_time") %in% names(env$scored)))
@@ -177,6 +183,74 @@ test_that("scaffolding leaves the caller's RNG state alone", {
   suppressMessages(use_study_project(path, questionnaires = "sus", renv = FALSE, quiet = TRUE))
 
   expect_equal(stats::runif(1), before)
+})
+
+
+test_that("renv is opt-in, and runs outside the calling session", {
+  # Initialising renv installs every package the scripts use into a project
+  # library -- network access, minutes of work -- so it must not happen just
+  # because renv is installed.
+  expect_false(formals(use_study_project)$renv)
+
+  skip_if_not_installed("renv")
+  called <- NULL
+  local_mocked_bindings(.renv_init_subprocess = function(path, quiet = FALSE) {
+    called <<- path
+    invisible(TRUE)
+  })
+  # renv::init() in this session would rewrite .libPaths(), R_LIBS_USER, PATH
+  # and options(repos); the scaffold must hand it to a child process instead.
+  before <- list(
+    libs = .libPaths(), repos = getOption("repos"),
+    r_libs_user = Sys.getenv("R_LIBS_USER"), path = Sys.getenv("PATH"),
+    wd = getwd()
+  )
+  project <- withr::local_tempdir()
+  suppressMessages(use_study_project(project, renv = TRUE, quiet = TRUE))
+
+  expect_equal(called, normalizePath(project, winslash = "/"))
+  expect_equal(
+    list(
+      libs = .libPaths(), repos = getOption("repos"),
+      r_libs_user = Sys.getenv("R_LIBS_USER"), path = Sys.getenv("PATH"),
+      wd = getwd()
+    ),
+    before
+  )
+})
+
+
+test_that("the generated figures pass the participant column to within-subject plots", {
+  # plot_within_stats() requires `subject` to pair observations across
+  # conditions; a call without it would not run.
+  path <- scaffold()
+  figures <- readLines(file.path(path, "R", "figures.R"))
+  report <- readLines(file.path(path, "report", "report.qmd"))
+
+  code <- grep("^[[:space:]]*#", c(figures, report), value = TRUE, invert = TRUE)
+  calls <- grep("plot_within_stats(", code, fixed = TRUE, value = TRUE)
+  expect_length(calls, 3L)
+  expect_equal(sum(grepl("subject = CLUSTER", figures, fixed = TRUE)), 2L)
+  expect_true(any(grepl("subject = \"participant\"", report, fixed = TRUE)))
+})
+
+
+test_that("a text label in an exported item column stops the pipeline with a fix", {
+  # read.csv() turns a column with one "Strongly agree" into text. Scoring used
+  # to make that cell NA and carry on; the pipeline must stop and say why.
+  path <- scaffold(questionnaires = "sus")
+  csv <- file.path(path, "data-raw", "example-study.csv")
+  raw <- utils::read.csv(csv, stringsAsFactors = FALSE)
+  raw$sus_3[1] <- "Strongly agree"
+  utils::write.csv(raw, csv, row.names = FALSE)
+
+  env <- new.env(parent = globalenv())
+  for (f in list.files(file.path(path, "R"), full.names = TRUE)) sys.source(f, envir = env)
+  clean <- env$prepare_study(env$read_study(csv))
+
+  expect_error(suppressMessages(env$score_scales(clean)), "'Strongly agree'.*Recode")
+  # The template points at where the recoding belongs.
+  expect_true(any(grepl("must be numbers", readLines(file.path(path, "R", "prepare.R")))))
 })
 
 

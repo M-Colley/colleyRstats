@@ -62,7 +62,16 @@ wrongly.
 
 ## Reproducibility
 
-Package versions are pinned in `renv.lock`. A collaborator runs:
+Pin the package versions this analysis runs with, so it still runs in three
+years. If the project was scaffolded with `use_study_project(renv = TRUE)`,
+that is done; otherwise run this once, inside the project (it installs every
+package the scripts use into a project library):
+
+```r
+renv::init()
+```
+
+The versions are then recorded in `renv.lock`. A collaborator runs:
 
 ```r
 renv::restore()

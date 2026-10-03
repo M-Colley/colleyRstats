@@ -38,15 +38,18 @@ A principled model choice is the product of three questions, in order:
    (Gaussian, binomial, Poisson, cumulative-link) before anything else.
 2. **Are the observations independent or clustered?** Repeated measures or any
    grouped structure needs random effects, i.e. a *mixed* model.
-3. **For a continuous outcome, do the parametric assumptions hold?** Group-wise
-   normality (and, between subjects, homogeneity of variance) decides between a
+3. **For a continuous outcome, do the parametric assumptions hold?** Normality
+   of the residuals of the model that would be fitted (and, between subjects,
+   homogeneity of variance across all design cells) decides between a
    parametric and a rank-based method.
 
 `classify_outcome()` answers the first question. It maps a variable to one of
 `"continuous"`, `"ordinal"`, `"binary"`, `"count"`, or `"nominal"` using simple,
-transparent rules (ordered factor -> ordinal; two distinct values -> binary; a
-few-valued integer -> ordinal/Likert; a non-negative integer with more values ->
-count; anything else numeric -> continuous).
+transparent rules (ordered factor -> ordinal; values coded 0/1, a logical or a
+two-level factor -> binary; a few-valued integer -> ordinal/Likert; whole
+numbers in steps of 5 within 0-100, such as raw NASA-TLX, -> continuous; any
+other non-negative integer with more values -> count, announced with a message
+so you can override it; anything else numeric -> continuous).
 
 ```{r}
 set.seed(1)
@@ -64,7 +67,7 @@ d$correct <- rbinom(nrow(d), 1, plogis(step - 1))
 
 classify_outcome(d$score)    # continuous
 classify_outcome(d$rating)   # ordinal (ordered factor)
-classify_outcome(d$correct)  # binary (two distinct values)
+classify_outcome(d$correct)  # binary (coded 0/1)
 ```
 
 Getting the scale right matters because it, not the analyst's habit, dictates
@@ -120,13 +123,20 @@ cat(rec_glmm$methods_text)
 ## Fitting and reporting the recommended models
 
 Once a model is fitted, the reporters turn it into manuscript-ready LaTeX/APA
-sentences, one per fixed-effect term, with the effect size, its confidence
-interval, the test statistic, and the p-value. `reportGLMM()` handles
-`lme4::lmer` / `lme4::glmer` / `glmmTMB::glmmTMB` and plain `lm`/`glm`;
-`reportCLMM()` handles `ordinal::clmm` / `ordinal::clm`. The reporters pick the
-effect-size scale from the family: **odds ratios** for binomial and
-cumulative-link models, **incidence-rate ratios** for counts, and raw
-coefficients (`b`) with a `t`/`z` statistic for Gaussian fits.
+sentences. Each model term first gets a Type III omnibus test (Satterthwaite
+F for linear mixed models, a Wald chi-square otherwise) -- the test that answers
+"does condition matter?" for a factor with any number of levels. The
+coefficients follow, each labelled as what a treatment-coded coefficient is: a
+contrast against the reference level ("B vs. A of cond"), and in a model with an
+interaction, a contrast at the reference level of the other factor. Each comes
+with the effect size, its confidence interval, the test statistic, and the
+p-value; linear mixed models use Satterthwaite degrees of freedom.
+`reportGLMM()` handles `lme4::lmer` / `lme4::glmer` / `glmmTMB::glmmTMB` and
+plain `lm`/`glm`; `reportCLMM()` handles `ordinal::clmm` / `ordinal::clm`. The
+reporters pick the effect-size scale from the family and link: **odds ratios**
+for logit links (binomial and cumulative-link models), **incidence-rate
+ratios** for log-link counts, and raw coefficients (`b`) with the link named
+otherwise, e.g. for Gaussian or probit fits.
 
 The fits below require **lme4**, **ordinal**, and **parameters** (all in
 Suggests), so the chunk is guarded by `has_mixed`; the vignette still builds

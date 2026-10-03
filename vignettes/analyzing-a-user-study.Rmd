@@ -56,7 +56,12 @@ Two things matter before any analysis:
 
 - the participant and condition columns must be **factors** (they are above);
 - decide up front whether the design is within- or between-subjects -- it
-  changes the tests, the plots, and the effect sizes.
+  changes the tests, the plots, and the effect sizes;
+- for a within-subjects design, every function that pairs observations takes
+  the participant column as `subject =`. Paired tests compare each
+  participant with themselves, so without it the rows would be paired by their
+  position in the data frame -- and sorting or filtering the data would change
+  the result.
 
 ## The quick route: one call per dependent variable
 
@@ -70,7 +75,7 @@ significant post-hoc comparisons.
 res <- analyze_and_report(
   main_df,
   dv = "tlx_mental", iv = "ConditionID",
-  design = "within",
+  design = "within", subject = "Participant",
   ylab = "Mental Demand (TLX)"
 )
 ```
@@ -96,7 +101,7 @@ battery <- report_all(
   main_df,
   dvs = c("tlx_mental", "trust"),
   iv = "ConditionID",
-  design = "within",
+  design = "within", subject = "Participant",
   labels = c(tlx_mental = "Mental Demand", trust = "Trust")
 )
 battery$summary
@@ -107,14 +112,19 @@ battery$summary
 ### 1. Check the assumptions
 
 ```{r}
-check_normality_by_group(main_df, "ConditionID", "tlx_mental")
+check_normality_by_group(main_df, "ConditionID", "tlx_mental", subject = "Participant")
 ```
+
+With `subject` given, the check tests what a repeated-measures analysis assumes
+to be normal: the residuals once participant and condition effects are removed
+(or, for two conditions, the per-participant differences) -- not the raw scores
+per condition, which also carry the spread between participants.
 
 `assumption_methods_text()` turns the same checks into the sentence reviewers
 expect next to the choice of test:
 
 ```{r}
-assumption_methods_text(main_df, x = "ConditionID", y = "tlx_mental")
+assumption_methods_text(main_df, x = "ConditionID", y = "tlx_mental", subject = "Participant")
 ```
 
 ### 2. Plot with automatic test selection
@@ -128,7 +138,8 @@ plot_within_stats_asterisk(
   data = main_df,
   x = "ConditionID", y = "tlx_mental",
   ylab = "Mental Demand (TLX)",
-  xlabels = c("Baseline", "HUD", "LED")
+  xlabels = c("Baseline", "HUD", "LED"),
+  subject = "Participant"
 )
 ```
 

@@ -71,10 +71,15 @@ Invisibly returns the rendered LaTeX table as a string (or
 \code{NULL} when xtable is unavailable); the table is also printed.
 }
 \description{
-Required commands in LaTeX:
-\code{\\newcommand{\\padjminor}{\\textit{p$_{adj}<$}}}
-\code{\\newcommand{\\padj}{\\textit{p$_{adj}$=}}}
-\code{\\newcommand{\\rankbiserial}[1]{$r_{rb} = #1$}}
+The table lists the significant contrasts with their test statistic -- a
+column headed \emph{t}, or \emph{z} when emmeans reports z ratios -- its
+degrees of freedom (fractional Kenward-Roger or Satterthwaite dfs are shown
+to two decimals, not rounded to integers; the column is omitted for z
+ratios), the p-value and the rank-biserial correlation. The p-value column
+is headed "p-adjusted" and the caption names the correction read from the
+contrast summary; with \code{adjust = "none"} the header is "p" and the caption
+says the p-values are not adjusted. A positive statistic means the
+first-named level is higher on the aligned-rank scale.
 }
 \section{Naming}{
 

@@ -26,23 +26,36 @@ Poisson, cumulative-link) before any distributional assumption is checked.
 The rules are deliberately simple and transparent:
 \itemize{
 \item ordered factor \eqn{\rightarrow} \code{"ordinal"};
-\item logical, a two-level factor, or a numeric/character with exactly two
-distinct values \eqn{\rightarrow} \code{"binary"};
+\item logical, a factor with two observed levels, a character vector with
+two distinct values, or a numeric coded \code{0}/\code{1}
+\eqn{\rightarrow} \code{"binary"};
 \item unordered factor/character with more than two levels
 \eqn{\rightarrow} \code{"nominal"};
+\item a numeric with at most two distinct values that are \emph{not}
+\code{0}/\code{1} -- a 1--7 item on which only 6 and 7 were ticked, or a
+yes/no item coded 1/2 -- is \emph{not} taken for binary: it is classified
+as \code{"ordinal"} (whole numbers) or \code{"continuous"}, with a
+warning;
 \item integer-valued numeric with at most \code{ordinal_max_levels}
 distinct values (a Likert-type item) \eqn{\rightarrow} \code{"ordinal"};
-\item non-negative integer-valued numeric with more distinct values
-\eqn{\rightarrow} \code{"count"};
+\item non-negative whole numbers that are all multiples of 5 within
+\eqn{[0, 100]} (the shape of a raw NASA-TLX subscale or a 0--100 slider
+in steps of 5) \eqn{\rightarrow} \code{"continuous"}, with a message;
+\item any other non-negative whole numbers \eqn{\rightarrow}
+\code{"count"}. This is always announced with a message that says how to
+override it, and the message becomes a \emph{warning} when the values
+lie in a closed range without zeros (\eqn{[1, 100]}) -- the typical
+shape of a summed questionnaire score or a 1--10 rating, which a Poisson
+model would misdescribe;
 \item any other numeric \eqn{\rightarrow} \code{"continuous"}.
 }
 The heuristics can never be perfect (a 1--7 Likert item and a small count are
 genuinely ambiguous); pass an explicit \code{outcome_type} to
-\code{\link[=recommend_test]{recommend_test()}} when you want to override them.
+\code{\link[=recommend_test]{recommend_test()}} or \code{\link[=fit_recommended]{fit_recommended()}} when you want to override them.
 }
 \examples{
 classify_outcome(rnorm(50)) # "continuous"
 classify_outcome(factor(sample(1:5, 50, TRUE), ordered = TRUE)) # "ordinal"
 classify_outcome(sample(0:1, 50, TRUE)) # "binary"
-classify_outcome(rpois(50, 3)) # "count"
+classify_outcome(rpois(50, 3)) # "count", with a message
 }

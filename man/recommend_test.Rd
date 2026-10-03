@@ -12,7 +12,8 @@ recommend_test(
   cluster = NULL,
   design = c("auto", "between", "within"),
   outcome_type = c("auto", "continuous", "ordinal", "binary", "count", "nominal"),
-  ordinal_max_levels = 7L
+  ordinal_max_levels = 7L,
+  factors = NULL
 )
 
 recommend_analysis(
@@ -22,7 +23,8 @@ recommend_analysis(
   cluster = NULL,
   design = c("auto", "between", "within"),
   outcome_type = c("auto", "continuous", "ordinal", "binary", "count", "nominal"),
-  ordinal_max_levels = 7L
+  ordinal_max_levels = 7L,
+  factors = NULL
 )
 }
 \arguments{
@@ -37,23 +39,42 @@ variable) column names.}
 repeated-measures or otherwise non-independent data (the random-effect
 grouping factor).}
 
-\item{design}{One of \code{"auto"} (default; clustered when \code{cluster} is
-given), \code{"between"}, or \code{"within"}.}
+\item{design}{One of \code{"auto"} (default; clustered when some
+\code{cluster} has several rows), \code{"between"}, or \code{"within"}.
+Repeated rows per cluster are modelled with a random effect even with
+\code{"between"} -- ignoring them would be pseudo-replication.}
 
 \item{outcome_type}{One of \code{"auto"} (default; use \code{\link[=classify_outcome]{classify_outcome()}})
 or an explicit \code{"continuous"}, \code{"ordinal"}, \code{"binary"},
 \code{"count"}, \code{"nominal"} to override the automatic classification.}
 
 \item{ordinal_max_levels}{Passed to \code{\link[=classify_outcome]{classify_outcome()}}. Default 7.}
+
+\item{factors}{Optional character vector naming the numeric predictors that
+are categorical (condition codes). \code{NULL} (default) decides from the
+data: a numeric predictor is categorical only when it looks like codes --
+at most 10 consecutive whole numbers starting at 0 or 1, each observed at
+least twice (and for at least two clusters). Factor, character and logical
+predictors are always categorical; \code{factors = character(0)} keeps
+every numeric predictor numeric.}
 }
 \value{
 An object of class \code{"colley_recommendation"} (a list) with
-components including \code{outcome_type}, \code{clustered}, \code{family},
-\code{recommendation} (human-readable label), \code{model_function} (the
-R function to call, e.g. \code{"ordinal::clmm"}), \code{reporter} (the
-matching colleyRstats reporter), \code{fit_call} (a ready-to-edit call as a
-string), \code{alternatives}, \code{rationale}, and \code{methods_text} (an
-APA-style sentence). A \code{print} method summarises it.
+components including \code{outcome_type}, \code{clustered}, \code{design}
+(\code{"between"}, \code{"within"}, \code{"mixed"}, or
+\code{"between (clustered)"} for between-cluster predictors with repeated
+rows per cluster), \code{n_obs} (complete rows),
+\code{categorical} (which predictors are categorical), \code{within}
+(which categorical predictors vary within clusters), \code{random} (the
+random-effect structure), \code{family}, \code{assumptions} (normality and
+homogeneity results with their test statistics), \code{dispersion} (for
+counts), \code{recommendation} (human-readable label),
+\code{model_function} (the R function to call, e.g.
+\code{"ordinal::clmm"}), \code{reporter} (the matching colleyRstats
+reporter), \code{fit_call} (a ready-to-edit call as a string),
+\code{alternatives}, \code{rationale}, \code{methods_text} (an APA-style
+sentence) and \code{methods_tex} (the same, escaped for LaTeX). A
+\code{print} method summarises it.
 }
 \description{
 Works out, from the data alone, which statistical model is appropriate for a
@@ -62,23 +83,39 @@ follows a transparent three-question tree:
 \enumerate{
 \item \strong{What is the outcome's measurement scale?}
 (via \code{\link[=classify_outcome]{classify_outcome()}}: continuous, ordinal, binary, count, nominal.)
-This fixes the model family.
+This fixes the model family. A count is checked for over-dispersion
+(\code{performance::check_overdispersion()}, Pearson
+\eqn{\chi^2}/df); an over-dispersed count is modelled as negative
+binomial (\code{glmmTMB::glmmTMB(family = nbinom2)} when clustered,
+\code{MASS::glm.nb()} otherwise).
 \item \strong{Are the observations independent or clustered?}
-A repeated-measures / clustered design (a \code{cluster} id is supplied,
-or \code{design = "within"}) needs random effects, i.e. a \emph{mixed} model.
+A \code{cluster} column in which some cluster contributes several rows
+makes the design clustered, whatever \code{design} says: the cluster then
+needs a random effect, i.e. a \emph{mixed} model. For a categorical predictor
+that varies within clusters and whose levels are replicated within a
+cluster, by-cluster random slopes are added (Barr et al., 2013);
+\code{\link[=fit_recommended]{fit_recommended()}} simplifies the structure when the fit is singular.
 \item \strong{For a continuous outcome, do the parametric assumptions
-hold?} Group-wise normality (Shapiro--Wilk) and, for between-subjects
-designs, homogeneity of variance (Levene) decide between a parametric
-test and a non-parametric / rank-based alternative.
+hold?} A Shapiro--Wilk test on the residuals of the model that would be
+fitted (all predictors, their interactions and the random effects) and,
+for between-subjects designs, a Brown--Forsythe test (Levene's test
+centred on the median) across all design cells decide between a
+parametric model and a rank-based alternative.
 }
 }
 \details{
-The recommendation therefore ranges over ordinary ANOVA / t-tests, rank-based
-methods (Kruskal--Wallis + Dunn, Wilcoxon, the Aligned Rank Transform, nparLD),
-generalized linear models, cumulative link models, and their mixed-model
-counterparts -- linear mixed models (LMM), generalized linear mixed models
-(GLMM, \code{lme4}/\code{glmmTMB}) and cumulative link mixed models (CLMM,
-\code{ordinal}).
+The recommendation ranges over ordinary ANOVA (Type III sums of squares for
+factorial designs, via \pkg{afex}), heteroscedasticity-robust (HC3) ANOVA,
+Welch tests, rank-based methods (Kruskal--Wallis + Dunn, Wilcoxon, the
+Aligned Rank Transform, nparLD), generalized linear models, cumulative link
+models, multinomial models, and their mixed-model counterparts -- linear
+mixed models (LMM), generalized linear mixed models (GLMM,
+\code{lme4}/\code{glmmTMB}), cumulative link mixed models (CLMM,
+\code{ordinal}) and multinomial mixed models (\code{mclogit::mblogit}).
+Only models that can actually be fitted to the design are recommended:
+continuous covariates take the (mixed) regression route, because ART and
+nparLD accept only categorical predictors; ART is used only for all-factor
+full-factorial models; nparLD only for a single within-subject factor.
 }
 \section{Naming}{
 
@@ -98,4 +135,9 @@ d <- data.frame(
 recommend_test(d, outcome = "rating", predictors = "cond", cluster = "id")
 # Continuous, between-subjects -> ANOVA or its rank-based fallback
 recommend_test(d, outcome = "score", predictors = "cond")
+}
+\references{
+Barr, D. J., Levy, R., Scheepers, C., & Tily, H. J. (2013).
+Random effects structure for confirmatory hypothesis testing: Keep it
+maximal. \emph{Journal of Memory and Language, 68}(3), 255--278.
 }

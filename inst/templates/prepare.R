@@ -17,6 +17,18 @@ prepare_study <- function(data) {
   # Exclusions go here, each with the reason in the comment, e.g.
   #   data <- dplyr::filter(data, participant != "07")  # aborted, simulator sickness
 
+  # Questionnaire items must be numbers. score_questionnaire() stops on an item
+  # column holding text ("Strongly agree", "5 - Strongly agree", "2,5") rather
+  # than silently turning those answers into missing values, and names the
+  # offending values. Recode such columns here, visibly, e.g.
+  #   labels <- c("Strongly disagree" = 1, "Disagree" = 2, "Neutral" = 3,
+  #               "Agree" = 4, "Strongly agree" = 5)
+  #   data <- dplyr::mutate(data, dplyr::across(dplyr::starts_with("sus_"),
+  #                                             ~ unname(labels[.x])))
+  # or, for "5 - Strongly agree", keep the leading number:
+  #   data <- dplyr::mutate(data, dplyr::across(dplyr::starts_with("sus_"),
+  #     ~ as.numeric(sub("^[[:space:]]*(-?[0-9]+).*$", "\\1", .x))))
+
   data
 }
 

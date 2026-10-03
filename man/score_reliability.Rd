@@ -11,7 +11,8 @@ score_reliability(
   prefix = NULL,
   scale = NULL,
   reverse_items = NULL,
-  verbose = TRUE
+  verbose = TRUE,
+  unreverse_items = NULL
 )
 }
 \arguments{
@@ -27,38 +28,78 @@ or a character vector \emph{named} after the item codes
 and the safer choice for a survey export you did not lay out yourself.}
 
 \item{prefix}{Optional column-name prefix selecting the item columns, e.g.
-\code{"sus_"}. Matching columns are sorted numerically, so \code{sus_2}
-comes before \code{sus_10}. Must select exactly as many columns as the
-instrument has items.}
+\code{"sus_"}. Must select exactly as many columns as the instrument has
+items. The columns are then matched to items \emph{by their names}, never
+by sort order: either what follows the prefix is the item's code, label or
+(for a single-item subscale) subscale name, compared without case or
+punctuation (\code{tlx_mental}, \code{tlx_Mental_Demand}, \code{tia_rc1},
+\code{ipq_SP2}); or it carries one item number per column, and those
+numbers are exactly \code{1..n} (\code{sus_2}, \code{SUS[2]},
+\code{Q5_2}; in \code{SUS_2_1} the number that varies across the columns
+is the item). Anything else -- numbering from 0, numbers that do not run
+\code{1..n}, names that only partly match -- is an error asking for a
+named \code{items} mapping, rather than a guess.}
 
 \item{scale}{Optional two-element vector giving the response range your
 survey used, e.g. \code{c(1, 21)} for the 21-point NASA-TLX sheet or
 \code{c(0, 4)} for a zero-based SUS. Responses are rescaled onto the
 instrument's own range before scoring. Defaults to the instrument's range;
-responses outside it are an error rather than a silent rescale.}
+responses outside it are an error rather than a silent rescale. Without
+\code{scale}, a coding that fits the range but looks shifted against it
+draws a warning (see Details); passing \code{scale} explicitly confirms
+the coding and silences it.}
 
-\item{reverse_items}{Optional items to \emph{toggle} the reverse-coding of,
-given as item numbers or item codes. Naming an item the scoring key already
-reverses un-reverses it, which is what an export that stores a pair the
-other way round needs.}
+\item{reverse_items}{Optional items to reverse-code in addition to the
+scoring key's own, given as item numbers or item codes -- for a survey that
+printed a pair the other way round. For backward compatibility it
+\emph{toggles}: naming an item the key already reverses un-reverses it,
+and because passing an instrument's own reverse set (e.g.
+\code{c(2, 4, 6, 8, 10)} for the SUS) is a common mistake that would do
+exactly that, it raises a warning. Use \code{unreverse_items} to undo a
+key reversal on purpose.}
 
 \item{verbose}{Logical. If \code{TRUE} (default), emit the one-time mapping
 message described above.}
+
+\item{unreverse_items}{Optional items the scoring key reverses that should
+\emph{not} be reversed, because the export already stored them
+reverse-coded. Naming an item the key does not reverse is an error.}
 }
 \value{
-A data frame with one row per subscale: the number of items, the
-number of complete cases it was computed on, \code{alpha}, \code{omega}
-(\code{NA} without \pkg{psych}), and the mean inter-item correlation.
-Subscales of a single item yield \code{NA} -- internal consistency is not
-defined for them.
+A data frame with one row per subscale, plus a final row named after
+the overall score where the instrument defines one: the number of items,
+the number of complete cases it was computed on, \code{alpha},
+\code{omega} (omega total), \code{spearman_brown} (two-item scales only),
+the mean inter-item correlation, and a \code{note} saying why a
+coefficient is missing (a single item, two items, too few complete
+responses, \pkg{psych} not installed, or the reason the factor solution
+failed). Subscales of a single item yield \code{NA} -- internal
+consistency is not defined for them.
 }
 \description{
-Cronbach's alpha per subscale, computed on the same recoded item matrix that
-\code{\link[=score_questionnaire]{score_questionnaire()}} aggregates -- so reverse-coded items are already
+Cronbach's alpha per subscale -- and for the whole scale, where the
+instrument defines an overall score (the SUS, the SSQ Total, RTLX, the UEQ-S
+Overall) -- computed on the same recoded item matrix that
+\code{\link[=score_questionnaire]{score_questionnaire()}} aggregates. Reverse-coded items are therefore already
 flipped, and a negative alpha means a genuine problem rather than a forgotten
-reversal. McDonald's omega is added when \pkg{psych} is installed, and is the
-better-behaved statistic when a subscale's items are not equally good
-indicators.
+reversal.
+}
+\details{
+McDonald's omega (total) is added when \pkg{psych} is installed. It is
+computed from an unrotated one-factor solution
+(\code{psych::fa(nfactors = 1, rotate = "none")}) as
+\eqn{1 - \sum u^2 / \sum R}{1 - sum(u2) / sum(R)}, which is the
+\code{omega.tot} that \code{psych::omega(nfactors = 1)} reports, without that
+function's dependence on \pkg{GPArotation} and without its automatic
+flipping of negatively loading items -- which would hide exactly the
+reverse-coding error this function is meant to expose. Omega needs at least
+three items; for two-item scales it is not identified.
+
+For two-item scales (the SUS Learnability scale, three TiA subscales) the
+Spearman-Brown coefficient \eqn{2r / (1 + r)} is reported as well, which
+Eisinga, te Grotenhuis & Pelzer (2013) recommend over alpha: alpha
+underestimates the reliability of a two-item scale whenever the two item
+variances differ.
 }
 \section{Caution -- verify the mapping against your own survey}{
 
@@ -82,7 +123,12 @@ scored in a session (silence it with
 
 A named \code{items} argument (\code{items = c(mental = "tlx_md", ...)}) removes the
 positional assumption altogether and is the safer choice for an export you
-did not lay out yourself.
+did not lay out yourself. A \code{prefix} maps columns by what their names say
+-- an item code or label, or one item number per column running 1 to the
+number of items -- never by sort order, and stops when the names do not
+identify the items. Note that the \code{attrakdiff} key is blocked by dimension
+with the negative pole first; data stored as answered on the official
+AttrakDiff sheet belong to \code{attrakdiff_official}.
 }
 
 \examples{
@@ -95,6 +141,13 @@ names(d) <- paste0("sus_", 1:10)
 # Items 2, 4, 6, 8, 10 are negatively worded on the real SUS, so flip them
 d[paste0("sus_", c(2, 4, 6, 8, 10))] <- 6 - d[paste0("sus_", c(2, 4, 6, 8, 10))]
 score_reliability(d, "sus", prefix = "sus_")
+}
+\references{
+Eisinga, R., te Grotenhuis, M., & Pelzer, B. (2013). The reliability of a
+two-item scale: Pearson, Cronbach, or Spearman-Brown? \emph{International
+Journal of Public Health, 58}(4), 637--642. \doi{10.1007/s00038-012-0416-3}
+
+McDonald, R. P. (1999). \emph{Test theory: A unified treatment}. Erlbaum.
 }
 \seealso{
 \code{\link[=score_questionnaire]{score_questionnaire()}}

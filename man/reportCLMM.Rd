@@ -11,7 +11,8 @@ reportCLMM(
   exponentiate = "auto",
   conf_level = 0.95,
   write_to_clipboard = FALSE,
-  sink_to = NULL
+  sink_to = NULL,
+  omnibus = TRUE
 )
 
 report_clmm(
@@ -20,7 +21,8 @@ report_clmm(
   exponentiate = "auto",
   conf_level = 0.95,
   write_to_clipboard = FALSE,
-  sink_to = NULL
+  sink_to = NULL,
+  omnibus = TRUE
 )
 }
 \arguments{
@@ -28,7 +30,8 @@ report_clmm(
 
 \item{dv}{Name of the (ordinal) dependent variable, used in the sentence text.}
 
-\item{exponentiate}{\code{"auto"} (default; report odds ratios) or
+\item{exponentiate}{\code{"auto"} (default; odds ratios for the logit link,
+raw coefficients for probit, cloglog and other links) or
 \code{TRUE}/\code{FALSE} to force it. \code{FALSE} reports raw log-odds.}
 
 \item{conf_level}{Confidence level for the intervals. Default 0.95.}
@@ -36,6 +39,9 @@ report_clmm(
 \item{write_to_clipboard}{Whether to copy the sentences to the clipboard.}
 
 \item{sink_to}{Optional path of a \code{.tex} file to write the sentences to.}
+
+\item{omnibus}{Logical. Report the Type III omnibus test of every model term
+before the coefficients. Default \code{TRUE}; needs \pkg{emmeans}.}
 }
 \value{
 Invisibly returns the reported sentence(s) as a character vector; the
@@ -44,15 +50,20 @@ text is also emitted via \code{message()}.
 \description{
 Reporter for ordinal proportional-odds models fitted with \pkg{ordinal}:
 cumulative link mixed models (\code{ordinal::clmm}) and their fixed-effects
-counterpart (\code{ordinal::clm}). Each location (predictor) effect is
-reported as an odds ratio -- the multiplicative change in the odds of being
-in a higher outcome category for a one-unit increase in the predictor -- with
-its confidence interval, z statistic and p-value. The threshold (cut-point)
-coefficients are omitted, as is conventional.
+counterpart (\code{ordinal::clm}). Each model term is first tested with a
+Type III Wald \eqn{\chi^2} test (\code{emmeans::joint_tests()},
+independent of the contrast coding); each location coefficient is then
+reported -- as an odds ratio for the logit link (the multiplicative change
+in the odds of being in a higher outcome category), as the raw coefficient
+with the link named otherwise -- with its confidence interval, z statistic
+and p-value, labelled as the contrast it is (see \code{\link[=reportGLMM]{reportGLMM()}}).
 }
 \details{
-The threshold (cut-point) parameters are never reported, so unlike
-\code{\link[=reportGLMM]{reportGLMM()}} this reporter has no \code{include_intercept} argument.
+Only the location coefficients are reported: the thresholds
+(cut-points, including the \code{threshold.1}/\code{spacing} parameters of
+equidistant thresholds), scale effects and nominal effects are not
+predictor effects on the location, so unlike \code{\link[=reportGLMM]{reportGLMM()}} this reporter
+has no \code{include_intercept} argument.
 }
 \section{Naming}{
 

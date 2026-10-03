@@ -12,7 +12,8 @@ report_all(
   labels = NULL,
   xlabels = NULL,
   plotType = "boxviolin",
-  sink_dir = NULL
+  sink_dir = NULL,
+  subject = NULL
 )
 }
 \arguments{
@@ -33,6 +34,9 @@ axis label, e.g. \code{c(tlx_mental = "Mental Demand")}}
 
 \item{sink_dir}{optional directory; each dv's sentences are written to
 \code{<sink_dir>/<dv>.tex} so a manuscript can \code{\\input{}} them}
+
+\item{subject}{the participant-ID column (a string); required for
+\code{design = "within"}. See \code{\link[=analyze_and_report]{analyze_and_report()}}.}
 }
 \value{
 Invisibly returns a list with components \code{results} (named list
@@ -46,6 +50,13 @@ Runs \code{\link[=analyze_and_report]{analyze_and_report()}} for each dependent 
 questionnaire scales of a study) and additionally returns a summary table
 of the omnibus tests with Holm-adjusted p-values across the dependent
 variables, plus -- when \pkg{patchwork} is installed -- a combined figure.
+}
+\details{
+Each dependent variable is analysed on its own complete cases (see
+\code{\link[=analyze_and_report]{analyze_and_report()}}), so in a within-subjects design a participant
+missing one rating is left out of that dependent variable only. The
+\code{p.holm} column corrects the omnibus p-values for the number of
+dependent variables; the per-dv sentences report the uncorrected ones.
 }
 \examples{
 \donttest{

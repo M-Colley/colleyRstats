@@ -62,10 +62,17 @@ main_df <- data.frame(
 
 ## Check assumptions
 
+Every participant here saw both conditions, so the design is within-subjects.
+Name the participant column as `subject`: the check then tests the
+per-participant differences, which is what a paired test assumes to be normal.
+
 ```{r}
-check_normality_by_group(main_df, "ConditionID", "score")
-check_homogeneity_by_group(main_df, "ConditionID", "score")
+check_normality_by_group(main_df, "ConditionID", "score", subject = "Participant")
 ```
+
+For a between-subjects design, leave `subject` out: each group is then tested
+on its own (Holm-corrected across groups), and `check_homogeneity_by_group()`
+adds the Brown-Forsythe test of equal variances.
 
 ## Create a plot
 

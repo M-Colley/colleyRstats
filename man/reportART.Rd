@@ -5,8 +5,12 @@
 \alias{report_art}
 \title{Generate the Latex-text based on the ARTool (see \url{https://github.com/mjskay/ARTool}). The ART result must be piped into an anova().
 Only significant main and interaction effects are reported.
-P-values are rounded for the third digit.
-Attention: Effect sizes are not calculated!
+P-values are rounded for the third digit. Each effect is accompanied by its
+partial eta squared, derived from the F statistic and its degrees of freedom
+with \code{\link[effectsize:F_to_eta2]{effectsize::F_to_eta2()}}, and a two-sided 95\% confidence interval.
+A term is reported as an interaction when its name contains \code{":"}; each
+factor name is rendered as a \code{\\Name} macro only when that is a safe new
+LaTeX command, and as escaped text otherwise.
 Attention: the independent variables of the formula and the term specifying the participant must be factors (i.e., use as.factor()).}
 \usage{
 reportART(

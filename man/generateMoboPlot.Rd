@@ -32,7 +32,7 @@ plot_mobo(
 \arguments{
 \item{data}{A data frame containing the data to be plotted.}
 
-\item{x}{A string representing the column name in \code{data} to be used for the x-axis. Can be either numeric or factor.}
+\item{x}{A string representing the column name in \code{data} to be used for the x-axis. Can be either numeric or a factor whose labels are numbers; it is plotted on a continuous axis either way, so the data, the phase guides and the fitted equation all refer to the iteration values (not to factor positions).}
 
 \item{y}{A string representing the column name in \code{data} to be used for the y-axis. This should be a numeric variable.}
 
@@ -42,7 +42,7 @@ plot_mobo(
 
 \item{legendPos}{A numeric vector of length 2 specifying the position of the legend inside the plot. Default is \code{c(0.65, 0.85)}.}
 
-\item{numberSamplingSteps}{An integer specifying the number of initial sampling steps before the optimization phase begins. Default is 5.}
+\item{numberSamplingSteps}{An integer specifying the number of initial sampling steps before the optimization phase begins, counted in distinct iterations from the first one (so it also works when iterations start at 0 or are spaced by more than 1). Must be smaller than the number of iterations. Default is 5.}
 
 \item{labelPosFormulaY}{A string specifying the vertical position of the polynomial equation label in the plot. Acceptable values are \code{"top"}, \code{"center"}, or \code{"bottom"}. Default is \code{"top"}.}
 
@@ -78,6 +78,7 @@ df <- data.frame(
 )
 generateMoboPlot(df, x = "x", y = "y")
 
+\donttest{
 # Example with factor x-axis
 df <- data.frame(
   x = factor(rep(1:5, each = 4)),
@@ -85,4 +86,5 @@ df <- data.frame(
   ConditionID = rep(c("A", "B"), 10)
 )
 generateMoboPlot(df, x = "x", y = "y", numberSamplingSteps = 3)
+}
 }

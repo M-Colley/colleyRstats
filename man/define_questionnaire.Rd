@@ -17,7 +17,8 @@ define_questionnaire(
   total_name = "Total",
   reference = NA_character_,
   higher = NA_character_,
-  notes = character()
+  notes = character(),
+  integer_responses = TRUE
 )
 }
 \arguments{
@@ -38,7 +39,8 @@ that item loads on. Use a comma-separated string
 
 \item{label}{Optional item wording, one entry per item.}
 
-\item{reverse}{Optional item numbers that are reverse-scored.}
+\item{reverse}{Optional items that are reverse-scored, as item numbers
+(\code{c(2, 4)}) or item codes (\code{c("item2", "item4")}).}
 
 \item{recode}{One of \code{"none"} (default), \code{"center"} (subtract the
 midpoint, giving the \eqn{-3..+3} coding of a 7-point semantic
@@ -57,6 +59,12 @@ choice for a multidimensional instrument whose authors define no total.}
 \code{"better"} or \code{"worse"}.}
 
 \item{notes}{Optional character vector of scoring notes.}
+
+\item{integer_responses}{Logical. \code{TRUE} (default) for an instrument
+answered in whole scale points (Likert items, semantic differentials):
+fractional responses then draw a warning, and a coding that looks shifted
+against \code{scale} is checked for. Set \code{FALSE} for a visual-analogue
+scale or slider.}
 }
 \value{
 Invisibly, the instrument definition.
@@ -91,7 +99,12 @@ scored in a session (silence it with
 
 A named \code{items} argument (\code{items = c(mental = "tlx_md", ...)}) removes the
 positional assumption altogether and is the safer choice for an export you
-did not lay out yourself.
+did not lay out yourself. A \code{prefix} maps columns by what their names say
+-- an item code or label, or one item number per column running 1 to the
+number of items -- never by sort order, and stops when the names do not
+identify the items. Note that the \code{attrakdiff} key is blocked by dimension
+with the negative pole first; data stored as answered on the official
+AttrakDiff sheet belong to \code{attrakdiff_official}.
 }
 
 \examples{

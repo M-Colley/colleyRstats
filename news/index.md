@@ -181,6 +181,29 @@ with earlier versions.**
   outcome is fitted with
   [`mclogit::mblogit()`](https://melff.github.io/mclogit/reference/mblogit.html)
   instead of a `multinom()` that ignored the clustering.
+- In a model with a numeric covariate, the omnibus test of a factor is
+  taken at the covariate’s mean. Type III tests are independent of how
+  factors are coded but not of where the covariate is zero: in
+  `y ~ cond * age`, the “main effect of cond” was the effect at age 0 –
+  reported as F = 0.11, p = .74 next to post-hoc contrasts with p \<
+  .001 for the same effect at the mean age. The tests now equal those of
+  the model with the covariate centred, for linear mixed models as for
+  GLM(M)s.
+- [`fit_recommended()`](https://m-colley.github.io/colleyRstats/reference/fit_recommended.md)
+  fits every engine on the same complete cases (ART, nparLD and
+  `mblogit` refused data with a missing value), turns a nominal outcome
+  stored as text into a factor (`mblogit` refused it), fits nparLD on
+  the participants observed in every condition instead of recommending a
+  model it then could not fit, writes ART sentences with plain factor
+  names (a factor called `B` became the undefined `\B{}`), and handles
+  an intercept-only model. ART-C simple effects read their cells from
+  the contrast coefficients rather than by splitting labels, so levels
+  such as “low - fast” or “b,1” no longer make them fail; the methods
+  text describes simple effects only when they were computed, and names
+  the correction actually applied (ART-C simple effects fall back from
+  Tukey to Holm). The Kruskal-Wallis route runs the Dunn’s test its
+  methods sentence names. Declaring a three-valued outcome binary warns
+  that the binomial model compares the first value with all the others.
 - [`fit_recommended()`](https://m-colley.github.io/colleyRstats/reference/fit_recommended.md)
   uses order-independent Type III sums of squares for unbalanced
   between-subjects factorials (Type I gave F = 2.03 or 0.14 depending on
@@ -200,18 +223,42 @@ with earlier versions.**
   and IPQ reversals landed on the wrong items, AttrakDiff PQ and ATT
   swapped, and `SUS_10_1` was read as item 2. Columns are now matched by
   name or by an unambiguous item number running 1..n.
+
 - The scoring message shows the observed response range; NASA-TLX data
-  that never exceed 21, and codings that look shifted by one point, draw
-  a warning unless `scale` is given.
+  that never exceed 21 (other than the 0-100 sheet’s own steps of 5),
+  and responses that fill exactly the assumed range shifted by one point
+  (an IPQ exported 1-7, a SUS exported 0-4), draw a warning unless
+  `scale` is given. An unused scale end alone does not: nobody choosing
+  the top of a 7-point scale is unremarkable in a small sample.
+
+- An item column stored as a factor that mixes numeric and text levels
+  (`"0"`-`"3"` plus `"no answer"`) is refused, naming the text levels,
+  instead of being scored by level position – which put every SSQ answer
+  one point too high and doubled the Total. Blank factor levels are
+  missing responses, as blank text cells are.
+  [`define_questionnaire()`](https://m-colley.github.io/colleyRstats/reference/define_questionnaire.md)
+  refuses a missing subscale.
+
 - `reverse_items` warns when it un-reverses an item the published key
   already reverses (passing `c(2, 4, 6, 8, 10)` for the SUS gave a
   perfect respondent 50); new `unreverse_items` does that on purpose.
+
 - With `min_valid < 1`, missing SUS items count as the centre point, as
   Brooke (1996) instructs; new `impute =` chooses the rule explicitly.
+
 - [`score_reliability()`](https://m-colley.github.io/colleyRstats/reference/score_reliability.md)
   adds a whole-scale row, a Spearman-Brown coefficient for two-item
   scales, and a `note` column; omega comes from an unrotated one-factor
   solution, so it no longer silently returns `NA` without ‘GPArotation’.
+
+- The scaffolded figures follow the design declared in `analysis.R`:
+  with `CLUSTER <- NULL`, or a condition that does not vary within
+  participants, they are between-subjects plots (`make_figures()` used
+  to stop with “`subject` is required”), and repeated trials are
+  averaged per participant first. The report draws the same figures by
+  reusing the pipeline’s own `plot_outcome()` instead of hard-coding
+  column names, and the combined figure grows with the number of
+  outcomes instead of failing for a long questionnaire battery.
 
 #### Utilities
 
@@ -294,6 +341,10 @@ with earlier versions.**
   /
   [`generateMoboPlot2()`](https://m-colley.github.io/colleyRstats/reference/generateMoboPlot2.md)
   lines up with its phase guides and fitted equation.
+  `numberSamplingSteps` counts iteration steps from the first iteration,
+  so an iteration missing from the log no longer moves the sampling
+  boundary, and a value covering every iteration warns instead of
+  stopping.
 
 ### DEPRECATIONS
 

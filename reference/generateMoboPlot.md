@@ -71,10 +71,11 @@ plot_mobo(
 - numberSamplingSteps:
 
   An integer specifying the number of initial sampling steps before the
-  optimization phase begins, counted in distinct iterations from the
-  first one (so it also works when iterations start at 0 or are spaced
-  by more than 1). Must be smaller than the number of iterations.
-  Default is 5.
+  optimization phase begins, counted in iteration steps from the first
+  iteration (the spacing being the smallest gap between iterations), so
+  it also works when iterations start at 0 or are spaced by more than 1,
+  and a missing iteration does not move the boundary. A value that
+  covers every iteration in the data gives a warning. Default is 5.
 
 - labelPosFormulaY:
 

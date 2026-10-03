@@ -26,7 +26,8 @@ define_questionnaire(
   total_name = "Total",
   reference = NA_character_,
   higher = NA_character_,
-  notes = character()
+  notes = character(),
+  integer_responses = TRUE
 )
 ```
 
@@ -62,7 +63,8 @@ define_questionnaire(
 
 - reverse:
 
-  Optional item numbers that are reverse-scored.
+  Optional items that are reverse-scored, as item numbers (`c(2, 4)`) or
+  item codes (`c("item2", "item4")`).
 
 - recode:
 
@@ -93,6 +95,13 @@ define_questionnaire(
 
   Optional character vector of scoring notes.
 
+- integer_responses:
+
+  Logical. `TRUE` (default) for an instrument answered in whole scale
+  points (Likert items, semantic differentials): fractional responses
+  then draw a warning, and a coding that looks shifted against `scale`
+  is checked for. Set `FALSE` for a visual-analogue scale or slider.
+
 ## Value
 
 Invisibly, the instrument definition.
@@ -122,7 +131,13 @@ session (silence it with
 
 A named `items` argument (`items = c(mental = "tlx_md", ...)`) removes
 the positional assumption altogether and is the safer choice for an
-export you did not lay out yourself.
+export you did not lay out yourself. A `prefix` maps columns by what
+their names say – an item code or label, or one item number per column
+running 1 to the number of items – never by sort order, and stops when
+the names do not identify the items. Note that the `attrakdiff` key is
+blocked by dimension with the negative pole first; data stored as
+answered on the official AttrakDiff sheet belong to
+`attrakdiff_official`.
 
 ## See also
 

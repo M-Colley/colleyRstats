@@ -1,4 +1,4 @@
-# Generate the Latex-text based on the NPAV by Lüpsen (see <https://www.uni-koeln.de/~luepsen/R/>). Only significant main and interaction effects are reported. P-values are rounded for the third digit and partial eta squared values are provided when possible. Attention: the independent variables of the formula and the term specifying the participant must be factors (i.e., use as.factor()).
+# Generate the Latex-text based on the NPAV by Lüpsen (see <https://www.uni-koeln.de/~luepsen/R/>). Only significant main and interaction effects are reported. P-values are rounded for the third digit and partial eta squared values, with a two-sided 95% confidence interval, are provided when possible. A term is reported as an interaction when its name contains `":"`. Attention: the independent variables of the formula and the term specifying the participant must be factors (i.e., use as.factor()).
 
 Deprecated: `reportNPAV()` will be removed in a future release. Use
 [`reportART()`](https://m-colley.github.io/colleyRstats/reference/reportART.md)
@@ -59,6 +59,6 @@ model <- data.frame(
 rownames(model) <- c("Video", "gesture:eHMI", "Residuals")
 reportNPAV(model, dv = "mental workload")
 #> Warning: reportNPAV() is deprecated and will be removed in a future release. Use reportART() with ARTool instead.
-#> The NPAV found a significant main effect of \Video on mental workload (\F{1}{10}{6.12}, \p{0.033}), $\eta_{p}^{2}$=0.38 [0.02, 1.00]. 
-#> The NPAV found a significant interaction effect of \gesture $\times$ \eHMI on mental workload (\F{1}{10}{5.01}, \p{0.045}), $\eta_{p}^{2}$=0.33 [0.00, 1.00]. 
+#> The NPAV found a significant main effect of \Video{} on mental workload (\F{1}{10}{6.12}, \p{0.033}, $\eta_{p}^{2}$ = 0.38, 95\% CI: [0.00, 0.68]). 
+#> The NPAV found a significant interaction effect of \gesture{} $\times$ \eHMI{} on mental workload (\F{1}{10}{5.01}, \p{0.045}, $\eta_{p}^{2}$ = 0.33, 95\% CI: [0.00, 0.66]). 
 ```

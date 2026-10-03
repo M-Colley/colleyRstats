@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,7 +37,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Add <code>PARETO_EMOA</code> Column to a Data Frame</h1>
-      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.1/R/utils.R" class="external-link"><code>R/utils.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/main/R/utils.R" class="external-link"><code>R/utils.R</code></a></small>
       <div class="d-none name"><code>add_pareto_emoa_column.Rd</code></div>
     </div>
 
@@ -76,7 +76,11 @@ longer need to pass negated copies of your own columns.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A data frame with the same columns as <code>data</code>, along with an additional column, <code>PARETO_EMOA</code>, which is <code>TRUE</code> for rows that are on the Pareto front and <code>FALSE</code> otherwise.</p>
+    <p>A data frame with the same columns as <code>data</code>, along with an additional column, <code>PARETO_EMOA</code>, which is <code>TRUE</code> for rows that are on the Pareto front and <code>FALSE</code> otherwise.
+Identical rows share one verdict (a copy of a non-dominated point is
+non-dominated too), as in <code><a href="add_pareto_moocore_column.html">add_pareto_moocore_column()</a></code>. Rows with a
+missing objective value get <code>NA</code>, with a warning, and the front is
+computed from the complete rows.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -98,7 +98,7 @@
 <li>
 <strong>Fit What Is Recommended</strong>: <code><a href="reference/fit_recommended.html">fit_recommended()</a></code> carries <code><a href="reference/recommend_test.html">recommend_test()</a></code> through to a fitted model, its post-hoc contrasts, and the manuscript sentence, so the test you justify and the model you ran cannot drift apart.</li>
 <li>
-<strong>Reproducible Study Projects</strong>: <code><a href="reference/use_study_project.html">use_study_project()</a></code> scaffolds the whole analysis as a <code>targets</code> pipeline with <code>renv</code> pinning, a Quarto report, and generated LaTeX the manuscript <code>\input{}</code>s.</li>
+<strong>Reproducible Study Projects</strong>: <code><a href="reference/use_study_project.html">use_study_project()</a></code> scaffolds the whole analysis as a <code>targets</code> pipeline (with optional <code>renv</code> pinning), a Quarto report, and generated LaTeX the manuscript <code>\input{}</code>s.</li>
 <li>
 <strong>Automated Assumption Checking</strong>: For ANOVA models, automatically verify normality and homogeneity of variance.</li>
 <li>
@@ -211,7 +211,7 @@
 <span><span class="fu"><a href="reference/score_questionnaire.html">score_questionnaire</a></span><span class="op">(</span><span class="va">tlx</span>, <span class="st">"nasa_tlx"</span>, scale <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">21</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   Mental_Demand Physical_Demand Temporal_Demand Performance Effort Frustration     RTLX</span></span>
 <span><span class="co">#&gt; 1            65               5              50          25     60          40 40.83333</span></span></code></pre></div>
-<p>Ten instruments ship: NASA-TLX (raw), SUS, UEQ and UEQ-S, TiA, AttrakDiff 2, IPQ, SSQ, FMS, MISC. <code><a href="reference/list_questionnaires.html">list_questionnaires()</a></code> lists them, <code><a href="reference/questionnaire_items.html">questionnaire_items()</a></code> shows one instrument’s items and scoring notes, and <code><a href="reference/define_questionnaire.html">define_questionnaire()</a></code> registers your own.</p>
+<p>Eleven instrument keys ship: NASA-TLX (raw), SUS, UEQ and UEQ-S, TiA, AttrakDiff 2 (in the order of the administered sheet, <code>attrakdiff_official</code>, or blocked by dimension, <code>attrakdiff</code>), IPQ, SSQ, FMS, MISC. With <code>prefix =</code>, columns are matched to items by name or by an unambiguous item number – never by sort order – and text answers in an item column are an error rather than a silent <code>NA</code>. <code><a href="reference/list_questionnaires.html">list_questionnaires()</a></code> lists them, <code><a href="reference/questionnaire_items.html">questionnaire_items()</a></code> shows one instrument’s items and scoring notes, and <code><a href="reference/define_questionnaire.html">define_questionnaire()</a></code> registers your own.</p>
 <p><strong>Verify the mapping before you trust the scores.</strong> Item numbers, order and polarity belong to the sheet your participants actually saw — survey tools renumber items, translations reorder them, short forms drop them. This package applies the <em>published</em> key, so a shifted or re-ordered export scores silently, plausibly, and wrongly. R says so too: a caution prints alongside the mapping the first time each instrument is scored in a session. Read it, and check:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/check_questionnaire.html">check_questionnaire</a></span><span class="op">(</span><span class="va">study</span>, <span class="st">"sus"</span>, prefix <span class="op">=</span> <span class="st">"sus_"</span><span class="op">)</span></span>
@@ -225,7 +225,7 @@
 <span><span class="co">#&gt;     3  sus3  sus_3    Usability   FALSE            2            3         0</span></span>
 <span><span class="co">#&gt;     4  sus4  sus_4 Learnability    TRUE            1            5         0</span></span>
 <span><span class="co">#&gt;   ...</span></span></code></pre></div>
-<p>Related: <code><a href="reference/score_reliability.html">score_reliability()</a></code> for Cronbach’s alpha and McDonald’s omega per subscale, computed on the reverse-coded items so a negative alpha means a real problem; <code><a href="reference/reverse_code.html">reverse_code()</a></code>; and <code><a href="reference/summarize_sickness.html">summarize_sickness()</a></code>, which reduces a repeated FMS or MISC rating to peak, mean, final value, area under the curve and time to threshold. See <code><a href="articles/scoring-questionnaires.html">vignette("scoring-questionnaires")</a></code>.</p>
+<p>Related: <code><a href="reference/score_reliability.html">score_reliability()</a></code> for Cronbach’s alpha and McDonald’s omega per subscale and for the whole scale (with the Spearman-Brown coefficient for two-item scales), computed on the reverse-coded items so a negative alpha means a real problem; <code><a href="reference/reverse_code.html">reverse_code()</a></code>; and <code><a href="reference/summarize_sickness.html">summarize_sickness()</a></code>, which reduces a repeated FMS or MISC rating to peak, mean, final value, area under the curve and time to threshold. See <code><a href="articles/scoring-questionnaires.html">vignette("scoring-questionnaires")</a></code>.</p>
 </div>
 <div class="section level3">
 <h3 id="fit_recommended">
@@ -235,22 +235,26 @@
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/fit_recommended.html">fit_recommended</a></span><span class="op">(</span><span class="va">data</span>, outcome <span class="op">=</span> <span class="st">"rating"</span>, predictors <span class="op">=</span> <span class="st">"condition"</span>, cluster <span class="op">=</span> <span class="st">"participant"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Coerced `rating` to an ordered factor with 4 levels (2 &lt; 3 &lt; 4 &lt; ...).</span></span>
-<span><span class="co">#&gt; Fitting: Cumulative Link Mixed Model (CLMM) via ordinal::clmm().</span></span>
+<span><span class="co">#&gt; Fitted: Cumulative Link Mixed Model (CLMM) -- ordinal::clmm(rating ~ condition + (1 | participant), data = your_data)</span></span>
 <span></span>
 <span><span class="va">fit</span><span class="op">$</span><span class="va">text</span></span>
-<span><span class="co">#&gt; A cumulative link mixed model was fitted for rating.</span></span>
-<span><span class="co">#&gt; The effect of \textit{conditionB} on rating was not significant</span></span>
-<span><span class="co">#&gt;   ($OR = 2.83$, 95\% CI $[0.92, 8.69]$, $z = 1.81$, \p{0.070}).</span></span>
-<span><span class="co">#&gt; The effect of \textit{conditionC} on rating was significant</span></span>
-<span><span class="co">#&gt;   ($OR = 21.38$, 95\% CI $[5.36, 85.29]$, $z = 4.34$, \pminor{0.001}).</span></span>
+<span><span class="co">#&gt; A cumulative link mixed model (logit link) was fitted for rating. Model terms</span></span>
+<span><span class="co">#&gt;   were tested with Type III Wald $\chi^2$ tests. Coefficients are reported as</span></span>
+<span><span class="co">#&gt;   odds ratios (OR) and are treatment contrasts against each factor's reference level.</span></span>
+<span><span class="co">#&gt; The main effect of \textit{condition} on rating was significant</span></span>
+<span><span class="co">#&gt;   ($\chi^2(2) = 24.39$, \pminor{0.001}).</span></span>
+<span><span class="co">#&gt; The contrast \textit{B} vs.\ \textit{A} of \textit{condition} on rating was significant</span></span>
+<span><span class="co">#&gt;   ($OR = 3.15$, 95\% CI $[1.01, 9.80]$, $z = 1.98$, \p{0.048}).</span></span>
+<span><span class="co">#&gt; The contrast \textit{C} vs.\ \textit{A} of \textit{condition} on rating was significant</span></span>
+<span><span class="co">#&gt;   ($OR = 50.00$, 95\% CI $[10.43, 239.76]$, $z = 4.89$, \pminor{0.001}).</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">contrasts</span><span class="op">)</span>   <span class="co"># Holm-adjusted pairwise comparisons</span></span>
-<span><span class="co">#&gt;  contrast estimate    SE  df z.ratio p.value</span></span>
-<span><span class="co">#&gt;  A - B       -1.04 0.573 Inf   -1.81  0.0697</span></span>
-<span><span class="co">#&gt;  A - C       -3.06 0.706 Inf   -4.34 &lt;0.0001</span></span>
-<span><span class="co">#&gt;  B - C       -2.02 0.640 Inf   -3.16  0.0032</span></span></code></pre></div>
-<p>It covers cumulative link models with and without random effects, linear and generalized linear mixed models, GLMs, ART, nparLD, multinomial regression, and the classical ANOVA / Welch / Kruskal-Wallis / Wilcoxon tests.</p>
-<p>One thing worth knowing: an outcome whose scores stay <strong>whole numbers</strong> is taken for a count and fitted with a Poisson model. That catches the six raw NASA-TLX subscales, a single MISC rating, and item-level ratings — but not SUS or RTLX, whose multipliers and means make them fractional and therefore continuous. Pass <code>outcome_type = "continuous"</code> (or <code>"ordinal"</code>) when the classification is wrong; <code><a href="reference/use_study_project.html">use_study_project()</a></code> writes those declarations for you.</p>
+<span><span class="va">fit</span><span class="op">$</span><span class="va">contrasts</span>   <span class="co"># Holm-adjusted pairwise comparisons, one family per factor</span></span>
+<span><span class="co">#&gt;        term contrast estimate SE    df statistic p.value adjust</span></span>
+<span><span class="co">#&gt; 1 condition    A - B   -1.15 0.580 Inf     -1.98  0.0480   holm</span></span>
+<span><span class="co">#&gt; 2 condition    A - C   -3.91 0.800 Inf     -4.89 &lt;0.0001   holm</span></span>
+<span><span class="co">#&gt; 3 condition    B - C   -2.77 0.700 Inf     -3.95  0.0002   holm</span></span></code></pre></div>
+<p>It covers cumulative link models with and without random effects, linear and generalized linear mixed models (with by-participant random slopes when trials repeat within a condition), negative-binomial models for over-dispersed counts, GLMs, ART, nparLD, clustered multinomial models, Type III and HC3-robust factorial ANOVA, and the classical ANOVA / Welch / Kruskal-Wallis / Wilcoxon tests. Every model term gets an omnibus test before the coefficients, and linear mixed models use Satterthwaite degrees of freedom.</p>
+<p>One thing worth knowing: an outcome whose scores stay <strong>whole numbers</strong> is taken for a count, and <code><a href="reference/fit_recommended.html">fit_recommended()</a></code> says so in a message. Raw NASA-TLX subscales on 0-100 in steps of 5 are recognised as bounded scores and treated as continuous, but a single MISC rating or item-level ratings are not. Pass <code>outcome_type = "continuous"</code> (or <code>"ordinal"</code>) when the classification is wrong; <code><a href="reference/use_study_project.html">use_study_project()</a></code> writes those declarations for you.</p>
 </div>
 <div class="section level3">
 <h3 id="use_study_project">
@@ -267,7 +271,7 @@ R/figures.R             figures at publication sizes
 report/report.qmd       a Quarto report of everything the pipeline produced
 paper/generated/        generated .tex snippets -- the manuscript \input{}s these
 data-raw/               the raw export, never edited by hand
-renv.lock               pinned package versions</code></pre>
+renv.lock               pinned package versions (with renv = TRUE)</code></pre>
 <p>It ships synthetic example data with a column per item of every instrument you name, so <code>targets::tar_make()</code> runs end to end before any real data exists. Re-running it on a live project adds missing pieces without touching your work.</p>
 </div>
 <div class="section level3">
@@ -284,8 +288,13 @@ renv.lock               pinned package versions</code></pre>
 <code>plot_within_stats_asterisk</code> and <code>plot_between_stats_asterisk</code>
 <a class="anchor" aria-label="anchor" href="#plot_within_stats_asterisk-and-plot_between_stats_asterisk"></a>
 </h3>
-<p>These functions include APA-compliant asterisks (e.g., *** for p &lt; 0.001) on your ggwithinstats or ggbetweenstats plots. They automatically adjust for the appropriate test based on the data’s normality.</p>
-<p>Note: Avoid using these functions if your data has more than two groups, as geom_signif does not support more than two groups.</p>
+<p>These functions include APA-compliant asterisks (e.g., *** for p &lt; 0.001) on your ggwithinstats or ggbetweenstats plots. They automatically adjust for the appropriate test based on the data’s normality, and with more than two groups draw one bracket per significant (Holm-adjusted) pairwise comparison.</p>
+<p>The within-subjects variants pair each participant with themselves, so they need the participant column:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/ggwithinstatsWithPriorNormalityCheckAsterisk.html">plot_within_stats_asterisk</a></span><span class="op">(</span><span class="va">main_df</span>, x <span class="op">=</span> <span class="st">"ConditionID"</span>, y <span class="op">=</span> <span class="st">"tlx_mental"</span>,</span>
+<span>                           ylab <span class="op">=</span> <span class="st">"Mental Demand"</span>, xlabels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span>, <span class="st">"C"</span><span class="op">)</span>,</span>
+<span>                           subject <span class="op">=</span> <span class="st">"Participant"</span><span class="op">)</span></span></code></pre></div>
+<p>The same <code>subject =</code> argument is required by <code><a href="reference/ggwithinstatsWithPriorNormalityCheck.html">plot_within_stats()</a></code> and by <code><a href="reference/analyze_and_report.html">analyze_and_report()</a></code> / <code><a href="reference/report_all.html">report_all()</a></code> with <code>design = "within"</code>. Without it, observations would be paired by their row order.</p>
 <div class="float">
 <img src="reference/figures/ggwithinstatsWithPriorNormalityCheckAsterisk.png" alt="plot_within_stats_asterisk Plot Example"><div class="figcaption">plot_within_stats_asterisk Plot Example</div>
 </div>
@@ -296,8 +305,8 @@ renv.lock               pinned package versions</code></pre>
 </h3>
 <p>Generates a plot that emphasizes either main effects or interaction effects, with clear formatting and options for publication-ready visuals. This function supports customizing group colors, axis labels, and plot size.</p>
 <p><strong>Example:</strong></p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/generateEffectPlot.html">plot_effect</a></span><span class="op">(</span>df <span class="op">=</span> <span class="va">main_df</span>, x <span class="op">=</span> <span class="st">"factor1"</span>, y <span class="op">=</span> <span class="st">"dependent_var"</span>, fillColourGroup <span class="op">=</span> <span class="st">"group"</span>, ytext <span class="op">=</span> <span class="st">"Y Label"</span>, xtext <span class="op">=</span> <span class="st">"X Label"</span>, legendPos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">0.2</span><span class="op">)</span>, shownEffect <span class="op">=</span> <span class="st">"interaction"</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/generateEffectPlot.html">plot_effect</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">main_df</span>, x <span class="op">=</span> <span class="st">"factor1"</span>, y <span class="op">=</span> <span class="st">"dependent_var"</span>, fillColourGroup <span class="op">=</span> <span class="st">"group"</span>, ytext <span class="op">=</span> <span class="st">"Y Label"</span>, xtext <span class="op">=</span> <span class="st">"X Label"</span>, legendPos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">0.2</span><span class="op">)</span>, shownEffect <span class="op">=</span> <span class="st">"interaction"</span><span class="op">)</span></span></code></pre></div>
 <div class="float">
 <img src="reference/figures/effect_plot.png" alt="Effect Plot Example"><div class="figcaption">Effect Plot Example</div>
 </div>
@@ -307,12 +316,12 @@ renv.lock               pinned package versions</code></pre>
 <code>reportNPAV</code><a class="anchor" aria-label="anchor" href="#reportnpav"></a>
 </h3>
 <p>Generates APA-compliant LaTeX output for within-subject designs analyzed using np.anova. The function handles both main and interaction effects. The necessary LaTeX commands are:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode latex"><code class="sourceCode latex"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">\newcommand</span>{<span class="ex">\F</span>}[3]{<span class="ss">$F({#1},{#2})={#3}$</span>}</span>
-<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="fu">\newcommand</span>{<span class="ex">\p</span>}{<span class="fu">\textit</span>{p=}}</span>
-<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="fu">\newcommand</span>{<span class="ex">\pminor</span>}{<span class="fu">\textit</span>{p<span class="ss">$&lt;$</span>}}</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode latex"><code class="sourceCode latex"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">\newcommand</span>{<span class="ex">\F</span>}[3]{<span class="ss">$F({#1},{#2})={#3}$</span>}</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="fu">\newcommand</span>{<span class="ex">\p</span>}{<span class="fu">\textit</span>{p=}}</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="fu">\newcommand</span>{<span class="ex">\pminor</span>}{<span class="fu">\textit</span>{p<span class="ss">$&lt;$</span>}}</span></code></pre></div>
 <p><strong>Deprecated:</strong> <code><a href="reference/reportNPAV.html">reportNPAV()</a></code> is deprecated and will be removed in a future release. Use <code><a href="reference/reportART.html">report_art()</a></code> with ARTool instead.</p>
 <p><strong>Example:</strong></p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu">np.anova</span><span class="op">(</span><span class="va">tlx_mental</span> <span class="op">~</span> <span class="va">factor1</span> <span class="op">*</span> <span class="va">factor2</span> <span class="op">+</span> <span class="fu">Error</span><span class="op">(</span><span class="va">Subject</span> <span class="op">/</span> <span class="va">factor1</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">main_df</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/reportNPAV.html">reportNPAV</a></span><span class="op">(</span><span class="va">model</span>, <span class="st">"Dependent Variable"</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -327,10 +336,10 @@ renv.lock               pinned package versions</code></pre>
 <code>report_mean_sd</code><a class="anchor" aria-label="anchor" href="#report_mean_sd"></a>
 </h3>
 <p>For each level of an independent variable, this function calculates the mean and standard deviation of a dependent variable and returns them in APA-compliant LaTeX format:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode latex"><code class="sourceCode latex"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">\newcommand</span>{<span class="ex">\m</span>}{<span class="fu">\textit</span>{M=}}</span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="fu">\newcommand</span>{<span class="ex">\sd</span>}{<span class="fu">\textit</span>{SD=}}</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode latex"><code class="sourceCode latex"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">\newcommand</span>{<span class="ex">\m</span>}{<span class="fu">\textit</span>{M=}}</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="fu">\newcommand</span>{<span class="ex">\sd</span>}{<span class="fu">\textit</span>{SD=}}</span></code></pre></div>
 <p><strong>Example:</strong></p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/reportMeanAndSD.html">report_mean_sd</a></span><span class="op">(</span><span class="va">main_df</span>, iv <span class="op">=</span> <span class="st">"factor1"</span>, dv <span class="op">=</span> <span class="st">"dependent_var"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -339,10 +348,10 @@ renv.lock               pinned package versions</code></pre>
 <a class="anchor" aria-label="anchor" href="#report_dunn_test-and-report_dunn_test_table"></a>
 </h3>
 <p>This function summarizes the results of FSA::dunnTest objects in text or table form. Both versions output LaTeX-ready results:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode latex"><code class="sourceCode latex"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">\newcommand</span>{<span class="ex">\padjminor</span>}{<span class="fu">\textit</span>{p<span class="ss">$_{adj}&lt;$</span>}}</span>
-<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="fu">\newcommand</span>{<span class="ex">\padj</span>}{<span class="fu">\textit</span>{p<span class="ss">$_{adj}$</span>=}}</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode latex"><code class="sourceCode latex"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">\newcommand</span>{<span class="ex">\padjminor</span>}{<span class="fu">\textit</span>{p<span class="ss">$_{adj}&lt;$</span>}}</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="fu">\newcommand</span>{<span class="ex">\padj</span>}{<span class="fu">\textit</span>{p<span class="ss">$_{adj}$</span>=}}</span></code></pre></div>
 <p><strong>Example:</strong></p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">d</span> <span class="op">&lt;-</span> <span class="fu">dunnTest</span><span class="op">(</span><span class="va">dependent_var</span> <span class="op">~</span> <span class="va">factor1</span>, data <span class="op">=</span> <span class="va">main_df</span>, method <span class="op">=</span> <span class="st">"holm"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/reportDunnTest.html">report_dunn_test</a></span><span class="op">(</span><span class="va">main_df</span>, <span class="va">d</span>, iv <span class="op">=</span> <span class="st">"factor1"</span>, dv <span class="op">=</span> <span class="st">"dependent_var"</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -351,11 +360,11 @@ renv.lock               pinned package versions</code></pre>
 <code>report_art</code><a class="anchor" aria-label="anchor" href="#report_art"></a>
 </h3>
 <p>Generates LaTeX-formatted results from art models for factorial designs. The necessary LaTeX commands are:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode latex"><code class="sourceCode latex"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="fu">\newcommand</span>{<span class="ex">\F</span>}[3]{<span class="ss">$F({#1},{#2})={#3}$</span>}</span>
-<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="fu">\newcommand</span>{<span class="ex">\p</span>}{<span class="fu">\textit</span>{p=}}</span>
-<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a><span class="fu">\newcommand</span>{<span class="ex">\pminor</span>}{<span class="fu">\textit</span>{p<span class="ss">$&lt;$</span>}}</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode latex"><code class="sourceCode latex"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="fu">\newcommand</span>{<span class="ex">\F</span>}[3]{<span class="ss">$F({#1},{#2})={#3}$</span>}</span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a><span class="fu">\newcommand</span>{<span class="ex">\p</span>}{<span class="fu">\textit</span>{p=}}</span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a><span class="fu">\newcommand</span>{<span class="ex">\pminor</span>}{<span class="fu">\textit</span>{p<span class="ss">$&lt;$</span>}}</span></code></pre></div>
 <p><strong>Example:</strong></p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu">art</span><span class="op">(</span>formula <span class="op">=</span> <span class="va">dependent_var</span> <span class="op">~</span> <span class="va">factor1</span> <span class="op">*</span> <span class="va">factor2</span> <span class="op">+</span> <span class="fu">Error</span><span class="op">(</span><span class="va">Subject</span> <span class="op">/</span> <span class="op">(</span><span class="va">factor1</span> <span class="op">*</span> <span class="va">factor2</span><span class="op">)</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">main_df</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/reportART.html">report_art</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/anova.html" class="external-link">anova</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span>, <span class="st">"Dependent Variable"</span><span class="op">)</span></span></code></pre></div>
 <p>Follow up significant effects with <code><a href="reference/reportArtCon.html">report_art_con()</a></code> / <code><a href="reference/reportArtConTable.html">report_art_con_table()</a></code>, which report the pairwise <code>art.con()</code> contrasts as sentences or a LaTeX table (including rank-biserial effect sizes).</p>
@@ -367,7 +376,7 @@ renv.lock               pinned package versions</code></pre>
 <p>This function adds a Pareto front classification column to a dataset, useful in multi-objective optimization scenarios. <code><a href="reference/add_pareto_moocore_column.html">add_pareto_moocore_column()</a></code> is the equivalent based on the <code>moocore</code> package (adds a <code>PARETO_MOOCORE</code> column).</p>
 <p>Attention: must be done per User - Condition etc group.</p>
 <p><strong>Example:</strong></p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># This would do it over **all** participants and **all** conditions</span></span>
 <span><span class="va">objectives</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"objective1"</span>, <span class="st">"objective2"</span>, <span class="st">"objective3"</span><span class="op">)</span></span>
 <span><span class="va">main_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/add_pareto_emoa_column.html">add_pareto_emoa_column</a></span><span class="op">(</span><span class="va">main_df</span>, <span class="va">objectives</span><span class="op">)</span></span>
@@ -386,7 +395,7 @@ renv.lock               pinned package versions</code></pre>
 </h3>
 <p>Creates a multi-objective optimization plot, visualizing sampling and optimization phases. This is particularly useful for visualizing iterations in optimization problems. <code>plot_mobo2</code> is appropriate when using <a href="https://github.com/Pascal-Jansen/Bayesian-Optimization-for-Unity/releases" class="external-link uri">https://github.com/Pascal-Jansen/Bayesian-Optimization-for-Unity/releases</a> starting version 1.1.0.</p>
 <p><strong>Example:</strong></p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/generateMoboPlot2.html">plot_mobo2</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">main_df</span>, x <span class="op">=</span> <span class="st">"Iteration"</span>, y <span class="op">=</span> <span class="st">"objective1"</span>, fillColourGroup <span class="op">=</span> <span class="st">"group"</span>, ytext <span class="op">=</span> <span class="st">"Y Axis Label"</span><span class="op">)</span></span></code></pre></div>
 <p>Example Plot: <img src="reference/figures/mobo.png" alt="MOBO Plot Example"></p>
 </div>
@@ -396,7 +405,7 @@ renv.lock               pinned package versions</code></pre>
 </h3>
 <p>Writes the same plot as a video, one frame per iteration, so a talk or a supplement can show the run building up instead of only its end state. The axes, phase guides and legend are taken from the complete data, so only the points, intervals and fitted line move. Requires the <code>av</code> package; the file extension picks the container (<code>.mp4</code>, <code>.gif</code>, …).</p>
 <p><strong>Example:</strong></p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/animate_mobo2.html">animate_mobo2</a></span><span class="op">(</span><span class="va">main_df</span>, x <span class="op">=</span> <span class="st">"Iteration"</span>, y <span class="op">=</span> <span class="st">"objective1"</span>, filename <span class="op">=</span> <span class="st">"mobo.mp4"</span>, ytext <span class="op">=</span> <span class="st">"Y Axis Label"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -405,7 +414,7 @@ renv.lock               pinned package versions</code></pre>
 </h3>
 <p>Calculates the Response Entropy Index (REI) and flags suspicious entries based on their REI percentile. This function is useful for identifying outliers in Likert scale data.</p>
 <p><strong>Example:</strong></p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/remove_outliers_REI.html">remove_outliers_REI</a></span><span class="op">(</span><span class="va">main_df</span>, header <span class="op">=</span> <span class="cn">TRUE</span>, variables <span class="op">=</span> <span class="st">"var1,var2,var3"</span>, range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">5</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -414,7 +423,7 @@ renv.lock               pinned package versions</code></pre>
 </h3>
 <p>Replaces specified values in a data frame with custom replacements. This can be used to clean or preprocess your data.</p>
 <p><strong>Example:</strong></p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">new_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/replace_values.html">replace_values</a></span><span class="op">(</span><span class="va">main_df</span>, to_replace <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"bad_val1"</span>, <span class="st">"bad_val2"</span><span class="op">)</span>, replace_with <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"good_val1"</span>, <span class="st">"good_val2"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
@@ -423,7 +432,7 @@ renv.lock               pinned package versions</code></pre>
 </h2>
 <p><code><a href="reference/reportNPAV.html">reportNPAV()</a></code> formats results from Lüpsen’s nonparametric ANOVA (<code>np.anova</code>) output. <strong>Deprecated:</strong> <code><a href="reference/reportNPAV.html">reportNPAV()</a></code> is deprecated and will be removed in a future release; use <code><a href="reference/reportART.html">report_art()</a></code> with ARTool instead. NPAV is not shipped with this package, and it is loaded manually by the user from Lüpsen’s site: <code>https://www.uni-koeln.de/~luepsen/R/</code>.</p>
 <p>This step requires internet access, so it is documented here (not in <code>@examples</code>, which should run offline during package checks).</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Download Lüpsen's NPAV bundle (anova.lib) and load it into a dedicated environment</span></span>
 <span><span class="va">npav_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>fileext <span class="op">=</span> <span class="st">".lib"</span><span class="op">)</span></span>
 <span><span class="fu">utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/utils/download.file.html" class="external-link">download.file</a></span><span class="op">(</span></span>
@@ -462,15 +471,15 @@ renv.lock               pinned package versions</code></pre>
 <div class="section level2">
 <h2 id="citations">Citations<a class="anchor" aria-label="anchor" href="#citations"></a>
 </h2>
-<div class="sourceCode" id="cb25"><pre class="sourceCode bibtex"><code class="sourceCode bibtex"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a><span class="va">@misc</span>{<span class="ot">colley2025rstats</span>,</span>
-<span id="cb25-2"><a href="#cb25-2" tabindex="-1"></a>  <span class="dt">author</span>       = {Mark Colley},</span>
-<span id="cb25-3"><a href="#cb25-3" tabindex="-1"></a>  <span class="dt">title</span>        = {colleyRstats: Functions to Streamline Statistical Analysis and Reporting},</span>
-<span id="cb25-4"><a href="#cb25-4" tabindex="-1"></a>  <span class="dt">year</span>         = {2025},</span>
-<span id="cb25-5"><a href="#cb25-5" tabindex="-1"></a>  <span class="dt">howpublished</span> = {<span class="ch">\url</span>{https://github.com/M-Colley/colleyRstats}},</span>
-<span id="cb25-6"><a href="#cb25-6" tabindex="-1"></a>  <span class="dt">note</span>         = {A collection of custom R functions for streamlining statistical analysis, visualizations, and APA-compliant reporting.},</span>
-<span id="cb25-7"><a href="#cb25-7" tabindex="-1"></a>  <span class="dt">doi</span>          = {10.5281/zenodo.18046754},</span>
-<span id="cb25-8"><a href="#cb25-8" tabindex="-1"></a>  <span class="dt">url</span>          = {https://doi.org/10.5281/zenodo.18046754},</span>
-<span id="cb25-9"><a href="#cb25-9" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode bibtex"><code class="sourceCode bibtex"><span id="cb26-1"><a href="#cb26-1" tabindex="-1"></a><span class="va">@misc</span>{<span class="ot">colley2025rstats</span>,</span>
+<span id="cb26-2"><a href="#cb26-2" tabindex="-1"></a>  <span class="dt">author</span>       = {Mark Colley},</span>
+<span id="cb26-3"><a href="#cb26-3" tabindex="-1"></a>  <span class="dt">title</span>        = {colleyRstats: Functions to Streamline Statistical Analysis and Reporting},</span>
+<span id="cb26-4"><a href="#cb26-4" tabindex="-1"></a>  <span class="dt">year</span>         = {2025},</span>
+<span id="cb26-5"><a href="#cb26-5" tabindex="-1"></a>  <span class="dt">howpublished</span> = {<span class="ch">\url</span>{https://github.com/M-Colley/colleyRstats}},</span>
+<span id="cb26-6"><a href="#cb26-6" tabindex="-1"></a>  <span class="dt">note</span>         = {A collection of custom R functions for streamlining statistical analysis, visualizations, and APA-compliant reporting.},</span>
+<span id="cb26-7"><a href="#cb26-7" tabindex="-1"></a>  <span class="dt">doi</span>          = {10.5281/zenodo.18046754},</span>
+<span id="cb26-8"><a href="#cb26-8" tabindex="-1"></a>  <span class="dt">url</span>          = {https://doi.org/10.5281/zenodo.18046754},</span>
+<span id="cb26-9"><a href="#cb26-9" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="contributing">Contributing<a class="anchor" aria-label="anchor" href="#contributing"></a>

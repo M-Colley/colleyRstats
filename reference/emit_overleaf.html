@@ -17,7 +17,7 @@ compiled PDF" pipeline.'></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,7 +47,7 @@ compiled PDF" pipeline.'></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Bundle an analysis into an Overleaf-ready folder</h1>
-      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.1/R/latex-output.R" class="external-link"><code>R/latex-output.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/main/R/latex-output.R" class="external-link"><code>R/latex-output.R</code></a></small>
       <div class="d-none name"><code>emit_overleaf.Rd</code></div>
     </div>
 
@@ -95,7 +95,11 @@ Default <code>TRUE</code>.</p></dd>
 
 <dt id="arg-methods">methods<a class="anchor" aria-label="anchor" href="#arg-methods"></a></dt>
 <dd><p>Methods to cite (passed to <code><a href="cite_methods.html">cite_methods()</a></code>) for
-<code>references.bib</code>; <code>NULL</code> to skip the bibliography.</p></dd>
+<code>references.bib</code>; <code>NULL</code> to skip the bibliography. Every entry is
+listed via <code>\nocite{*}</code>, since the generated text cites nothing and
+BibTeX writes an empty bibliography without a citation. When none of the
+methods can be cited (their packages are not installed), no
+<code>references.bib</code> is written, with a warning.</p></dd>
 
 
 <dt id="arg-title">title<a class="anchor" aria-label="anchor" href="#arg-title"></a></dt>
@@ -111,34 +115,55 @@ Default <code>TRUE</code>.</p></dd>
 
 
 <dt id="arg-columns">columns<a class="anchor" aria-label="anchor" href="#arg-columns"></a></dt>
-<dd><p>Figure width preset passed to <code><a href="save_paper_figure.html">save_paper_figure()</a></code>.</p></dd>
+<dd><p>Figure width preset passed to <code><a href="save_paper_figure.html">save_paper_figure()</a></code>. A
+single-column figure is included at its natural size, because
+<code><a href="save_paper_figure.html">save_paper_figure()</a></code> chose its type size for exactly that width (scaling
+it to the line width would enlarge the text with it); a full-width figure
+(<code>columns = 2</code>) goes into a <code>figure*</code> at <code>\textwidth</code>.</p></dd>
 
 
 <dt id="arg-overwrite">overwrite<a class="anchor" aria-label="anchor" href="#arg-overwrite"></a></dt>
-<dd><p>Overwrite existing files in <code>dir</code>? Default <code>FALSE</code>.</p></dd>
+<dd><p>Overwrite existing files in <code>dir</code>? Default
+<code>FALSE</code>: if any file the project consists of already exists, nothing
+is written.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>Invisibly, a list with the paths written (<code>dir</code>, <code>main</code>,
-<code>results</code>, <code>sections</code>, <code>figures</code>, <code>bib</code>, <code>sty</code>).</p>
+<code>results</code>, <code>sections</code>, <code>figures</code>, <code>bib</code>, <code>sty</code>,
+<code>names</code>); <code>bib</code>, <code>sty</code> and <code>names</code> are <code>NULL</code>
+when the file was not needed.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Section keys become file names with only letters, digits and hyphens kept
+(<code>"tlx_1"</code> is written to <code>sections/tlx-1.tex</code>); keys that would
+share a file name – including names differing only in case, which Windows
+and macOS treat as one file – get a numbered suffix, so no section can
+overwrite another. The keys themselves are escaped with <code><a href="latex_escape.html">latex_escape()</a></code>
+wherever they are typeset (headings, captions). Name macros in the text
+(<code>\Video</code>) get <code>\providecommand</code> stubs in <code>names.tex</code>, and a
+<code><a href="https://rdrr.io/r/base/Paren.html" class="external-link">{}</a></code> where a space follows them, because TeX would otherwise swallow
+that space ("<code>\cyl on</code>" typesets as "cylon").</p>
     </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu"><a href="report_all.html">report_all</a></span><span class="op">(</span><span class="va">mtcars</span>, dvs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mpg"</span>, <span class="st">"disp"</span><span class="op">)</span>, iv <span class="op">=</span> <span class="st">"cyl"</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Shapiro--Wilk tests indicated no significant deviation from normality in any group (all $p \geq 0.05$); therefore, parametric tests were used. Levene's test indicated unequal variances ($F(2, 29) = 5.51$, $p = 0.009$); Welch-corrected statistics were used where applicable.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> A One-way analysis of means (not assuming equal variances) found a significant effect of \cyl on mpg (\F{2}{18.03}{31.62}, \pminor{0.001}, $\omega^{2}$ = 0.74). </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> A Games-Howell post-hoc test (Holm-adjusted) found that 4 was significantly higher (\m{26.66}, \sd{4.51}) in terms of \mpg compared to 6 (\m{19.74}, \sd{1.45}; \padj{0.001}). </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> A Games-Howell post-hoc test (Holm-adjusted) found that 4 was significantly higher (\m{26.66}, \sd{4.51}) in terms of \mpg compared to 8 (\m{15.10}, \sd{2.56}; \padjminor{0.001}). </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> A Games-Howell post-hoc test (Holm-adjusted) found that 6 was significantly higher (\m{19.74}, \sd{1.45}) in terms of \mpg compared to 8 (\m{15.10}, \sd{2.56}; \padjminor{0.001}). </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Shapiro--Wilk tests indicated a significant deviation from normality for at least one group (minimum $W = 0.80$, $p = 0.043$); therefore, non-parametric tests were used. Levene's test indicated homogeneity of variances ($F(2, 29) = 3.29$, $p = 0.052$).</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> A Kruskal-Wallis rank sum test found a significant effect of \cyl on disp (\chisq(2)=26.68, \pminor{0.001}, $\epsilon_{ordinal}^{2}$ = 0.86). </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> A Dunn post-hoc test (Holm-adjusted) found that 8 was significantly higher (\m{353.10}, \sd{67.77}) in terms of \disp compared to 4 (\m{105.14}, \sd{26.87}; \padjminor{0.001}). </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> A Dunn post-hoc test (Holm-adjusted) found that 8 was significantly higher (\m{353.10}, \sd{67.77}) in terms of \disp compared to 6 (\m{183.31}, \sd{41.56}; \padj{0.028}). </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Shapiro--Wilk tests in each of the 3 groups of cyl (Holm-corrected for 3 tests) indicated no significant deviation from normality (smallest $p$: $W = 0.91$, $p_{\mathrm{Holm}} = 0.782$ for group 4); therefore, parametric tests were used. Brown-Forsythe test (median-centred Levene's test) indicated unequal variances ($F(2, 29) = 5.51$, $p = 0.009$); Welch-corrected statistics were used where applicable.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> A One-way analysis of means (not assuming equal variances) found a significant effect of \cyl{} on mpg (\F{2}{18.03}{31.62}, \pminor{0.001}, $\omega^{2}$ = 0.74). </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> A Games-Howell post-hoc test (Holm-adjusted) found that 4 was significantly higher (\m{26.66}, \sd{4.51}) in terms of mpg compared to 6 (\m{19.74}, \sd{1.45}; \padj{0.001}). </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> A Games-Howell post-hoc test (Holm-adjusted) found that 4 was significantly higher (\m{26.66}, \sd{4.51}) in terms of mpg compared to 8 (\m{15.10}, \sd{2.56}; \padjminor{0.001}). </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> A Games-Howell post-hoc test (Holm-adjusted) found that 6 was significantly higher (\m{19.74}, \sd{1.45}) in terms of mpg compared to 8 (\m{15.10}, \sd{2.56}; \padjminor{0.001}). </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Shapiro--Wilk tests in each of the 3 groups of cyl (Holm-corrected for 3 tests) indicated no significant deviation from normality (smallest $p$: $W = 0.80$, $p_{\mathrm{Holm}} = 0.129$ for group 6); therefore, parametric tests were used. Brown-Forsythe test (median-centred Levene's test) did not indicate unequal variances ($F(2, 29) = 3.29$, $p = 0.052$).</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> A One-way analysis of means (not assuming equal variances) found a significant effect of \cyl{} on disp (\F{2}{14.89}{76.89}, \pminor{0.001}, $\omega^{2}$ = 0.89). </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> A Games-Howell post-hoc test (Holm-adjusted) found that 6 was significantly higher (\m{183.31}, \sd{41.56}) in terms of disp compared to 4 (\m{105.14}, \sd{26.87}; \padj{0.004}). </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> A Games-Howell post-hoc test (Holm-adjusted) found that 8 was significantly higher (\m{353.10}, \sd{67.77}) in terms of disp compared to 4 (\m{105.14}, \sd{26.87}; \padjminor{0.001}). </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> A Games-Howell post-hoc test (Holm-adjusted) found that 8 was significantly higher (\m{353.10}, \sd{67.77}) in terms of disp compared to 6 (\m{183.31}, \sd{41.56}; \padjminor{0.001}). </span>
 <span class="r-in"><span><span class="fu">emit_overleaf</span><span class="op">(</span><span class="va">out</span>, dir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"paper"</span><span class="op">)</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Wrote an Overleaf-ready project to '/tmp/Rtmp2Ft8yp/paper' (2 sections; \usepackage{colleyRstats}).</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Wrote an Overleaf-ready project to '/tmp/Rtmpb2vD81/paper' (2 sections; \usepackage{colleyRstats}).</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

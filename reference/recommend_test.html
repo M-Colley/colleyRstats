@@ -4,28 +4,48 @@ given outcome and set of predictors, and – crucially – why. The decision
 follows a transparent three-question tree:
 What is the outcome's measurement scale?
 (via classify_outcome(): continuous, ordinal, binary, count, nominal.)
-This fixes the model family.
+This fixes the model family. A count is checked for over-dispersion
+(performance::check_overdispersion(), Pearson
+\(\chi^2\)/df); an over-dispersed count is modelled as negative
+binomial (glmmTMB::glmmTMB(family = nbinom2) when clustered,
+MASS::glm.nb() otherwise).
 Are the observations independent or clustered?
-A repeated-measures / clustered design (a cluster id is supplied,
-or design = &quot;within&quot;) needs random effects, i.e. a mixed model.
+A cluster column in which some cluster contributes several rows
+makes the design clustered, whatever design says: the cluster then
+needs a random effect, i.e. a mixed model. For a categorical predictor
+that varies within clusters and whose levels are replicated within a
+cluster, by-cluster random slopes are added (Barr et al., 2013);
+fit_recommended() simplifies the structure when the fit is singular.
 For a continuous outcome, do the parametric assumptions
-hold? Group-wise normality (Shapiro–Wilk) and, for between-subjects
-designs, homogeneity of variance (Levene) decide between a parametric
-test and a non-parametric / rank-based alternative.
+hold? A Shapiro–Wilk test on the residuals of the model that would be
+fitted (all predictors, their interactions and the random effects) and,
+for between-subjects designs, a Brown–Forsythe test (Levene's test
+centred on the median) across all design cells decide between a
+parametric model and a rank-based alternative.
 
 "><meta property="og:description" content="Works out, from the data alone, which statistical model is appropriate for a
 given outcome and set of predictors, and – crucially – why. The decision
 follows a transparent three-question tree:
 What is the outcome's measurement scale?
 (via classify_outcome(): continuous, ordinal, binary, count, nominal.)
-This fixes the model family.
+This fixes the model family. A count is checked for over-dispersion
+(performance::check_overdispersion(), Pearson
+\(\chi^2\)/df); an over-dispersed count is modelled as negative
+binomial (glmmTMB::glmmTMB(family = nbinom2) when clustered,
+MASS::glm.nb() otherwise).
 Are the observations independent or clustered?
-A repeated-measures / clustered design (a cluster id is supplied,
-or design = &quot;within&quot;) needs random effects, i.e. a mixed model.
+A cluster column in which some cluster contributes several rows
+makes the design clustered, whatever design says: the cluster then
+needs a random effect, i.e. a mixed model. For a categorical predictor
+that varies within clusters and whose levels are replicated within a
+cluster, by-cluster random slopes are added (Barr et al., 2013);
+fit_recommended() simplifies the structure when the fit is singular.
 For a continuous outcome, do the parametric assumptions
-hold? Group-wise normality (Shapiro–Wilk) and, for between-subjects
-designs, homogeneity of variance (Levene) decide between a parametric
-test and a non-parametric / rank-based alternative.
+hold? A Shapiro–Wilk test on the residuals of the model that would be
+fitted (all predictors, their interactions and the random effects) and,
+for between-subjects designs, a Brown–Forsythe test (Levene's test
+centred on the median) across all design cells decide between a
+parametric model and a rank-based alternative.
 
 "></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -35,7 +55,7 @@ test and a non-parametric / rank-based alternative.
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -65,7 +85,7 @@ test and a non-parametric / rank-based alternative.
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Recommend a principled analysis for one outcome</h1>
-      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.1/R/mixed-models.R" class="external-link"><code>R/mixed-models.R</code></a>, <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.1/R/zzz-aliases.R" class="external-link"><code>R/zzz-aliases.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/main/R/mixed-models.R" class="external-link"><code>R/mixed-models.R</code></a>, <a href="https://github.com/M-Colley/colleyRstats/blob/main/R/zzz-aliases.R" class="external-link"><code>R/zzz-aliases.R</code></a></small>
       <div class="d-none name"><code>recommend_test.Rd</code></div>
     </div>
 
@@ -74,14 +94,24 @@ test and a non-parametric / rank-based alternative.
 given outcome and set of predictors, and – crucially – <em>why</em>. The decision
 follows a transparent three-question tree:</p><ol><li><p><strong>What is the outcome's measurement scale?</strong>
 (via <code><a href="classify_outcome.html">classify_outcome()</a></code>: continuous, ordinal, binary, count, nominal.)
-This fixes the model family.</p></li>
+This fixes the model family. A count is checked for over-dispersion
+(<code><a href="https://easystats.github.io/performance/reference/check_overdispersion.html" class="external-link">performance::check_overdispersion()</a></code>, Pearson
+\(\chi^2\)/df); an over-dispersed count is modelled as negative
+binomial (<code>glmmTMB::glmmTMB(family = nbinom2)</code> when clustered,
+<code><a href="https://rdrr.io/pkg/MASS/man/glm.nb.html" class="external-link">MASS::glm.nb()</a></code> otherwise).</p></li>
 <li><p><strong>Are the observations independent or clustered?</strong>
-A repeated-measures / clustered design (a <code>cluster</code> id is supplied,
-or <code>design = "within"</code>) needs random effects, i.e. a <em>mixed</em> model.</p></li>
+A <code>cluster</code> column in which some cluster contributes several rows
+makes the design clustered, whatever <code>design</code> says: the cluster then
+needs a random effect, i.e. a <em>mixed</em> model. For a categorical predictor
+that varies within clusters and whose levels are replicated within a
+cluster, by-cluster random slopes are added (Barr et al., 2013);
+<code><a href="fit_recommended.html">fit_recommended()</a></code> simplifies the structure when the fit is singular.</p></li>
 <li><p><strong>For a continuous outcome, do the parametric assumptions
-hold?</strong> Group-wise normality (Shapiro–Wilk) and, for between-subjects
-designs, homogeneity of variance (Levene) decide between a parametric
-test and a non-parametric / rank-based alternative.</p></li>
+hold?</strong> A Shapiro–Wilk test on the residuals of the model that would be
+fitted (all predictors, their interactions and the random effects) and,
+for between-subjects designs, a Brown–Forsythe test (Levene's test
+centred on the median) across all design cells decide between a
+parametric model and a rank-based alternative.</p></li>
 </ol></div>
 
     <div class="section level2">
@@ -93,7 +123,8 @@ test and a non-parametric / rank-based alternative.</p></li>
 <span>  cluster <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  design <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"between"</span>, <span class="st">"within"</span><span class="op">)</span>,</span>
 <span>  outcome_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"continuous"</span>, <span class="st">"ordinal"</span>, <span class="st">"binary"</span>, <span class="st">"count"</span>, <span class="st">"nominal"</span><span class="op">)</span>,</span>
-<span>  ordinal_max_levels <span class="op">=</span> <span class="fl">7L</span></span>
+<span>  ordinal_max_levels <span class="op">=</span> <span class="fl">7L</span>,</span>
+<span>  factors <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">recommend_analysis</span><span class="op">(</span></span>
@@ -103,7 +134,8 @@ test and a non-parametric / rank-based alternative.</p></li>
 <span>  cluster <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  design <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"between"</span>, <span class="st">"within"</span><span class="op">)</span>,</span>
 <span>  outcome_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"continuous"</span>, <span class="st">"ordinal"</span>, <span class="st">"binary"</span>, <span class="st">"count"</span>, <span class="st">"nominal"</span><span class="op">)</span>,</span>
-<span>  ordinal_max_levels <span class="op">=</span> <span class="fl">7L</span></span>
+<span>  ordinal_max_levels <span class="op">=</span> <span class="fl">7L</span>,</span>
+<span>  factors <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -131,8 +163,10 @@ grouping factor).</p></dd>
 
 
 <dt id="arg-design">design<a class="anchor" aria-label="anchor" href="#arg-design"></a></dt>
-<dd><p>One of <code>"auto"</code> (default; clustered when <code>cluster</code> is
-given), <code>"between"</code>, or <code>"within"</code>.</p></dd>
+<dd><p>One of <code>"auto"</code> (default; clustered when some
+<code>cluster</code> has several rows), <code>"between"</code>, or <code>"within"</code>.
+Repeated rows per cluster are modelled with a random effect even with
+<code>"between"</code> – ignoring them would be pseudo-replication.</p></dd>
 
 
 <dt id="arg-outcome-type">outcome_type<a class="anchor" aria-label="anchor" href="#arg-outcome-type"></a></dt>
@@ -144,25 +178,50 @@ or an explicit <code>"continuous"</code>, <code>"ordinal"</code>, <code>"binary"
 <dt id="arg-ordinal-max-levels">ordinal_max_levels<a class="anchor" aria-label="anchor" href="#arg-ordinal-max-levels"></a></dt>
 <dd><p>Passed to <code><a href="classify_outcome.html">classify_outcome()</a></code>. Default 7.</p></dd>
 
+
+<dt id="arg-factors">factors<a class="anchor" aria-label="anchor" href="#arg-factors"></a></dt>
+<dd><p>Optional character vector naming the numeric predictors that
+are categorical (condition codes). <code>NULL</code> (default) decides from the
+data: a numeric predictor is categorical only when it looks like codes –
+at most 10 consecutive whole numbers starting at 0 or 1, each observed at
+least twice (and for at least two clusters). Factor, character and logical
+predictors are always categorical; <code>factors = character(0)</code> keeps
+every numeric predictor numeric.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>An object of class <code>"colley_recommendation"</code> (a list) with
-components including <code>outcome_type</code>, <code>clustered</code>, <code>family</code>,
-<code>recommendation</code> (human-readable label), <code>model_function</code> (the
-R function to call, e.g. <code>"ordinal::clmm"</code>), <code>reporter</code> (the
-matching colleyRstats reporter), <code>fit_call</code> (a ready-to-edit call as a
-string), <code>alternatives</code>, <code>rationale</code>, and <code>methods_text</code> (an
-APA-style sentence). A <code>print</code> method summarises it.</p>
+components including <code>outcome_type</code>, <code>clustered</code>, <code>design</code>
+(<code>"between"</code>, <code>"within"</code>, <code>"mixed"</code>, or
+<code>"between (clustered)"</code> for between-cluster predictors with repeated
+rows per cluster), <code>n_obs</code> (complete rows),
+<code>categorical</code> (which predictors are categorical), <code>within</code>
+(which categorical predictors vary within clusters), <code>random</code> (the
+random-effect structure), <code>family</code>, <code>assumptions</code> (normality and
+homogeneity results with their test statistics), <code>dispersion</code> (for
+counts), <code>recommendation</code> (human-readable label),
+<code>model_function</code> (the R function to call, e.g.
+<code>"ordinal::clmm"</code>), <code>reporter</code> (the matching colleyRstats
+reporter), <code>fit_call</code> (a ready-to-edit call as a string),
+<code>alternatives</code>, <code>rationale</code>, <code>methods_text</code> (an APA-style
+sentence) and <code>methods_tex</code> (the same, escaped for LaTeX). A
+<code>print</code> method summarises it.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The recommendation therefore ranges over ordinary ANOVA / t-tests, rank-based
-methods (Kruskal–Wallis + Dunn, Wilcoxon, the Aligned Rank Transform, nparLD),
-generalized linear models, cumulative link models, and their mixed-model
-counterparts – linear mixed models (LMM), generalized linear mixed models
-(GLMM, <code>lme4</code>/<code>glmmTMB</code>) and cumulative link mixed models (CLMM,
-<code>ordinal</code>).</p>
+    <p>The recommendation ranges over ordinary ANOVA (Type III sums of squares for
+factorial designs, via <span class="pkg">afex</span>), heteroscedasticity-robust (HC3) ANOVA,
+Welch tests, rank-based methods (Kruskal–Wallis + Dunn, Wilcoxon, the
+Aligned Rank Transform, nparLD), generalized linear models, cumulative link
+models, multinomial models, and their mixed-model counterparts – linear
+mixed models (LMM), generalized linear mixed models (GLMM,
+<code>lme4</code>/<code>glmmTMB</code>), cumulative link mixed models (CLMM,
+<code>ordinal</code>) and multinomial mixed models (<code><a href="https://melff.github.io/mclogit/reference/mblogit.html" class="external-link">mclogit::mblogit</a></code>).
+Only models that can actually be fitted to the design are recommended:
+continuous covariates take the (mixed) regression route, because ART and
+nparLD accept only categorical predictors; ART is used only for all-factor
+full-factorial models; nparLD only for a single within-subject factor.</p>
     </div>
     <div class="section level2">
     <h2 id="naming">Naming<a class="anchor" aria-label="anchor" href="#naming"></a></h2>
@@ -170,6 +229,12 @@ counterparts – linear mixed models (LMM), generalized linear mixed models
 
 <p><code>recommend_test()</code> is the canonical name. <code>recommend_analysis()</code> is an alias
 for the same function object, kept for backward compatibility.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
+    <p>Barr, D. J., Levy, R., Scheepers, C., &amp; Tily, H. J. (2013).
+Random effects structure for confirmatory hypothesis testing: Keep it
+maximal. <em>Journal of Memory and Language, 68</em>(3), 255–278.</p>
     </div>
 
     <div class="section level2">
@@ -185,28 +250,28 @@ for the same function object, kept for backward compatibility.</p>
 <span class="r-in"><span><span class="fu">recommend_test</span><span class="op">(</span><span class="va">d</span>, outcome <span class="op">=</span> <span class="st">"rating"</span>, predictors <span class="op">=</span> <span class="st">"cond"</span>, cluster <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;colleyRstats analysis recommendation&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Outcome        : rating (ordinal)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Predictors     : cond</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Predictors     : cond (categorical, within)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Design         : within (cluster: id)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Random effects : (1 | id)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Recommendation : Cumulative Link Mixed Model (CLMM)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Family         : cumulative link (logit)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Fit with       : ordinal::clmm(rating ~ cond + (1 | id), data = your_data)  # outcome must be an ordered factor</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Report with    : reportCLMM()</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Alternative(s) : nparLD (rank-based repeated measures) if proportional odds is untenable</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Rationale      : the outcome is ordinal and the observations are clustered, so an ordinal (proportional-odds) model with a random effect is appropriate</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Rationale      : the outcome is ordinal and the observations are clustered, so an ordinal (proportional-odds) model with random effects is appropriate</span>
 <span class="r-in"><span><span class="co"># Continuous, between-subjects -&gt; ANOVA or its rank-based fallback</span></span></span>
 <span class="r-in"><span><span class="fu">recommend_test</span><span class="op">(</span><span class="va">d</span>, outcome <span class="op">=</span> <span class="st">"score"</span>, predictors <span class="op">=</span> <span class="st">"cond"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;colleyRstats analysis recommendation&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Outcome        : score (continuous)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Predictors     : cond</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Predictors     : cond (categorical)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Design         : between</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Normality      : not rejected</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Homogeneity    : not rejected</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Normality      : not rejected (residuals)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Homogeneity    : not rejected (Brown-Forsythe, all cells)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Recommendation : One-way ANOVA (parametric)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Family         : gaussian</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Fit with       : ggbetweenstatsWithPriorNormalityCheck(data = your_data, x = "cond", y = "score")</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Report with    : reportggstatsplot()</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Alternative(s) : none needed</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Rationale      : the outcome is continuous and normally distributed with homogeneous variances, so a parametric ANOVA is appropriate</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Fit with       : stats::aov(score ~ cond, data = your_data)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Alternative(s) : ggbetweenstatsWithPriorNormalityCheck() for the figure with the omnibus test</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Rationale      : the outcome is continuous, its residuals are approximately normal and the variances are homogeneous across the design cells, so a parametric ANOVA is appropriate</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -17,7 +17,7 @@ significant post-hoc comparisons via reportggstatsplotPostHoc()."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,7 +47,7 @@ significant post-hoc comparisons via reportggstatsplotPostHoc()."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Analyze one dependent variable and produce everything a paper needs</h1>
-      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.1/R/pipeline.R" class="external-link"><code>R/pipeline.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/main/R/pipeline.R" class="external-link"><code>R/pipeline.R</code></a></small>
       <div class="d-none name"><code>analyze_and_report.Rd</code></div>
     </div>
 
@@ -70,7 +70,8 @@ significant post-hoc comparisons via <code><a href="reportggstatsplotPostHoc.htm
 <span>  ylab <span class="op">=</span> <span class="va">dv</span>,</span>
 <span>  xlabels <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  plotType <span class="op">=</span> <span class="st">"boxviolin"</span>,</span>
-<span>  sink_to <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  sink_to <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  subject <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -79,7 +80,8 @@ significant post-hoc comparisons via <code><a href="reportggstatsplotPostHoc.htm
 
 
 <dl><dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
-<dd><p>the data frame</p></dd>
+<dd><p>the data frame (long format for <code>design = "within"</code>: one
+row per participant and condition)</p></dd>
 
 
 <dt id="arg-dv">dv<a class="anchor" aria-label="anchor" href="#arg-dv"></a></dt>
@@ -87,8 +89,8 @@ significant post-hoc comparisons via <code><a href="reportggstatsplotPostHoc.htm
 
 
 <dt id="arg-iv">iv<a class="anchor" aria-label="anchor" href="#arg-iv"></a></dt>
-<dd><p>the independent variable (column name as string); coerced to a
-factor if it is not one already</p></dd>
+<dd><p>the independent variable (column name as string); treated as a
+factor, so numeric condition codes are categories</p></dd>
 
 
 <dt id="arg-design">design<a class="anchor" aria-label="anchor" href="#arg-design"></a></dt>
@@ -113,6 +115,15 @@ factor if it is not one already</p></dd>
 omnibus result, and post-hoc sentences are written there so a manuscript
 can <code>\input{}</code> them</p></dd>
 
+
+<dt id="arg-subject">subject<a class="anchor" aria-label="anchor" href="#arg-subject"></a></dt>
+<dd><p>the participant-ID column (a string). Required for
+<code>design = "within"</code>, where it pairs the observations; without it they
+would be paired by row order. For <code>design = "between"</code> it is
+optional and only used to check that no participant contributes more than
+one row, which a between-subjects test would wrongly treat as independent
+observations.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -121,18 +132,42 @@ can <code>\input{}</code> them</p></dd>
 <code>posthoc</code> (post-hoc sentences, or <code>NULL</code> for two groups), and
 <code>sentences</code> (all text combined, in manuscript order).</p>
     </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Every part of the output is computed from one data set: the rows with both
+<code>dv</code> and <code>iv</code> observed and, for <code>design = "within"</code>, only
+the participants measured in every condition (the others are dropped with a
+message naming them; more than one row per participant and condition is an
+error). The methods sentence, the test, the figure and the means quoted in
+the post-hoc sentences therefore all describe the same participants.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">analyze_and_report</span><span class="op">(</span><span class="va">mtcars</span>, dv <span class="op">=</span> <span class="st">"mpg"</span>, iv <span class="op">=</span> <span class="st">"cyl"</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Shapiro--Wilk tests indicated no significant deviation from normality in any group (all $p \geq 0.05$); therefore, parametric tests were used. Levene's test indicated unequal variances ($F(2, 29) = 5.51$, $p = 0.009$); Welch-corrected statistics were used where applicable.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> A One-way analysis of means (not assuming equal variances) found a significant effect of \cyl on mpg (\F{2}{18.03}{31.62}, \pminor{0.001}, $\omega^{2}$ = 0.74). </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> A Games-Howell post-hoc test (Holm-adjusted) found that 4 was significantly higher (\m{26.66}, \sd{4.51}) in terms of \mpg compared to 6 (\m{19.74}, \sd{1.45}; \padj{0.001}). </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> A Games-Howell post-hoc test (Holm-adjusted) found that 4 was significantly higher (\m{26.66}, \sd{4.51}) in terms of \mpg compared to 8 (\m{15.10}, \sd{2.56}; \padjminor{0.001}). </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> A Games-Howell post-hoc test (Holm-adjusted) found that 6 was significantly higher (\m{19.74}, \sd{1.45}) in terms of \mpg compared to 8 (\m{15.10}, \sd{2.56}; \padjminor{0.001}). </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Shapiro--Wilk tests in each of the 3 groups of cyl (Holm-corrected for 3 tests) indicated no significant deviation from normality (smallest $p$: $W = 0.91$, $p_{\mathrm{Holm}} = 0.782$ for group 4); therefore, parametric tests were used. Brown-Forsythe test (median-centred Levene's test) indicated unequal variances ($F(2, 29) = 5.51$, $p = 0.009$); Welch-corrected statistics were used where applicable.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> A One-way analysis of means (not assuming equal variances) found a significant effect of \cyl{} on mpg (\F{2}{18.03}{31.62}, \pminor{0.001}, $\omega^{2}$ = 0.74). </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> A Games-Howell post-hoc test (Holm-adjusted) found that 4 was significantly higher (\m{26.66}, \sd{4.51}) in terms of mpg compared to 6 (\m{19.74}, \sd{1.45}; \padj{0.001}). </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> A Games-Howell post-hoc test (Holm-adjusted) found that 4 was significantly higher (\m{26.66}, \sd{4.51}) in terms of mpg compared to 8 (\m{15.10}, \sd{2.56}; \padjminor{0.001}). </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> A Games-Howell post-hoc test (Holm-adjusted) found that 6 was significantly higher (\m{19.74}, \sd{1.45}) in terms of mpg compared to 8 (\m{15.10}, \sd{2.56}; \padjminor{0.001}). </span>
 <span class="r-in"><span><span class="va">result</span><span class="op">$</span><span class="va">plot</span></span></span>
 <span class="r-plt img"><img src="analyze_and_report-1.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Repeated measures: name the participant column</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">rm_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  participant <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">15</span>, times <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  condition   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span>, <span class="st">"C"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">15</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">rm_df</span><span class="op">$</span><span class="va">score</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">45</span>, mean <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>A <span class="op">=</span> <span class="fl">5</span>, B <span class="op">=</span> <span class="fl">6</span>, C <span class="op">=</span> <span class="fl">7</span><span class="op">)</span><span class="op">[</span><span class="va">rm_df</span><span class="op">$</span><span class="va">condition</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">analyze_and_report</span><span class="op">(</span><span class="va">rm_df</span>, dv <span class="op">=</span> <span class="st">"score"</span>, iv <span class="op">=</span> <span class="st">"condition"</span>,</span></span>
+<span class="r-in"><span>                   design <span class="op">=</span> <span class="st">"within"</span>, subject <span class="op">=</span> <span class="st">"participant"</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> A Shapiro--Wilk test on the residuals of the additive model with participant and condition as factors ($n = 45$) indicated no significant deviation from normality ($W = 0.98$, $p = 0.481$); therefore, parametric tests were used.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> An ANOVA estimation for factorial designs using 'afex' found a significant effect of \condition{} on score (\F{1.94}{27.18}{15.80}, \pminor{0.001}, $\omega_{p}^{2}$ = 0.45). </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> A Student's t post-hoc test (Holm-adjusted) found that B was significantly higher (\m{6.06}, \sd{0.86}) in terms of score compared to A (\m{5.10}, \sd{1.02}; \padj{0.021}). </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> A Student's t post-hoc test (Holm-adjusted) found that C was significantly higher (\m{7.09}, \sd{0.72}) in terms of score compared to A (\m{5.10}, \sd{1.02}; \padjminor{0.001}). </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> A Student's t post-hoc test (Holm-adjusted) found that C was significantly higher (\m{7.09}, \sd{0.72}) in terms of score compared to B (\m{6.06}, \sd{0.86}; \padj{0.021}). </span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

@@ -17,7 +17,7 @@ the same way."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,7 +47,7 @@ the same way."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Register your own questionnaire</h1>
-      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.1/R/questionnaires.R" class="external-link"><code>R/questionnaires.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/main/R/questionnaires.R" class="external-link"><code>R/questionnaires.R</code></a></small>
       <div class="d-none name"><code>define_questionnaire.Rd</code></div>
     </div>
 
@@ -75,7 +75,8 @@ the same way.</p>
 <span>  total_name <span class="op">=</span> <span class="st">"Total"</span>,</span>
 <span>  reference <span class="op">=</span> <span class="cn">NA_character_</span>,</span>
 <span>  higher <span class="op">=</span> <span class="cn">NA_character_</span>,</span>
-<span>  notes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  notes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  integer_responses <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -113,7 +114,8 @@ that item loads on. Use a comma-separated string
 
 
 <dt id="arg-reverse">reverse<a class="anchor" aria-label="anchor" href="#arg-reverse"></a></dt>
-<dd><p>Optional item numbers that are reverse-scored.</p></dd>
+<dd><p>Optional items that are reverse-scored, as item numbers
+(<code>c(2, 4)</code>) or item codes (<code>c("item2", "item4")</code>).</p></dd>
 
 
 <dt id="arg-recode">recode<a class="anchor" aria-label="anchor" href="#arg-recode"></a></dt>
@@ -145,6 +147,14 @@ choice for a multidimensional instrument whose authors define no total.</p></dd>
 <dt id="arg-notes">notes<a class="anchor" aria-label="anchor" href="#arg-notes"></a></dt>
 <dd><p>Optional character vector of scoring notes.</p></dd>
 
+
+<dt id="arg-integer-responses">integer_responses<a class="anchor" aria-label="anchor" href="#arg-integer-responses"></a></dt>
+<dd><p>Logical. <code>TRUE</code> (default) for an instrument
+answered in whole scale points (Likert items, semantic differentials):
+fractional responses then draw a warning, and a coding that looks shifted
+against <code>scale</code> is checked for. Set <code>FALSE</code> for a visual-analogue
+scale or slider.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -171,7 +181,12 @@ scored in a session (silence it with
 <code>options(colleyRstats.quiet_questionnaires = TRUE)</code>).</p>
 <p>A named <code>items</code> argument (<code>items = c(mental = "tlx_md", ...)</code>) removes the
 positional assumption altogether and is the safer choice for an export you
-did not lay out yourself.</p>
+did not lay out yourself. A <code>prefix</code> maps columns by what their names say
+– an item code or label, or one item number per column running 1 to the
+number of items – never by sort order, and stops when the names do not
+identify the items. Note that the <code>attrakdiff</code> key is blocked by dimension
+with the negative pole first; data stored as answered on the official
+AttrakDiff sheet belong to <code>attrakdiff_official</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

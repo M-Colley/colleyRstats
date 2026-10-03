@@ -1,8 +1,16 @@
 # Check the data's distribution. If non-normal, take the non-parametric variant of *ggbetweenstats*. x and y have to be in parentheses, e.g., "ConditionID".
 
-Check the data's distribution. If non-normal, take the non-parametric
-variant of *ggbetweenstats*. x and y have to be in parentheses, e.g.,
-"ConditionID".
+As
+[`ggbetweenstatsWithPriorNormalityCheck()`](https://m-colley.github.io/colleyRstats/reference/ggbetweenstatsWithPriorNormalityCheck.md),
+but the significant comparisons are drawn as asterisk brackets (\*\*\* p
+\< .001, \*\* p \< .01,
+
+- p \< .05) instead of p-values. The brackets come from the same test as
+  the figure: with two groups, the omnibus test in the subtitle
+  (ggstatsplot runs no post-hoc test then, and a second test of the same
+  pair could disagree with it); with more, the Holm-adjusted
+  Games-Howell (parametric) or Dunn (non-parametric) tests ggstatsplot
+  itself would compute.
 
 ## Usage
 
@@ -72,10 +80,9 @@ unchanged.
 
 set.seed(123)
 
-# Toy within-subject style data
+# Toy between-subject data: each participant sees one condition
 main_df <- data.frame(
-  Participant = factor(rep(1:20, each = 3)),
-  CondID      = factor(rep(c("A", "B", "C"), times = 20)),
+  CondID      = factor(rep(c("A", "B", "C"), each = 20)),
   tlx_mental  = rnorm(60, mean = 50, sd = 10)
 )
 

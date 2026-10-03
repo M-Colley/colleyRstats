@@ -37,8 +37,8 @@ tasks easier.
   apart.
 - **Reproducible Study Projects**:
   [`use_study_project()`](https://m-colley.github.io/colleyRstats/reference/use_study_project.md)
-  scaffolds the whole analysis as a `targets` pipeline with `renv`
-  pinning, a Quarto report, and generated LaTeX the manuscript
+  scaffolds the whole analysis as a `targets` pipeline (with optional
+  `renv` pinning), a Quarto report, and generated LaTeX the manuscript
   `\input{}`s.
 - **Automated Assumption Checking**: For ANOVA models, automatically
   verify normality and homogeneity of variance.
@@ -191,8 +191,12 @@ score_questionnaire(tlx, "nasa_tlx", scale = c(1, 21))
 #> 1            65               5              50          25     60          40 40.83333
 ```
 
-Ten instruments ship: NASA-TLX (raw), SUS, UEQ and UEQ-S, TiA,
-AttrakDiff 2, IPQ, SSQ, FMS, MISC.
+Eleven instrument keys ship: NASA-TLX (raw), SUS, UEQ and UEQ-S, TiA,
+AttrakDiff 2 (in the order of the administered sheet,
+`attrakdiff_official`, or blocked by dimension, `attrakdiff`), IPQ, SSQ,
+FMS, MISC. With `prefix =`, columns are matched to items by name or by
+an unambiguous item number – never by sort order – and text answers in
+an item column are an error rather than a silent `NA`.
 [`list_questionnaires()`](https://m-colley.github.io/colleyRstats/reference/list_questionnaires.md)
 lists them,
 [`questionnaire_items()`](https://m-colley.github.io/colleyRstats/reference/questionnaire_items.md)
@@ -225,8 +229,10 @@ check_questionnaire(study, "sus", prefix = "sus_")
 
 Related:
 [`score_reliability()`](https://m-colley.github.io/colleyRstats/reference/score_reliability.md)
-for Cronbach’s alpha and McDonald’s omega per subscale, computed on the
-reverse-coded items so a negative alpha means a real problem;
+for Cronbach’s alpha and McDonald’s omega per subscale and for the whole
+scale (with the Spearman-Brown coefficient for two-item scales),
+computed on the reverse-coded items so a negative alpha means a real
+problem;
 [`reverse_code()`](https://m-colley.github.io/colleyRstats/reference/reverse_code.md);
 and
 [`summarize_sickness()`](https://m-colley.github.io/colleyRstats/reference/summarize_sickness.md),
@@ -248,33 +254,43 @@ manuscript sentence.
 
 fit <- fit_recommended(data, outcome = "rating", predictors = "condition", cluster = "participant")
 #> Coerced `rating` to an ordered factor with 4 levels (2 < 3 < 4 < ...).
-#> Fitting: Cumulative Link Mixed Model (CLMM) via ordinal::clmm().
+#> Fitted: Cumulative Link Mixed Model (CLMM) -- ordinal::clmm(rating ~ condition + (1 | participant), data = your_data)
 
 fit$text
-#> A cumulative link mixed model was fitted for rating.
-#> The effect of \textit{conditionB} on rating was not significant
-#>   ($OR = 2.83$, 95\% CI $[0.92, 8.69]$, $z = 1.81$, \p{0.070}).
-#> The effect of \textit{conditionC} on rating was significant
-#>   ($OR = 21.38$, 95\% CI $[5.36, 85.29]$, $z = 4.34$, \pminor{0.001}).
+#> A cumulative link mixed model (logit link) was fitted for rating. Model terms
+#>   were tested with Type III Wald $\chi^2$ tests. Coefficients are reported as
+#>   odds ratios (OR) and are treatment contrasts against each factor's reference level.
+#> The main effect of \textit{condition} on rating was significant
+#>   ($\chi^2(2) = 24.39$, \pminor{0.001}).
+#> The contrast \textit{B} vs.\ \textit{A} of \textit{condition} on rating was significant
+#>   ($OR = 3.15$, 95\% CI $[1.01, 9.80]$, $z = 1.98$, \p{0.048}).
+#> The contrast \textit{C} vs.\ \textit{A} of \textit{condition} on rating was significant
+#>   ($OR = 50.00$, 95\% CI $[10.43, 239.76]$, $z = 4.89$, \pminor{0.001}).
 
-as.data.frame(fit$contrasts)   # Holm-adjusted pairwise comparisons
-#>  contrast estimate    SE  df z.ratio p.value
-#>  A - B       -1.04 0.573 Inf   -1.81  0.0697
-#>  A - C       -3.06 0.706 Inf   -4.34 <0.0001
-#>  B - C       -2.02 0.640 Inf   -3.16  0.0032
+fit$contrasts   # Holm-adjusted pairwise comparisons, one family per factor
+#>        term contrast estimate SE    df statistic p.value adjust
+#> 1 condition    A - B   -1.15 0.580 Inf     -1.98  0.0480   holm
+#> 2 condition    A - C   -3.91 0.800 Inf     -4.89 <0.0001   holm
+#> 3 condition    B - C   -2.77 0.700 Inf     -3.95  0.0002   holm
 ```
 
 It covers cumulative link models with and without random effects, linear
-and generalized linear mixed models, GLMs, ART, nparLD, multinomial
-regression, and the classical ANOVA / Welch / Kruskal-Wallis / Wilcoxon
-tests.
+and generalized linear mixed models (with by-participant random slopes
+when trials repeat within a condition), negative-binomial models for
+over-dispersed counts, GLMs, ART, nparLD, clustered multinomial models,
+Type III and HC3-robust factorial ANOVA, and the classical ANOVA / Welch
+/ Kruskal-Wallis / Wilcoxon tests. Every model term gets an omnibus test
+before the coefficients, and linear mixed models use Satterthwaite
+degrees of freedom.
 
 One thing worth knowing: an outcome whose scores stay **whole numbers**
-is taken for a count and fitted with a Poisson model. That catches the
-six raw NASA-TLX subscales, a single MISC rating, and item-level ratings
-— but not SUS or RTLX, whose multipliers and means make them fractional
-and therefore continuous. Pass `outcome_type = "continuous"` (or
-`"ordinal"`) when the classification is wrong;
+is taken for a count, and
+[`fit_recommended()`](https://m-colley.github.io/colleyRstats/reference/fit_recommended.md)
+says so in a message. Raw NASA-TLX subscales on 0-100 in steps of 5 are
+recognised as bounded scores and treated as continuous, but a single
+MISC rating or item-level ratings are not. Pass
+`outcome_type = "continuous"` (or `"ordinal"`) when the classification
+is wrong;
 [`use_study_project()`](https://m-colley.github.io/colleyRstats/reference/use_study_project.md)
 writes those declarations for you.
 
@@ -296,7 +312,7 @@ use_study_project("~/studies/av-communication", questionnaires = c("nasa_tlx", "
     report/report.qmd       a Quarto report of everything the pipeline produced
     paper/generated/        generated .tex snippets -- the manuscript \input{}s these
     data-raw/               the raw export, never edited by hand
-    renv.lock               pinned package versions
+    renv.lock               pinned package versions (with renv = TRUE)
 
 It ships synthetic example data with a column per item of every
 instrument you name, so `targets::tar_make()` runs end to end before any
@@ -321,10 +337,28 @@ check_assumptions_anova(data = main_df, y = "dependent_var", factors = c("factor
 
 These functions include APA-compliant asterisks (e.g., \*\*\* for p \<
 0.001) on your ggwithinstats or ggbetweenstats plots. They automatically
-adjust for the appropriate test based on the data’s normality.
+adjust for the appropriate test based on the data’s normality, and with
+more than two groups draw one bracket per significant (Holm-adjusted)
+pairwise comparison.
 
-Note: Avoid using these functions if your data has more than two groups,
-as geom_signif does not support more than two groups.
+The within-subjects variants pair each participant with themselves, so
+they need the participant column:
+
+``` r
+
+plot_within_stats_asterisk(main_df, x = "ConditionID", y = "tlx_mental",
+                           ylab = "Mental Demand", xlabels = c("A", "B", "C"),
+                           subject = "Participant")
+```
+
+The same `subject =` argument is required by
+[`plot_within_stats()`](https://m-colley.github.io/colleyRstats/reference/ggwithinstatsWithPriorNormalityCheck.md)
+and by
+[`analyze_and_report()`](https://m-colley.github.io/colleyRstats/reference/analyze_and_report.md)
+/
+[`report_all()`](https://m-colley.github.io/colleyRstats/reference/report_all.md)
+with `design = "within"`. Without it, observations would be paired by
+their row order.
 
 ![plot_within_stats_asterisk Plot
 Example](reference/figures/ggwithinstatsWithPriorNormalityCheckAsterisk.png)
@@ -342,7 +376,7 @@ and plot size.
 
 ``` r
 
-plot_effect(df = main_df, x = "factor1", y = "dependent_var", fillColourGroup = "group", ytext = "Y Label", xtext = "X Label", legendPos = c(0.1, 0.2), shownEffect = "interaction")
+plot_effect(data = main_df, x = "factor1", y = "dependent_var", fillColourGroup = "group", ytext = "Y Label", xtext = "X Label", legendPos = c(0.1, 0.2), shownEffect = "interaction")
 ```
 
 ![Effect Plot Example](reference/figures/effect_plot.png)

@@ -13,7 +13,7 @@ Poisson, cumulative-link) before any distributional assumption is checked."></he
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,7 +43,7 @@ Poisson, cumulative-link) before any distributional assumption is checked."></he
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Classify the measurement scale of an outcome variable</h1>
-      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.1/R/mixed-models.R" class="external-link"><code>R/mixed-models.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/main/R/mixed-models.R" class="external-link"><code>R/mixed-models.R</code></a></small>
       <div class="d-none name"><code>classify_outcome.Rd</code></div>
     </div>
 
@@ -80,18 +80,31 @@ many distinct values are treated as ordinal (Likert-like). Default 7.</p></dd>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The rules are deliberately simple and transparent:</p><ul><li><p>ordered factor \(\rightarrow\) <code>"ordinal"</code>;</p></li>
-<li><p>logical, a two-level factor, or a numeric/character with exactly two
-distinct values \(\rightarrow\) <code>"binary"</code>;</p></li>
+<li><p>logical, a factor with two observed levels, a character vector with
+two distinct values, or a numeric coded <code>0</code>/<code>1</code>
+\(\rightarrow\) <code>"binary"</code>;</p></li>
 <li><p>unordered factor/character with more than two levels
 \(\rightarrow\) <code>"nominal"</code>;</p></li>
+<li><p>a numeric with at most two distinct values that are <em>not</em>
+<code>0</code>/<code>1</code> – a 1–7 item on which only 6 and 7 were ticked, or a
+yes/no item coded 1/2 – is <em>not</em> taken for binary: it is classified
+as <code>"ordinal"</code> (whole numbers) or <code>"continuous"</code>, with a
+warning;</p></li>
 <li><p>integer-valued numeric with at most <code>ordinal_max_levels</code>
 distinct values (a Likert-type item) \(\rightarrow\) <code>"ordinal"</code>;</p></li>
-<li><p>non-negative integer-valued numeric with more distinct values
-\(\rightarrow\) <code>"count"</code>;</p></li>
+<li><p>non-negative whole numbers that are all multiples of 5 within
+\([0, 100]\) (the shape of a raw NASA-TLX subscale or a 0–100 slider
+in steps of 5) \(\rightarrow\) <code>"continuous"</code>, with a message;</p></li>
+<li><p>any other non-negative whole numbers \(\rightarrow\)
+<code>"count"</code>. This is always announced with a message that says how to
+override it, and the message becomes a <em>warning</em> when the values
+lie in a closed range without zeros (\([1, 100]\)) – the typical
+shape of a summed questionnaire score or a 1–10 rating, which a Poisson
+model would misdescribe;</p></li>
 <li><p>any other numeric \(\rightarrow\) <code>"continuous"</code>.</p></li>
 </ul><p>The heuristics can never be perfect (a 1–7 Likert item and a small count are
 genuinely ambiguous); pass an explicit <code>outcome_type</code> to
-<code><a href="recommend_test.html">recommend_test()</a></code> when you want to override them.</p>
+<code><a href="recommend_test.html">recommend_test()</a></code> or <code><a href="fit_recommended.html">fit_recommended()</a></code> when you want to override them.</p>
     </div>
 
     <div class="section level2">
@@ -102,7 +115,8 @@ genuinely ambiguous); pass an explicit <code>outcome_type</code> to
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "ordinal"</span>
 <span class="r-in"><span><span class="fu">classify_outcome</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">0</span><span class="op">:</span><span class="fl">1</span>, <span class="fl">50</span>, <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="co"># "binary"</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "binary"</span>
-<span class="r-in"><span><span class="fu">classify_outcome</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Poisson.html" class="external-link">rpois</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span> <span class="co"># "count"</span></span></span>
+<span class="r-in"><span><span class="fu">classify_outcome</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Poisson.html" class="external-link">rpois</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span> <span class="co"># "count", with a message</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> The outcome holds non-negative whole numbers (9 distinct values, 0-8), so it is classified as a count and modelled with a Poisson (or, if over-dispersed, negative-binomial) model. If it is a rating, a summed questionnaire score or another bounded scale rather than a count of events, pass outcome_type = "continuous" (or "ordinal").</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "count"</span>
 </code></pre></div>
     </div>

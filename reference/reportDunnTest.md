@@ -1,16 +1,34 @@
-# Report dunnTest as text. Required commands in LaTeX: `\newcommand{\padjminor}{\textit{p$_{adj}<$}}` `\newcommand{\padj}{\textit{p$_{adj}$=}}` `\newcommand{\rankbiserial}[1]{$r_{rb} = #1$}`
+# Report dunnTest as text
 
-Report dunnTest as text. Required commands in LaTeX:
-`\newcommand{\padjminor}{\textit{p$_{adj}<$}}`
-`\newcommand{\padj}{\textit{p$_{adj}$=}}`
-`\newcommand{\rankbiserial}[1]{$r_{rb} = #1$}`
+Reports the significant comparisons of an
+[`FSA::dunnTest()`](https://fishr-core-team.github.io/FSA/reference/dunnTest.html)
+result as sentences such as "A Dunn post-hoc test (Holm-adjusted) found
+that ... for the Species virginica was significantly higher (Mdn=...,
+IQR=...) than for setosa (Mdn=..., IQR=...; p_adj\<.001, r_rb=...)". The
+multiplicity correction is read from the test object; with
+`method = "none"` the p-values are uncorrected and are emitted as
+`\p{}`/`\pminor{}`, not as \\p\_{adj}\\.
 
 ## Usage
 
 ``` r
-reportDunnTest(d, data, iv = "testiv", dv = "testdv", sink_to = NULL)
+reportDunnTest(
+  d,
+  data,
+  iv = "testiv",
+  dv = "testdv",
+  sink_to = NULL,
+  descriptives = c("auto", "mean", "median", "trimmed")
+)
 
-report_dunn_test(d, data, iv = "testiv", dv = "testdv", sink_to = NULL)
+report_dunn_test(
+  d,
+  data,
+  iv = "testiv",
+  dv = "testdv",
+  sink_to = NULL,
+  descriptives = c("auto", "mean", "median", "trimmed")
+)
 ```
 
 ## Arguments
@@ -36,11 +54,37 @@ report_dunn_test(d, data, iv = "testiv", dv = "testdv", sink_to = NULL)
   optional path of a `.tex` file to write the sentences to, so a
   manuscript can `\input{}` them
 
+- descriptives:
+
+  which descriptives to print beside each level: `"auto"` (default,
+  median and IQR for this rank-based test), `"mean"`, `"median"` or
+  `"trimmed"` (20% trimmed mean and 20% winsorized SD).
+
 ## Value
 
 Invisibly returns the reported sentence(s) as a character vector; the
 text is also emitted via
 [`message()`](https://rdrr.io/r/base/message.html).
+
+## Details
+
+Which level is "higher" follows the sign of the test's \\Z\\ (FSA labels
+a comparison "A - B"; \\Z \> 0\\ means A has the higher mean rank).
+Until 0.3.0 it followed the raw means, which can point the other way:
+with a few large outliers a level can have the larger mean but the
+significantly lower mean rank. As a consistency check, the mean ranks
+are recomputed from `data` and a warning is given when they disagree
+with \\Z\\ (i.e. when `data` is not the data the test was computed on).
+
+By default (`descriptives = "auto"`) each level is described by its
+median and IQR, the location measure that matches a rank-based test;
+`"mean"` restores *M*/*SD* and warns where the means order two levels
+against the test.
+
+Required commands in LaTeX (all part of
+[`latex_preamble()`](https://m-colley.github.io/colleyRstats/reference/latex_preamble.md)):
+`\padj`, `\padjminor`, `\p`, `\pminor`, `\mdn`, `\iqr`, `\m`, `\sd` and
+`\newcommand{\rankbiserial}[1]{$r_{rb} = #1$}`.
 
 ## Naming
 
@@ -74,10 +118,6 @@ if (requireNamespace("FSA", quietly = TRUE)) {
     dv   = "Sepal.Length"
   )
 }
-#> Registered S3 methods overwritten by 'FSA':
-#>   method       from
-#>   confint.boot car 
-#>   hist.boot    car 
 #>   Kruskal-Wallis rank sum test
 #> 
 #> data: x and g
@@ -97,7 +137,7 @@ if (requireNamespace("FSA", quietly = TRUE)) {
 #> 
 #> FWER = 0.05
 #> Reject Ho if adjusted p ≤ FWER with stopping rule, where (unadjusted) p = Pr(|Z| ≥ |z|)
-#> A post-hoc test found that Sepal.Length for the \Species versicolor was significantly higher (\m{5.94}, \sd{0.52}) than for setosa (\m{5.01}, \sd{0.35}; \padjminor{0.001}, \rankbiserial{0.87}). 
-#> A post-hoc test found that Sepal.Length for the \Species virginica was significantly higher (\m{6.59}, \sd{0.64}) than for setosa (\m{5.01}, \sd{0.35}; \padjminor{0.001}, \rankbiserial{0.97}) and versicolor (\m{5.94}, \sd{0.52}; \padjminor{0.001}, \rankbiserial{0.58}). 
+#> A Dunn post-hoc test (Holm-adjusted) found that Sepal.Length for the \Species{} versicolor was significantly higher (\mdn{5.90}, \iqr{0.70}) than for setosa (\mdn{5.00}, \iqr{0.40}; \padjminor{0.001}, \rankbiserial{0.87}). 
+#> A Dunn post-hoc test (Holm-adjusted) found that Sepal.Length for the \Species{} virginica was significantly higher (\mdn{6.50}, \iqr{0.67}) than for setosa (\mdn{5.00}, \iqr{0.40}; \padjminor{0.001}, \rankbiserial{0.97}) and versicolor (\mdn{5.90}, \iqr{0.70}; \padjminor{0.001}, \rankbiserial{0.58}). 
 # }
 ```

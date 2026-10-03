@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,7 +63,7 @@
       <h1>Choosing the right test (and mixed models)</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.1/vignettes/choosing-a-test.Rmd" class="external-link"><code>vignettes/choosing-a-test.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/main/vignettes/choosing-a-test.Rmd" class="external-link"><code>vignettes/choosing-a-test.Rmd</code></a></small>
       <div class="d-none name"><code>choosing-a-test.Rmd</code></div>
     </div>
 
@@ -96,16 +96,19 @@ Repeated measures or any grouped structure needs random effects, i.e. a
 <em>mixed</em> model.</li>
 <li>
 <strong>For a continuous outcome, do the parametric assumptions
-hold?</strong> Group-wise normality (and, between subjects, homogeneity
-of variance) decides between a parametric and a rank-based method.</li>
+hold?</strong> Normality of the residuals of the model that would be
+fitted (and, between subjects, homogeneity of variance across all design
+cells) decides between a parametric and a rank-based method.</li>
 </ol>
 <p><code><a href="../reference/classify_outcome.html">classify_outcome()</a></code> answers the first question. It maps a
 variable to one of <code>"continuous"</code>, <code>"ordinal"</code>,
 <code>"binary"</code>, <code>"count"</code>, or <code>"nominal"</code>
-using simple, transparent rules (ordered factor -&gt; ordinal; two
-distinct values -&gt; binary; a few-valued integer -&gt; ordinal/Likert;
-a non-negative integer with more values -&gt; count; anything else
-numeric -&gt; continuous).</p>
+using simple, transparent rules (ordered factor -&gt; ordinal; values
+coded 0/1, a logical or a two-level factor -&gt; binary; a few-valued
+integer -&gt; ordinal/Likert; whole numbers in steps of 5 within 0-100,
+such as raw NASA-TLX, -&gt; continuous; any other non-negative integer
+with more values -&gt; count, announced with a message so you can
+override it; anything else numeric -&gt; continuous).</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">n_id</span> <span class="op">&lt;-</span> <span class="fl">24</span></span>
@@ -124,7 +127,7 @@ numeric -&gt; continuous).</p>
 <span><span class="co">#&gt; [1] "continuous"</span></span>
 <span><span class="fu"><a href="../reference/classify_outcome.html">classify_outcome</a></span><span class="op">(</span><span class="va">d</span><span class="op">$</span><span class="va">rating</span><span class="op">)</span>   <span class="co"># ordinal (ordered factor)</span></span>
 <span><span class="co">#&gt; [1] "ordinal"</span></span>
-<span><span class="fu"><a href="../reference/classify_outcome.html">classify_outcome</a></span><span class="op">(</span><span class="va">d</span><span class="op">$</span><span class="va">correct</span><span class="op">)</span>  <span class="co"># binary (two distinct values)</span></span>
+<span><span class="fu"><a href="../reference/classify_outcome.html">classify_outcome</a></span><span class="op">(</span><span class="va">d</span><span class="op">$</span><span class="va">correct</span><span class="op">)</span>  <span class="co"># binary (coded 0/1)</span></span>
 <span><span class="co">#&gt; [1] "binary"</span></span></code></pre></div>
 <p>Getting the scale right matters because it, not the analyst’s habit,
 dictates the family: a 1-5 rating is not an interval score, and a 0/1
@@ -152,14 +155,15 @@ within <code>id</code> gives a cumulative link mixed model (CLMM):</p>
 <span><span class="va">rec_clmm</span></span>
 <span><span class="co">#&gt; &lt;colleyRstats analysis recommendation&gt;</span></span>
 <span><span class="co">#&gt;   Outcome        : rating (ordinal)</span></span>
-<span><span class="co">#&gt;   Predictors     : cond</span></span>
+<span><span class="co">#&gt;   Predictors     : cond (categorical, within)</span></span>
 <span><span class="co">#&gt;   Design         : within (cluster: id)</span></span>
+<span><span class="co">#&gt;   Random effects : (1 | id)</span></span>
 <span><span class="co">#&gt;   Recommendation : Cumulative Link Mixed Model (CLMM)</span></span>
 <span><span class="co">#&gt;   Family         : cumulative link (logit)</span></span>
 <span><span class="co">#&gt;   Fit with       : ordinal::clmm(rating ~ cond + (1 | id), data = your_data)  # outcome must be an ordered factor</span></span>
 <span><span class="co">#&gt;   Report with    : reportCLMM()</span></span>
 <span><span class="co">#&gt;   Alternative(s) : nparLD (rank-based repeated measures) if proportional odds is untenable</span></span>
-<span><span class="co">#&gt;   Rationale      : the outcome is ordinal and the observations are clustered, so an ordinal (proportional-odds) model with a random effect is appropriate</span></span></code></pre></div>
+<span><span class="co">#&gt;   Rationale      : the outcome is ordinal and the observations are clustered, so an ordinal (proportional-odds) model with random effects is appropriate</span></span></code></pre></div>
 <p>A <strong>binary</strong> outcome with the same clustering gives a
 binomial generalized linear mixed model (GLMM):</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
@@ -167,8 +171,9 @@ binomial generalized linear mixed model (GLMM):</p>
 <span><span class="va">rec_glmm</span></span>
 <span><span class="co">#&gt; &lt;colleyRstats analysis recommendation&gt;</span></span>
 <span><span class="co">#&gt;   Outcome        : correct (binary)</span></span>
-<span><span class="co">#&gt;   Predictors     : cond</span></span>
+<span><span class="co">#&gt;   Predictors     : cond (categorical, within)</span></span>
 <span><span class="co">#&gt;   Design         : within (cluster: id)</span></span>
+<span><span class="co">#&gt;   Random effects : (1 | id)</span></span>
 <span><span class="co">#&gt;   Recommendation : Generalized Linear Mixed Model (GLMM), binomial</span></span>
 <span><span class="co">#&gt;   Family         : binomial (logit)</span></span>
 <span><span class="co">#&gt;   Fit with       : lme4::glmer(correct ~ cond + (1 | id), data = your_data, family = binomial)</span></span>
@@ -186,16 +191,15 @@ assumption checks and lands on ANOVA or its rank-based fallback:</p>
 <span><span class="va">rec_anova</span></span>
 <span><span class="co">#&gt; &lt;colleyRstats analysis recommendation&gt;</span></span>
 <span><span class="co">#&gt;   Outcome        : score (continuous)</span></span>
-<span><span class="co">#&gt;   Predictors     : cond</span></span>
+<span><span class="co">#&gt;   Predictors     : cond (categorical)</span></span>
 <span><span class="co">#&gt;   Design         : between</span></span>
-<span><span class="co">#&gt;   Normality      : not rejected</span></span>
-<span><span class="co">#&gt;   Homogeneity    : not rejected</span></span>
+<span><span class="co">#&gt;   Normality      : not rejected (residuals)</span></span>
+<span><span class="co">#&gt;   Homogeneity    : not rejected (Brown-Forsythe, all cells)</span></span>
 <span><span class="co">#&gt;   Recommendation : One-way ANOVA (parametric)</span></span>
 <span><span class="co">#&gt;   Family         : gaussian</span></span>
-<span><span class="co">#&gt;   Fit with       : ggbetweenstatsWithPriorNormalityCheck(data = your_data, x = "cond", y = "score")</span></span>
-<span><span class="co">#&gt;   Report with    : reportggstatsplot()</span></span>
-<span><span class="co">#&gt;   Alternative(s) : none needed</span></span>
-<span><span class="co">#&gt;   Rationale      : the outcome is continuous and normally distributed with homogeneous variances, so a parametric ANOVA is appropriate</span></span></code></pre></div>
+<span><span class="co">#&gt;   Fit with       : stats::aov(score ~ cond, data = your_data)</span></span>
+<span><span class="co">#&gt;   Alternative(s) : ggbetweenstatsWithPriorNormalityCheck() for the figure with the omnibus test</span></span>
+<span><span class="co">#&gt;   Rationale      : the outcome is continuous, its residuals are approximately normal and the variances are homogeneous across the design cells, so a parametric ANOVA is appropriate</span></span></code></pre></div>
 <p>Each recommendation also exposes machine-usable fields and a
 paste-ready methods sentence:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
@@ -212,16 +216,24 @@ paste-ready methods sentence:</p>
 <h2 id="fitting-and-reporting-the-recommended-models">Fitting and reporting the recommended models<a class="anchor" aria-label="anchor" href="#fitting-and-reporting-the-recommended-models"></a>
 </h2>
 <p>Once a model is fitted, the reporters turn it into manuscript-ready
-LaTeX/APA sentences, one per fixed-effect term, with the effect size,
-its confidence interval, the test statistic, and the p-value.
+LaTeX/APA sentences. Each model term first gets a Type III omnibus test
+(Satterthwaite F for linear mixed models, a Wald chi-square otherwise) –
+the test that answers “does condition matter?” for a factor with any
+number of levels. The coefficients follow, each labelled as what a
+treatment-coded coefficient is: a contrast against the reference level
+(“B vs. A of cond”), and in a model with an interaction, a contrast at
+the reference level of the other factor. Each comes with the effect
+size, its confidence interval, the test statistic, and the p-value;
+linear mixed models use Satterthwaite degrees of freedom.
 <code><a href="../reference/reportGLMM.html">reportGLMM()</a></code> handles <code><a href="https://rdrr.io/pkg/lme4/man/lmer.html" class="external-link">lme4::lmer</a></code> /
 <code><a href="https://rdrr.io/pkg/lme4/man/glmer.html" class="external-link">lme4::glmer</a></code> / <code><a href="https://rdrr.io/pkg/glmmTMB/man/glmmTMB.html" class="external-link">glmmTMB::glmmTMB</a></code> and plain
 <code>lm</code>/<code>glm</code>; <code><a href="../reference/reportCLMM.html">reportCLMM()</a></code> handles
 <code><a href="https://rdrr.io/pkg/ordinal/man/clmm.html" class="external-link">ordinal::clmm</a></code> / <code><a href="https://rdrr.io/pkg/ordinal/man/clm.html" class="external-link">ordinal::clm</a></code>. The reporters
-pick the effect-size scale from the family: <strong>odds ratios</strong>
-for binomial and cumulative-link models, <strong>incidence-rate
-ratios</strong> for counts, and raw coefficients (<code>b</code>) with a
-<code>t</code>/<code>z</code> statistic for Gaussian fits.</p>
+pick the effect-size scale from the family and link: <strong>odds
+ratios</strong> for logit links (binomial and cumulative-link models),
+<strong>incidence-rate ratios</strong> for log-link counts, and raw
+coefficients (<code>b</code>) with the link named otherwise, e.g. for
+Gaussian or probit fits.</p>
 <p>The fits below require <strong>lme4</strong>,
 <strong>ordinal</strong>, and <strong>parameters</strong> (all in
 Suggests), so the chunk is guarded by <code>has_mixed</code>; the
@@ -233,9 +245,10 @@ multiplicative change in the odds of a higher rating):</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m_clmm</span> <span class="op">&lt;-</span> <span class="fu">ordinal</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/ordinal/man/clmm.html" class="external-link">clmm</a></span><span class="op">(</span><span class="va">rating</span> <span class="op">~</span> <span class="va">cond</span> <span class="op">+</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">id</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">d</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/reportCLMM.html">reportCLMM</a></span><span class="op">(</span><span class="va">m_clmm</span>, dv <span class="op">=</span> <span class="st">"rating"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; A cumulative link mixed model was fitted for rating.</span></span>
-<span><span class="co">#&gt; The effect of \textit{condB} on rating was significant ($OR = 309.89$, 95\% CI $[26.21, 3663.95]$, $z = 4.55$, \pminor{0.001}).</span></span>
-<span><span class="co">#&gt; The effect of \textit{condC} on rating was significant ($OR = 10085.81$, 95\% CI $[384.38, 264641.13]$, $z = 5.53$, \pminor{0.001}).</span></span></code></pre></div>
+<span><span class="co">#&gt; A cumulative link mixed model (logit link) was fitted for rating. Model terms were tested with Type III Wald $\chi^2$ tests. Coefficients are reported as odds ratios (OR) and are treatment contrasts against each factor's reference level.</span></span>
+<span><span class="co">#&gt; The main effect of \textit{cond} on rating was significant ($\chi^2(2) = 30.60$, \pminor{0.001}).</span></span>
+<span><span class="co">#&gt; The contrast \textit{B} vs.\ \textit{A} of \textit{cond} on rating was significant ($OR = 309.89$, 95\% CI $[26.21, 3663.95]$, $z = 4.55$, \pminor{0.001}).</span></span>
+<span><span class="co">#&gt; The contrast \textit{C} vs.\ \textit{A} of \textit{cond} on rating was significant ($OR = 10085.81$, 95\% CI $[384.38, 264641.13]$, $z = 5.53$, \pminor{0.001}).</span></span></code></pre></div>
 <p>For the <strong>binary</strong> recommendation, fit the binomial GLMM
 and report it with <code><a href="../reference/reportGLMM.html">reportGLMM()</a></code>; the binomial family is
 likewise exponentiated to odds ratios, with a <code>z</code>
@@ -244,9 +257,10 @@ statistic:</p>
 <code class="sourceCode R"><span><span class="va">m_glmm</span> <span class="op">&lt;-</span> <span class="fu">lme4</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/lme4/man/glmer.html" class="external-link">glmer</a></span><span class="op">(</span><span class="va">correct</span> <span class="op">~</span> <span class="va">cond</span> <span class="op">+</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">id</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">d</span>, family <span class="op">=</span> <span class="va">binomial</span><span class="op">)</span></span>
 <span><span class="co">#&gt; boundary (singular) fit: see help('isSingular')</span></span>
 <span><span class="fu"><a href="../reference/reportGLMM.html">reportGLMM</a></span><span class="op">(</span><span class="va">m_glmm</span>, dv <span class="op">=</span> <span class="st">"accuracy"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; A generalized linear mixed model was fitted for accuracy.</span></span>
-<span><span class="co">#&gt; The effect of \textit{condB} on accuracy was not significant ($OR = 2.80$, 95\% CI $[0.87, 9.06]$, $z = 1.72$, \p{0.086}).</span></span>
-<span><span class="co">#&gt; The effect of \textit{condC} on accuracy was significant ($OR = 7.60$, 95\% CI $[2.07, 27.89]$, $z = 3.06$, \p{0.002}).</span></span></code></pre></div>
+<span><span class="co">#&gt; A generalized linear mixed model (binomial family, logit link) was fitted for accuracy. Model terms were tested with Type III Wald $\chi^2$ tests. Coefficients are reported as odds ratios (OR) and are treatment contrasts against each factor's reference level.</span></span>
+<span><span class="co">#&gt; The main effect of \textit{cond} on accuracy was significant ($\chi^2(2) = 9.44$, \p{0.009}).</span></span>
+<span><span class="co">#&gt; The contrast \textit{B} vs.\ \textit{A} of \textit{cond} on accuracy was not significant ($OR = 2.80$, 95\% CI $[0.87, 9.06]$, $z = 1.72$, \p{0.086}).</span></span>
+<span><span class="co">#&gt; The contrast \textit{C} vs.\ \textit{A} of \textit{cond} on accuracy was significant ($OR = 7.60$, 95\% CI $[2.07, 27.89]$, $z = 3.06$, \p{0.002}).</span></span></code></pre></div>
 <p><code><a href="../reference/reportGLMM.html">reportGLMM()</a></code> also covers <strong>Gaussian</strong> mixed
 and ordinary models. Here a linear mixed model is reported on the raw
 coefficient scale, with <code>b</code> and a <code>t(df)</code>
@@ -256,9 +270,10 @@ the family automatically:</p>
 <code class="sourceCode R"><span><span class="va">m_lmm</span> <span class="op">&lt;-</span> <span class="fu">lme4</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/lme4/man/lmer.html" class="external-link">lmer</a></span><span class="op">(</span><span class="va">score</span> <span class="op">~</span> <span class="va">cond</span> <span class="op">+</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">id</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">d</span><span class="op">)</span></span>
 <span><span class="co">#&gt; boundary (singular) fit: see help('isSingular')</span></span>
 <span><span class="fu"><a href="../reference/reportGLMM.html">reportGLMM</a></span><span class="op">(</span><span class="va">m_lmm</span>, dv <span class="op">=</span> <span class="st">"score"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; A linear mixed model was fitted for score.</span></span>
-<span><span class="co">#&gt; The effect of \textit{condB} on score was significant ($b = 1.28$, 95\% CI $[0.74, 1.81]$, $t(67) = 4.77$, \pminor{0.001}).</span></span>
-<span><span class="co">#&gt; The effect of \textit{condC} on score was significant ($b = 2.20$, 95\% CI $[1.67, 2.73]$, $t(67) = 8.21$, \pminor{0.001}).</span></span></code></pre></div>
+<span><span class="co">#&gt; A linear mixed model was fitted for score. Model terms were tested with Type III $F$-tests and coefficients with $t$-tests, using Satterthwaite's degrees of freedom. Coefficients are treatment contrasts against each factor's reference level.</span></span>
+<span><span class="co">#&gt; The main effect of \textit{cond} on score was significant (\F{2}{69}{34.03}, \pminor{0.001}).</span></span>
+<span><span class="co">#&gt; The contrast \textit{B} vs.\ \textit{A} of \textit{cond} on score was significant ($b = 1.28$, 95\% CI $[0.74, 1.81]$, $t(69) = 4.77$, \pminor{0.001}).</span></span>
+<span><span class="co">#&gt; The contrast \textit{C} vs.\ \textit{A} of \textit{cond} on score was significant ($b = 2.20$, 95\% CI $[1.67, 2.73]$, $t(69) = 8.21$, \pminor{0.001}).</span></span></code></pre></div>
 <p>Both reporters return the sentences invisibly (and emit them via
 <code><a href="https://rdrr.io/r/base/message.html" class="external-link">message()</a></code>), and can optionally copy to the clipboard
 (<code>write_to_clipboard = TRUE</code>) or write a <code>.tex</code>

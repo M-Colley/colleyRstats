@@ -11,7 +11,7 @@ section and bibliography can be filled in one step."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,7 +41,7 @@ section and bibliography can be filled in one step."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Citations and methods boilerplate for the analyses used</h1>
-      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.1/R/paper.R" class="external-link"><code>R/paper.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/main/R/paper.R" class="external-link"><code>R/paper.R</code></a></small>
       <div class="d-none name"><code>cite_methods.Rd</code></div>
     </div>
 
@@ -75,7 +75,11 @@ test via FSA), <code>"nparld"</code> (nparLD), <code>"ggstatsplot"</code>,
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>Invisibly returns the generated lines as a character vector; the
 text is also emitted via <code><a href="https://rdrr.io/r/base/message.html" class="external-link">message()</a></code>. Methods whose package is not
-installed are skipped with a message.</p>
+installed are skipped with a message. Every BibTeX entry gets a citation
+key – the package name, with <code>-2</code>, <code>-3</code>, ... for a package's
+further entries – because R's citation entries carry none, and BibTeX
+keeps only the first of several keyless entries ("Repeated entry"). The
+methods phrase then cites those keys (<code>\cite{ARTool,ARTool-2}</code>).</p>
     </div>
 
     <div class="section level2">

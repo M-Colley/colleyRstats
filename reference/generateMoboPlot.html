@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,7 +37,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Generate a Multi-objective Optimization Plot</h1>
-      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.1/R/plotting.R" class="external-link"><code>R/plotting.R</code></a>, <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.1/R/zzz-aliases.R" class="external-link"><code>R/zzz-aliases.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/main/R/plotting.R" class="external-link"><code>R/plotting.R</code></a>, <a href="https://github.com/M-Colley/colleyRstats/blob/main/R/zzz-aliases.R" class="external-link"><code>R/zzz-aliases.R</code></a></small>
       <div class="d-none name"><code>generateMoboPlot.Rd</code></div>
     </div>
 
@@ -81,7 +81,7 @@
 
 
 <dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>A string representing the column name in <code>data</code> to be used for the x-axis. Can be either numeric or factor.</p></dd>
+<dd><p>A string representing the column name in <code>data</code> to be used for the x-axis. Can be either numeric or a factor whose labels are numbers; it is plotted on a continuous axis either way, so the data, the phase guides and the fitted equation all refer to the iteration values (not to factor positions).</p></dd>
 
 
 <dt id="arg-y">y<a class="anchor" aria-label="anchor" href="#arg-y"></a></dt>
@@ -101,7 +101,7 @@
 
 
 <dt id="arg-numbersamplingsteps">numberSamplingSteps<a class="anchor" aria-label="anchor" href="#arg-numbersamplingsteps"></a></dt>
-<dd><p>An integer specifying the number of initial sampling steps before the optimization phase begins. Default is 5.</p></dd>
+<dd><p>An integer specifying the number of initial sampling steps before the optimization phase begins, counted in distinct iterations from the first one (so it also works when iterations start at 0 or are spaced by more than 1). Must be smaller than the number of iterations. Default is 5.</p></dd>
 
 
 <dt id="arg-labelposformulay">labelPosFormulaY<a class="anchor" aria-label="anchor" href="#arg-labelposformulay"></a></dt>
@@ -149,6 +149,7 @@ for removal, and existing scripts keep working unchanged.</p>
 <span class="r-in"><span><span class="fu">generateMoboPlot</span><span class="op">(</span><span class="va">df</span>, x <span class="op">=</span> <span class="st">"x"</span>, y <span class="op">=</span> <span class="st">"y"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="generateMoboPlot-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="co"># Example with factor x-axis</span></span></span>
 <span class="r-in"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, each <span class="op">=</span> <span class="fl">4</span><span class="op">)</span><span class="op">)</span>,</span></span>
@@ -157,6 +158,7 @@ for removal, and existing scripts keep working unchanged.</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">generateMoboPlot</span><span class="op">(</span><span class="va">df</span>, x <span class="op">=</span> <span class="st">"x"</span>, y <span class="op">=</span> <span class="st">"y"</span>, numberSamplingSteps <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="generateMoboPlot-2.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

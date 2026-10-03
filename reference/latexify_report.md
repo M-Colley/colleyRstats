@@ -3,8 +3,11 @@
 This function transforms the text output from
 [`report::report()`](https://easystats.github.io/report/reference/report.html)
 by performing several substitutions to prepare the text for LaTeX
-typesetting. In particular, it replaces instances of `R2`, `%`, and `~`
-with the corresponding LaTeX code. Additionally, it provides options to:
+typesetting. Every LaTeX special character (`\ { } $ & # _ % ^`) is
+escaped – `report()` keeps variable and level names such as `tlx_mental`
+verbatim – `~`, `<` and `>` become `$\sim$`, `$<$` and `$>$`, and `R2`
+and `Rhat` become `$R^2$` and `$\hat{R}$`. Additionally, it provides
+options to:
 
 - Omit bullet items marked as "non-significant" (when
   `only_sig = TRUE`).
@@ -81,11 +84,11 @@ if (requireNamespace("report", quietly = TRUE)) {
     )
   }
 }
-#> We fitted a linear model (estimated using OLS) to predict Sepal.Length with Sepal.Width and Petal.Length (formula: Sepal.Length $\sim$ Sepal.Width + Petal.Length). The model explains a statistically significant and substantial proportion of variance ($R^2$ = 0.84, F(2, 147) = 386.39, p < .001, adj. $R^2$ = 0.84). The model's intercept, corresponding to Sepal.Width = 0 and Petal.Length = 0, is at 2.25 (95\% CI [1.76, 2.74], t(147) = 9.07, p < .001). Within this model:
+#> We fitted a linear model (estimated using OLS) to predict Sepal.Length with Sepal.Width and Petal.Length (formula: Sepal.Length $\sim$ Sepal.Width + Petal.Length). The model explains a statistically significant and substantial proportion of variance ($R^2$ = 0.84, F(2, 147) = 386.39, p $<$ .001, adj. $R^2$ = 0.84). The model's intercept, corresponding to Sepal.Width = 0 and Petal.Length = 0, is at 2.25 (95\% CI [1.76, 2.74], t(147) = 9.07, p $<$ .001). Within this model:
 #> 
 #> \begin{itemize}
-#> \item The effect of Sepal Width is statistically significant and positive (beta = 0.60, 95\% CI [0.46, 0.73], t(147) = 8.59, p < .001; Std. beta = 0.31, 95\% CI [0.24, 0.39])
-#> \item The effect of Petal Length is statistically significant and positive (beta = 0.47, 95\% CI [0.44, 0.51], t(147) = 27.57, p < .001; Std. beta = 1.01, 95\% CI [0.93, 1.08])
+#> \item The effect of Sepal Width is statistically significant and positive (beta = 0.60, 95\% CI [0.46, 0.73], t(147) = 8.59, p $<$ .001; Std. beta = 0.31, 95\% CI [0.24, 0.39])
+#> \item The effect of Petal Length is statistically significant and positive (beta = 0.47, 95\% CI [0.44, 0.51], t(147) = 27.57, p $<$ .001; Std. beta = 1.01, 95\% CI [0.93, 1.08])
 #> \end{itemize}
 #> 
 # }

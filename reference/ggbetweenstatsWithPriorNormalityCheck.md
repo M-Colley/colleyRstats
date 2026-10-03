@@ -1,8 +1,16 @@
 # Check the data's distribution. If non-normal, take the non-parametric variant of *ggbetweenstats*. x and y have to be in parentheses, e.g., "ConditionID".
 
-Check the data's distribution. If non-normal, take the non-parametric
-variant of *ggbetweenstats*. x and y have to be in parentheses, e.g.,
-"ConditionID".
+For independent groups: one row per participant. If the group-wise
+normality check
+([`check_normality_by_group()`](https://m-colley.github.io/colleyRstats/reference/check_normality_by_group.md))
+passes, ggstatsplot runs Welch's t-test (two groups) or Welch's one-way
+ANOVA with Games-Howell post-hoc tests and labels the means; none of
+these assume equal variances, which is why no Levene test is run.
+Otherwise it runs a Wilcoxon rank-sum (Mann-Whitney) or Kruskal-Wallis
+test with Dunn post-hoc tests and labels the medians. Post-hoc p-values
+are Holm-adjusted. Rows without a group or an outcome are dropped, and
+the grouping column is treated as a factor, so numeric condition codes
+are categories.
 
 ## Usage
 
@@ -52,7 +60,11 @@ plot_between_stats(
 
 - showPairwiseComp:
 
-  whether to show pairwise comparisons, TRUE as default
+  whether to show the significant pairwise comparisons (`TRUE`, default)
+  or none (`FALSE`). With `FALSE` no pairwise table is computed either,
+  so
+  [`reportggstatsplotPostHoc()`](https://m-colley.github.io/colleyRstats/reference/reportggstatsplotPostHoc.md)
+  has nothing to report from the plot.
 
 - plotType:
 
@@ -82,10 +94,9 @@ not scheduled for removal, and existing scripts keep working unchanged.
 
 set.seed(123)
 
-# Toy within-subject style data
+# Toy between-subject data: each participant sees one condition
 main_df <- data.frame(
-  Participant = factor(rep(1:20, each = 3)),
-  CondID      = factor(rep(c("A", "B", "C"), times = 20)),
+  CondID      = factor(rep(c("A", "B", "C"), each = 20)),
   tlx_mental  = rnorm(60, mean = 50, sd = 10)
 )
 

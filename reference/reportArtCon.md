@@ -5,8 +5,9 @@ Companion to
 for aligned-rank-transform (ART) models. It extracts the significant
 pairwise comparisons produced by
 [`ARTool::art.con()`](https://rdrr.io/pkg/ARTool/man/art.con.html) (an
-emmeans contrast grid), computes the mean and standard deviation of the
-groups involved from the raw data, and prints LaTeX-formatted sentences.
+emmeans contrast grid), describes the groups involved from the raw data,
+and prints LaTeX-formatted sentences such as "An ART-C post-hoc test
+(Holm-adjusted) found that ...".
 
 ## Usage
 
@@ -18,7 +19,8 @@ reportArtCon(
   dv = "testdv",
   paired = FALSE,
   id = NULL,
-  sink_to = NULL
+  sink_to = NULL,
+  descriptives = c("auto", "mean", "median", "trimmed")
 )
 
 report_art_con(
@@ -28,7 +30,8 @@ report_art_con(
   dv = "testdv",
   paired = FALSE,
   id = NULL,
-  sink_to = NULL
+  sink_to = NULL,
+  descriptives = c("auto", "mean", "median", "trimmed")
 )
 ```
 
@@ -68,6 +71,12 @@ report_art_con(
   optional path of a `.tex` file to write the sentences to, so a
   manuscript can `\input{}` them
 
+- descriptives:
+
+  which descriptives to print beside each level: `"auto"` (default,
+  median and IQR for this rank-based test), `"mean"`, `"median"` or
+  `"trimmed"` (20% trimmed mean and 20% winsorized SD).
+
 ## Value
 
 Invisibly returns the reported sentence(s) as a character vector; the
@@ -78,18 +87,33 @@ text is also emitted via
 
 The p-values are taken as-is from the contrast object, i.e. they are
 already adjusted by whatever `adjust` was passed to `art.con()` (e.g.
-`"holm"`). The effect size is the rank-biserial correlation computed
-from the raw data. ART is most often used for within-subjects designs;
-pass `paired = TRUE` together with `id` (the subject column) to obtain
-the paired rank-biserial effect size.
+`"holm"`), and that correction – read from the contrast summary – is
+named in the sentence. With `adjust = "none"` the p-values are emitted
+as `\p{}`/`\pminor{}` rather than as \\p\_{adj}\\. The effect size is
+the rank-biserial correlation computed from the raw data. ART is most
+often used for within-subjects designs; pass `paired = TRUE` together
+with `id` (the subject column) to obtain the paired rank-biserial effect
+size.
+
+Which level is "higher" follows the sign of the contrast estimate (first
+minus second level, on the aligned-rank scale). Until 0.3.0 it followed
+the raw means, which can disagree with the test. By default
+(`descriptives = "auto"`) the levels are described by their median and
+IQR, which match a rank-based test; `"mean"` restores *M*/*SD* and warns
+where the means order two levels against the contrast.
+
+The two levels of each contrast are read from the contrast coefficients,
+so level names that emmeans rewrites in its labels – numbers ("mode1 -
+mode2") or names containing `-`, `+`, `*` or `/` ("Both - (Hand-only)")
+– are handled.
 
 Attention: `ac` must be a pairwise contrast over a single factor `iv`
 (e.g. `art.con(model, ~ interaction_mode, adjust = "holm")`).
 
-Required commands in LaTeX:
-`\newcommand{\padjminor}{\textit{p$_{adj}<$}}`
-`\newcommand{\padj}{\textit{p$_{adj}$=}}`
-`\newcommand{\rankbiserial}[1]{$r_{rb} = #1$}`
+Required commands in LaTeX (all part of
+[`latex_preamble()`](https://m-colley.github.io/colleyRstats/reference/latex_preamble.md)):
+`\padj`, `\padjminor`, `\p`, `\pminor`, `\mdn`, `\iqr`, `\m`, `\sd` and
+`\newcommand{\rankbiserial}[1]{$r_{rb} = #1$}`.
 
 ## Naming
 
@@ -122,7 +146,7 @@ if (requireNamespace("ARTool", quietly = TRUE) &&
   reportArtCon(ac, data = df, iv = "mode", dv = "score", paired = TRUE, id = "UserID")
 }
 #> NOTE: Results may be misleading due to involvement in interactions
-#> A post-hoc test found that score for the \mode Eye was significantly higher (\m{3.95}, \sd{0.83}) than for Both (\m{2.11}, \sd{0.96}; \padjminor{0.001}, \rankbiserial{0.97}). 
-#> A post-hoc test found that score for the \mode Hand was significantly higher (\m{6.14}, \sd{0.97}) than for Both (\m{2.11}, \sd{0.96}; \padjminor{0.001}, \rankbiserial{1.00}) and Eye (\m{3.95}, \sd{0.83}; \padjminor{0.001}, \rankbiserial{1.00}). 
+#> An ART-C post-hoc test (Holm-adjusted) found that score for the \mode{} Eye was significantly higher (\mdn{3.86}, \iqr{1.37}) than for Both (\mdn{1.96}, \iqr{1.05}; \padjminor{0.001}, \rankbiserial{0.97}). 
+#> An ART-C post-hoc test (Holm-adjusted) found that score for the \mode{} Hand was significantly higher (\mdn{6.12}, \iqr{1.04}) than for Both (\mdn{1.96}, \iqr{1.05}; \padjminor{0.001}, \rankbiserial{1.00}) and Eye (\mdn{3.86}, \iqr{1.37}; \padjminor{0.001}, \rankbiserial{1.00}). 
 # }
 ```

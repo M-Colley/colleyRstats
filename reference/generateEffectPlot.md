@@ -20,7 +20,8 @@ generateEffectPlot(
   effectDescription = NULL,
   xLabelsOverwrite = NULL,
   useLatexMarkup = FALSE,
-  numberColors = 6
+  numberColors = lifecycle::deprecated(),
+  subject = NULL
 )
 
 plot_effect(
@@ -37,7 +38,8 @@ plot_effect(
   effectDescription = NULL,
   xLabelsOverwrite = NULL,
   useLatexMarkup = FALSE,
-  numberColors = 6
+  numberColors = lifecycle::deprecated(),
+  subject = NULL
 )
 ```
 
@@ -97,11 +99,54 @@ plot_effect(
 
 - numberColors:
 
-  number of colors
+  **\[deprecated\]** Never had any effect: the colours come from
+  [`see::scale_colour_see()`](https://easystats.github.io/see/reference/scale_color_see.html),
+  which uses one colour per group. Passing it warns.
+
+- subject:
+
+  optional participant-ID column (a string). Give it when `x` and/or
+  `fillColourGroup` vary within participants, to get within-subject
+  error bars (see Details). Default `NULL`.
 
 ## Value
 
 a plot
+
+## Details
+
+**Points and lines.** The small points and the dashed (main) or bold
+(interaction) per-group lines are the cell means. The bold main-effect
+line and its large points are the *unweighted* marginal means of `x`:
+for each level of `x`, the mean of the cell means across
+`fillColourGroup`. That is the quantity a main effect in a factorial
+ANOVA is about; the mean of the raw observations would weight each cell
+by its size and, in an unbalanced design, follow whichever group happens
+to be larger.
+
+**Error bars** are 95\\
+
+- `subject = NULL` (default): nonparametric bootstrap intervals
+  ([`ggplot2::mean_cl_boot()`](https://ggplot2.tidyverse.org/reference/hmisc.html),
+  requires 'Hmisc'). These treat every observation as independent, i.e.
+  they are **between-subject** intervals. That is right for
+  between-subject factors, but for a factor that varies within
+  participants they include the between-participant spread a
+  within-subject comparison does not depend on, and look misleadingly
+  wide.
+
+- `subject` given: **within-subject** intervals after Cousineau (2005),
+  with the Morey (2008) correction. Each participant's scores are
+  centred on their own mean, the variance of the normalised scores is
+  inflated by \\M/(M-1)\\ (\\M\\ = number of within-subject conditions),
+  and a factor that does not vary within participants is respected by
+  normalising within its groups. Participants without a value in every
+  within-subject condition are dropped (with a message), and more than
+  one row per participant and cell is an error.
+
+Either way, the intervals describe single means, not differences between
+them; overlapping bars do not by themselves imply a non-significant
+difference.
 
 ## Naming
 
@@ -113,6 +158,16 @@ prefixes make the API discoverable through autocomplete.
 names refer to the same function object, so they are entirely
 interchangeable; the original remains fully supported and is not
 scheduled for removal, and existing scripts keep working unchanged.
+
+## References
+
+Cousineau, D. (2005). Confidence intervals in within-subject designs: A
+simpler solution to Loftus and Masson's method. *Tutorials in
+Quantitative Methods for Psychology, 1*(1), 42–45.
+
+Morey, R. D. (2008). Confidence intervals from normalized data: A
+correction to Cousineau (2005). *Tutorials in Quantitative Methods for
+Psychology, 4*(2), 61–64.
 
 ## Examples
 

@@ -39,7 +39,11 @@ add_pareto_emoa_column(data, objectives, maximise = FALSE)
 
 A data frame with the same columns as `data`, along with an additional
 column, `PARETO_EMOA`, which is `TRUE` for rows that are on the Pareto
-front and `FALSE` otherwise.
+front and `FALSE` otherwise. Identical rows share one verdict (a copy of
+a non-dominated point is non-dominated too), as in
+[`add_pareto_moocore_column()`](https://m-colley.github.io/colleyRstats/reference/add_pareto_moocore_column.md).
+Rows with a missing objective value get `NA`, with a warning, and the
+front is computed from the complete rows.
 
 ## See also
 

@@ -17,7 +17,7 @@ scores."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,7 +47,7 @@ scores."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Show how a questionnaire will be scored, before scoring it</h1>
-      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.1/R/questionnaires.R" class="external-link"><code>R/questionnaires.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/main/R/questionnaires.R" class="external-link"><code>R/questionnaires.R</code></a></small>
       <div class="d-none name"><code>check_questionnaire.Rd</code></div>
     </div>
 
@@ -68,7 +68,8 @@ scores.</p>
 <span>  items <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  prefix <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  scale <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  reverse_items <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  reverse_items <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  unreverse_items <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -95,9 +96,17 @@ and the safer choice for a survey export you did not lay out yourself.</p></dd>
 
 <dt id="arg-prefix">prefix<a class="anchor" aria-label="anchor" href="#arg-prefix"></a></dt>
 <dd><p>Optional column-name prefix selecting the item columns, e.g.
-<code>"sus_"</code>. Matching columns are sorted numerically, so <code>sus_2</code>
-comes before <code>sus_10</code>. Must select exactly as many columns as the
-instrument has items.</p></dd>
+<code>"sus_"</code>. Must select exactly as many columns as the instrument has
+items. The columns are then matched to items <em>by their names</em>, never
+by sort order: either what follows the prefix is the item's code, label or
+(for a single-item subscale) subscale name, compared without case or
+punctuation (<code>tlx_mental</code>, <code>tlx_Mental_Demand</code>, <code>tia_rc1</code>,
+<code>ipq_SP2</code>); or it carries one item number per column, and those
+numbers are exactly <code>1..n</code> (<code>sus_2</code>, <code>SUS[2]</code>,
+<code>Q5_2</code>; in <code>SUS_2_1</code> the number that varies across the columns
+is the item). Anything else – numbering from 0, numbers that do not run
+<code>1..n</code>, names that only partly match – is an error asking for a
+named <code>items</code> mapping, rather than a guess.</p></dd>
 
 
 <dt id="arg-scale">scale<a class="anchor" aria-label="anchor" href="#arg-scale"></a></dt>
@@ -105,14 +114,27 @@ instrument has items.</p></dd>
 survey used, e.g. <code>c(1, 21)</code> for the 21-point NASA-TLX sheet or
 <code>c(0, 4)</code> for a zero-based SUS. Responses are rescaled onto the
 instrument's own range before scoring. Defaults to the instrument's range;
-responses outside it are an error rather than a silent rescale.</p></dd>
+responses outside it are an error rather than a silent rescale. Without
+<code>scale</code>, a coding that fits the range but looks shifted against it
+draws a warning (see Details); passing <code>scale</code> explicitly confirms
+the coding and silences it.</p></dd>
 
 
 <dt id="arg-reverse-items">reverse_items<a class="anchor" aria-label="anchor" href="#arg-reverse-items"></a></dt>
-<dd><p>Optional items to <em>toggle</em> the reverse-coding of,
-given as item numbers or item codes. Naming an item the scoring key already
-reverses un-reverses it, which is what an export that stores a pair the
-other way round needs.</p></dd>
+<dd><p>Optional items to reverse-code in addition to the
+scoring key's own, given as item numbers or item codes – for a survey that
+printed a pair the other way round. For backward compatibility it
+<em>toggles</em>: naming an item the key already reverses un-reverses it,
+and because passing an instrument's own reverse set (e.g.
+<code>c(2, 4, 6, 8, 10)</code> for the SUS) is a common mistake that would do
+exactly that, it raises a warning. Use <code>unreverse_items</code> to undo a
+key reversal on purpose.</p></dd>
+
+
+<dt id="arg-unreverse-items">unreverse_items<a class="anchor" aria-label="anchor" href="#arg-unreverse-items"></a></dt>
+<dd><p>Optional items the scoring key reverses that should
+<em>not</em> be reversed, because the export already stored them
+reverse-coded. Naming an item the key does not reverse is an error.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -120,6 +142,14 @@ other way round needs.</p></dd>
     <p>Invisibly, a data frame with one row per item: the item number and
 code, the column it maps to, its subscale, whether it is reverse-coded, and
 the observed minimum, maximum and number of missing values of that column.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Problems that <code><a href="score_questionnaire.html">score_questionnaire()</a></code> would stop on (a column that is not
+numeric, responses outside the assumed range) are reported here as warnings
+instead, together with the warnings scoring would raise (a coding that looks
+shifted, an item named in <code>reverse_items</code> that the key already
+reverses), so the check can explain them rather than abort.</p>
     </div>
     <div class="section level2">
     <h2 id="caution-verify-the-mapping-against-your-own-survey">Caution – verify the mapping against your own survey<a class="anchor" aria-label="anchor" href="#caution-verify-the-mapping-against-your-own-survey"></a></h2>
@@ -142,7 +172,12 @@ scored in a session (silence it with
 <code>options(colleyRstats.quiet_questionnaires = TRUE)</code>).</p>
 <p>A named <code>items</code> argument (<code>items = c(mental = "tlx_md", ...)</code>) removes the
 positional assumption altogether and is the safer choice for an export you
-did not lay out yourself.</p>
+did not lay out yourself. A <code>prefix</code> maps columns by what their names say
+– an item code or label, or one item number per column running 1 to the
+number of items – never by sort order, and stops when the names do not
+identify the items. Note that the <code>attrakdiff</code> key is blocked by dimension
+with the negative pole first; data stored as answered on the official
+AttrakDiff sheet belong to <code>attrakdiff_official</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -163,6 +198,7 @@ did not lay out yourself.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Check the mapping against the survey your participants actually saw, and</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> double-check any number before it goes into a paper.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Assumed response range: 1-5 (the instrument's own; pass `scale` if your survey differed)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Observed responses: 1 to 5</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Item mapping (verify against the survey your participants saw):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  item  code column     subscale reverse observed_min observed_max n_missing</span>
@@ -180,6 +216,8 @@ did not lay out yourself.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Notes:</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   - The SUS score is the sum of the ten recoded items multiplied by 2.5, giving 0-100. That is a percentage of the maximum, NOT a percentile: the mean SUS across studies is about 68, so 68 is average rather than poor.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   - Usability (8 items, x 3.125) and Learnability (2 items, x 12.5) follow Lewis &amp; Sauro (2009) and are likewise on 0-100. The two are strongly correlated; report them only if the study has a reason to separate them.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   - Missing items: Brooke (1996) instructs a respondent who cannot answer an item to mark the centre point of the scale, so when `min_valid` &lt; 1 lets an incomplete row be scored, each missing item counts as the centre (3 on 1-5). One missing item in an otherwise perfect response therefore gives 95, not 100. Pass impute = "prorate" to scale up from the answered items instead, and say which rule you used.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   - Learnability has only two items. score_reliability() reports the Spearman-Brown coefficient for it, which Eisinga, te Grotenhuis &amp; Pelzer (2013) recommend over alpha for two-item scales.</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

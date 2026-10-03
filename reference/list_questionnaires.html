@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,7 +37,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>List the questionnaires this package can score</h1>
-      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.1/R/questionnaires.R" class="external-link"><code>R/questionnaires.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/main/R/questionnaires.R" class="external-link"><code>R/questionnaires.R</code></a></small>
       <div class="d-none name"><code>list_questionnaires.Rd</code></div>
     </div>
 
@@ -66,42 +66,45 @@ reference.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">list_questionnaires</span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           key                                              name n_items</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1  acceptance                     Van der Laan acceptance scale       9</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2  attrakdiff                                      AttrakDiff 2      28</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3         fms                  Fast Motion Sickness Scale (FMS)       1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4         ipq               igroup Presence Questionnaire (IPQ)      14</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5        misc                               Misery Scale (MISC)       1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6    nasa_tlx                  NASA Task Load Index, raw (RTLX)       6</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7         ssq            Simulator Sickness Questionnaire (SSQ)      16</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8         sus                      System Usability Scale (SUS)      10</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9         tia                         Trust in Automation (TiA)      19</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10        ueq    User Experience Questionnaire (UEQ), full form      26</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11      ueq_s User Experience Questionnaire, short form (UEQ-S)       8</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    n_subscales scale     higher_is</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1            2  -2-2        better</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2            4   1-7        better</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3            1  0-20         worse</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4            4   0-6 more presence</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5            1  0-10         worse</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6            6 0-100         worse</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7            3   0-3         worse</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8            2   1-5        better</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9            6   1-5        better</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10           6   1-7        better</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11           2   1-7        better</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                                            reference</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1                                         Van der Laan, Heino &amp; De Waard (1997), Transp. Res. C 5(1)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2                                      Hassenzahl, Burmester &amp; Koller (2003), Mensch &amp; Computer 2003</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3                                                      Keshavarz &amp; Hecht (2011), Human Factors 53(4)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4                               Schubert, Friedmann &amp; Regenbrecht (2001), Presence 10(3); igroup.org</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5  Wertheim, Bos &amp; Bles (1998); Bos, MacKinnon &amp; Patterson (2005), Aviat. Space Environ. Med. 76(12)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6                                  Hart &amp; Staveland (1988), Adv. Psychology 52; Hart (2006), HFES 50</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7                       Kennedy, Lane, Berbaum &amp; Lilienthal (1993), Int. J. Aviation Psychology 3(3)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8                        Brooke (1996), Usability Evaluation in Industry; Lewis &amp; Sauro (2009), HCII</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9                  Koerber (2018), Proc. IEA 2018, Advances in Intelligent Systems and Computing 823</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10                                      Laugwitz, Held &amp; Schrepp (2008), USAB; Schrepp, UEQ Handbook</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11                                             Schrepp, Hinderks &amp; Thomaschewski (2017), IJIMAI 4(6)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                    key                                              name</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1           acceptance                     Van der Laan acceptance scale</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2           attrakdiff                                      AttrakDiff 2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3  attrakdiff_official     AttrakDiff 2 (official sheet order and poles)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4                  fms                  Fast Motion Sickness Scale (FMS)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5                  ipq               igroup Presence Questionnaire (IPQ)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6                 misc                               Misery Scale (MISC)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7             nasa_tlx                  NASA Task Load Index, raw (RTLX)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8                  ssq            Simulator Sickness Questionnaire (SSQ)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9                  sus                      System Usability Scale (SUS)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10                 tia                         Trust in Automation (TiA)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 11                 ueq    User Experience Questionnaire (UEQ), full form</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 12               ueq_s User Experience Questionnaire, short form (UEQ-S)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    n_items n_subscales scale     higher_is</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1        9           2  -2-2        better</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2       28           4   1-7        better</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3       28           4   1-7        better</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4        1           1  0-20         worse</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5       14           4   0-6 more presence</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6        1           1  0-10         worse</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7        6           6 0-100         worse</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8       16           3   0-3         worse</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9       10           2   1-5        better</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10      19           6   1-5        better</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 11      26           6   1-7        better</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 12       8           2   1-7        better</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                                                                                                      reference</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1                                                                                                   Van der Laan, Heino &amp; De Waard (1997), Transp. Res. C 5(1)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2                                                                                                Hassenzahl, Burmester &amp; Koller (2003), Mensch &amp; Computer 2003</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3  Hassenzahl, Burmester &amp; Koller (2003), Mensch &amp; Computer 2003; order and poles as administered (cf. Lallemand et al., 2015, Eur. Rev. Appl. Psychol. 65(5))</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4                                                                                                                Keshavarz &amp; Hecht (2011), Human Factors 53(4)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5                                                                                         Schubert, Friedmann &amp; Regenbrecht (2001), Presence 10(3); igroup.org</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6                                                            Wertheim, Bos &amp; Bles (1998); Bos, MacKinnon &amp; Patterson (2005), Aviat. Space Environ. Med. 76(12)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7                                                                                            Hart &amp; Staveland (1988), Adv. Psychology 52; Hart (2006), HFES 50</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8                                                                                 Kennedy, Lane, Berbaum &amp; Lilienthal (1993), Int. J. Aviation Psychology 3(3)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9                                                                                  Brooke (1996), Usability Evaluation in Industry; Lewis &amp; Sauro (2009), HCII</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10                                                                           Koerber (2019), Proc. IEA 2018, Advances in Intelligent Systems and Computing 823</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 11                                                                                                Laugwitz, Held &amp; Schrepp (2008), USAB; Schrepp, UEQ Handbook</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 12                                                                                                       Schrepp, Hinderks &amp; Thomaschewski (2017), IJIMAI 4(6)</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

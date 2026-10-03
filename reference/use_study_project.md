@@ -13,7 +13,7 @@ use_study_project(
   path,
   name = NULL,
   questionnaires = c("nasa_tlx", "sus"),
-  renv = requireNamespace("renv", quietly = TRUE),
+  renv = FALSE,
   git = TRUE,
   overwrite = FALSE,
   quiet = FALSE
@@ -41,9 +41,19 @@ use_study_project(
 - renv:
 
   Logical. Initialise renv in the project, pinning the package versions
-  this analysis was run with. Default `TRUE` when renv is installed.
-  This is what makes the project still run in three years, and what
-  makes it a usable open-science artifact.
+  this analysis was run with – which is what makes the project still run
+  in three years, and what makes it a usable open-science artifact.
+  Default `FALSE`: initialising discovers every package the scripts use
+  and installs it into a project library, which can mean network
+  downloads, so it is opt-in. With `TRUE`,
+  [`renv::init()`](https://rstudio.github.io/renv/reference/init.html)
+  runs in a separate R process (via callr when installed, otherwise
+  `Rscript`), because activating a project rewrites the calling
+  session's library paths, environment variables (`R_LIBS_USER`, `PATH`,
+  `RENV_PATHS_*`), repository options and sandbox; your current session
+  is left exactly as it was. Run
+  [`renv::init()`](https://rstudio.github.io/renv/reference/init.html)
+  yourself later to opt in after the fact.
 
 - git:
 
@@ -99,23 +109,23 @@ produced.
 # \donttest{
 project <- file.path(tempdir(), "driving-study")
 use_study_project(project, questionnaires = c("nasa_tlx", "sus"), renv = FALSE)
-#> Creating study project 'driving-study' in /tmp/Rtmp2Ft8yp/driving-study
-#>   wrote: /tmp/Rtmp2Ft8yp/driving-study/_targets.R
-#>   wrote: /tmp/Rtmp2Ft8yp/driving-study/R/read.R
-#>   wrote: /tmp/Rtmp2Ft8yp/driving-study/R/prepare.R
-#>   wrote: /tmp/Rtmp2Ft8yp/driving-study/R/analysis.R
-#>   wrote: /tmp/Rtmp2Ft8yp/driving-study/R/figures.R
-#>   wrote: /tmp/Rtmp2Ft8yp/driving-study/report/report.qmd
-#>   wrote: /tmp/Rtmp2Ft8yp/driving-study/README.md
-#>   wrote: /tmp/Rtmp2Ft8yp/driving-study/.gitignore
-#>   wrote: /tmp/Rtmp2Ft8yp/driving-study/data-raw/example-study.csv
-#>   wrote: /tmp/Rtmp2Ft8yp/driving-study/data-raw/README.md
-#>   wrote: /tmp/Rtmp2Ft8yp/driving-study/paper/generated/README.md
-#>   wrote: /tmp/Rtmp2Ft8yp/driving-study/output/figures/README.md
-#>   wrote: /tmp/Rtmp2Ft8yp/driving-study/paper/colleyRstats.sty
+#> Creating study project 'driving-study' in /tmp/Rtmpb2vD81/driving-study
+#>   wrote: /tmp/Rtmpb2vD81/driving-study/_targets.R
+#>   wrote: /tmp/Rtmpb2vD81/driving-study/R/read.R
+#>   wrote: /tmp/Rtmpb2vD81/driving-study/R/prepare.R
+#>   wrote: /tmp/Rtmpb2vD81/driving-study/R/analysis.R
+#>   wrote: /tmp/Rtmpb2vD81/driving-study/R/figures.R
+#>   wrote: /tmp/Rtmpb2vD81/driving-study/report/report.qmd
+#>   wrote: /tmp/Rtmpb2vD81/driving-study/README.md
+#>   wrote: /tmp/Rtmpb2vD81/driving-study/.gitignore
+#>   wrote: /tmp/Rtmpb2vD81/driving-study/data-raw/example-study.csv
+#>   wrote: /tmp/Rtmpb2vD81/driving-study/data-raw/README.md
+#>   wrote: /tmp/Rtmpb2vD81/driving-study/paper/generated/README.md
+#>   wrote: /tmp/Rtmpb2vD81/driving-study/output/figures/README.md
+#>   wrote: /tmp/Rtmpb2vD81/driving-study/paper/colleyRstats.sty
 #> 
 #> Done. Next:
-#>   1. setwd("/tmp/Rtmp2Ft8yp/driving-study")
+#>   1. setwd("/tmp/Rtmpb2vD81/driving-study")
 #>   2. targets::tar_make()            # runs end to end on the example data
 #>   3. replace data-raw/example-study.csv with yours, then edit R/read.R
 #>   4. targets::tar_visnetwork()      # see what is out of date

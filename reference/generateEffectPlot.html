@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,7 +37,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Function to define a plot, either showing the main or interaction effect in bold.</h1>
-      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.1/R/plotting.R" class="external-link"><code>R/plotting.R</code></a>, <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.1/R/zzz-aliases.R" class="external-link"><code>R/zzz-aliases.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/main/R/plotting.R" class="external-link"><code>R/plotting.R</code></a>, <a href="https://github.com/M-Colley/colleyRstats/blob/main/R/zzz-aliases.R" class="external-link"><code>R/zzz-aliases.R</code></a></small>
       <div class="d-none name"><code>generateEffectPlot.Rd</code></div>
     </div>
 
@@ -61,7 +61,8 @@
 <span>  effectDescription <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  xLabelsOverwrite <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  useLatexMarkup <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  numberColors <span class="op">=</span> <span class="fl">6</span></span>
+<span>  numberColors <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  subject <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">plot_effect</span><span class="op">(</span></span>
@@ -78,7 +79,8 @@
 <span>  effectDescription <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  xLabelsOverwrite <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  useLatexMarkup <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  numberColors <span class="op">=</span> <span class="fl">6</span></span>
+<span>  numberColors <span class="op">=</span> <span class="fu">lifecycle</span><span class="fu">::</span><span class="fu"><a href="https://lifecycle.r-lib.org/reference/deprecated.html" class="external-link">deprecated</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  subject <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -139,12 +141,47 @@
 
 
 <dt id="arg-numbercolors">numberColors<a class="anchor" aria-label="anchor" href="#arg-numbercolors"></a></dt>
-<dd><p>number of colors</p></dd>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Never had any
+effect: the colours come from <code><a href="https://easystats.github.io/see/reference/scale_color_see.html" class="external-link">see::scale_colour_see()</a></code>, which uses one
+colour per group. Passing it warns.</p></dd>
+
+
+<dt id="arg-subject">subject<a class="anchor" aria-label="anchor" href="#arg-subject"></a></dt>
+<dd><p>optional participant-ID column (a string). Give it when
+<code>x</code> and/or <code>fillColourGroup</code> vary within participants, to get
+within-subject error bars (see Details). Default <code>NULL</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>a plot</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p><strong>Points and lines.</strong> The small points and the dashed (main) or bold
+(interaction) per-group lines are the cell means. The bold main-effect line
+and its large points are the <em>unweighted</em> marginal means of <code>x</code>: for each
+level of <code>x</code>, the mean of the cell means across <code>fillColourGroup</code>. That is
+the quantity a main effect in a factorial ANOVA is about; the mean of the
+raw observations would weight each cell by its size and, in an unbalanced
+design, follow whichever group happens to be larger.</p>
+<p><strong>Error bars</strong> are 95\<!-- % confidence intervals of each cell mean: --></p><ul><li><p><code>subject = NULL</code> (default): nonparametric bootstrap intervals
+(<code><a href="https://ggplot2.tidyverse.org/reference/hmisc.html" class="external-link">ggplot2::mean_cl_boot()</a></code>, requires 'Hmisc'). These treat every
+observation as independent, i.e. they are <strong>between-subject</strong> intervals.
+That is right for between-subject factors, but for a factor that varies
+within participants they include the between-participant spread a
+within-subject comparison does not depend on, and look misleadingly wide.</p></li>
+<li><p><code>subject</code> given: <strong>within-subject</strong> intervals after Cousineau (2005), with
+the Morey (2008) correction. Each participant's scores are centred on
+their own mean, the variance of the normalised scores is inflated by
+\(M/(M-1)\) (\(M\) = number of within-subject conditions), and a
+factor that does not vary within participants is respected by normalising
+within its groups. Participants without a value in every within-subject
+condition are dropped (with a message), and more than one row per
+participant and cell is an error.</p></li>
+</ul><p>Either way, the intervals describe single means, not differences between
+them; overlapping bars do not by themselves imply a non-significant
+difference.</p>
     </div>
     <div class="section level2">
     <h2 id="naming">Naming<a class="anchor" aria-label="anchor" href="#naming"></a></h2>
@@ -157,6 +194,15 @@ make the API discoverable through autocomplete.</p>
 name. Both names refer to the same function object, so they are entirely
 interchangeable; the original remains fully supported and is not scheduled
 for removal, and existing scripts keep working unchanged.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
+    <p>Cousineau, D. (2005). Confidence intervals in within-subject designs: A
+simpler solution to Loftus and Masson's method. <em>Tutorials in Quantitative
+Methods for Psychology, 1</em>(1), 42–45.</p>
+<p>Morey, R. D. (2008). Confidence intervals from normalized data: A correction
+to Cousineau (2005). <em>Tutorials in Quantitative Methods for Psychology,
+4</em>(2), 61–64.</p>
     </div>
 
     <div class="section level2">

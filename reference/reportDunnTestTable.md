@@ -1,10 +1,12 @@
-# report Dunn test as a table. Customizable with sensible defaults. Required commands in LaTeX: `\newcommand{\padjminor}{\textit{p$_{adj}<$}}` `\newcommand{\padj}{\textit{p$_{adj}$=}}` `\newcommand{\rankbiserial}[1]{$r_{rb} = #1$}`
+# report Dunn test as a table. Customizable with sensible defaults.
 
-report Dunn test as a table. Customizable with sensible defaults.
-Required commands in LaTeX:
-`\newcommand{\padjminor}{\textit{p$_{adj}<$}}`
-`\newcommand{\padj}{\textit{p$_{adj}$=}}`
-`\newcommand{\rankbiserial}[1]{$r_{rb} = #1$}`
+The table lists the significant comparisons with their \\Z\\, p-value
+and rank-biserial correlation. FSA's \\Z\\ for "A - B" is positive when
+A has the higher mean rank, which the caption states. The p-value column
+is headed "p-adjusted" and the caption names the correction read from
+the test object; a test run with `method = "none"` gets the header "p"
+and a caption saying the p-values are not adjusted. P-values are never
+rounded across .05 or .01.
 
 ## Usage
 
@@ -140,10 +142,10 @@ if (requireNamespace("FSA", quietly = TRUE)) {
 #> FWER = 0.05
 #> Reject Ho if adjusted p ≤ FWER with stopping rule, where (unadjusted) p = Pr(|Z| ≥ |z|)
 #> % latex table generated in R 4.6.1 by xtable 1.8-8 package
-#> % Tue Sep  1 17:40:41 2026
+#> % Sat Oct  3 05:35:36 2026
 #> \begin{table}[ht]
 #> \centering
-#> \caption{Post-hoc comparisons for independent variable \Species and dependent variable Sepal.Length. Positive Z-values mean that the first-named level is sig. higher than the second-named. For negative Z-values, the opposite is true. Effect size reported as rank-biserial correlation (r).} 
+#> \caption{Dunn post-hoc comparisons for independent variable \Species{} and dependent variable Sepal.Length. Positive Z-values mean that the first-named level has the higher mean rank; for negative Z-values, the second-named level does. p-values are Holm-adjusted. Effect size reported as rank-biserial correlation (r).} 
 #> \label{tab:posthoc-Species-Sepal.Length}
 #> \begingroup\small
 #> \begin{tabular}{lrll}

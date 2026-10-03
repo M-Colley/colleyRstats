@@ -156,8 +156,14 @@ APA-compliant, LaTeX-ready sentences and tables for each model family.
   Generate the Latex-text based on the ARTool (see
   <https://github.com/mjskay/ARTool>). The ART result must be piped into
   an anova(). Only significant main and interaction effects are
-  reported. P-values are rounded for the third digit. Attention: Effect
-  sizes are not calculated! Attention: the independent variables of the
+  reported. P-values are rounded for the third digit. Each effect is
+  accompanied by its partial eta squared, derived from the F statistic
+  and its degrees of freedom with
+  [`effectsize::F_to_eta2()`](https://easystats.github.io/effectsize/reference/F_to_eta2.html),
+  and a two-sided 95% confidence interval. A term is reported as an
+  interaction when its name contains `":"`; each factor name is rendered
+  as a `\Name` macro only when that is a safe new LaTeX command, and as
+  escaped text otherwise. Attention: the independent variables of the
   formula and the term specifying the participant must be factors (i.e.,
   use as.factor()).
 
@@ -183,22 +189,11 @@ APA-compliant, LaTeX-ready sentences and tables for each model family.
 
 - [`reportDunnTest()`](https://m-colley.github.io/colleyRstats/reference/reportDunnTest.md)
   [`report_dunn_test()`](https://m-colley.github.io/colleyRstats/reference/reportDunnTest.md)
-  :
-
-  Report dunnTest as text. Required commands in LaTeX:
-  `\newcommand{\padjminor}{\textit{p$_{adj}<$}}`
-  `\newcommand{\padj}{\textit{p$_{adj}$=}}`
-  `\newcommand{\rankbiserial}[1]{$r_{rb} = #1$}`
+  : Report dunnTest as text
 
 - [`reportDunnTestTable()`](https://m-colley.github.io/colleyRstats/reference/reportDunnTestTable.md)
   [`report_dunn_test_table()`](https://m-colley.github.io/colleyRstats/reference/reportDunnTestTable.md)
-  :
-
-  report Dunn test as a table. Customizable with sensible defaults.
-  Required commands in LaTeX:
-  `\newcommand{\padjminor}{\textit{p$_{adj}<$}}`
-  `\newcommand{\padj}{\textit{p$_{adj}$=}}`
-  `\newcommand{\rankbiserial}[1]{$r_{rb} = #1$}`
+  : report Dunn test as a table. Customizable with sensible defaults.
 
 - [`reportggstatsplot()`](https://m-colley.github.io/colleyRstats/reference/reportggstatsplot.md)
   [`report_ggstatsplot()`](https://m-colley.github.io/colleyRstats/reference/reportggstatsplot.md)
@@ -228,9 +223,11 @@ APA-compliant, LaTeX-ready sentences and tables for each model family.
   Generate the Latex-text based on the NPAV by Lüpsen (see
   <https://www.uni-koeln.de/~luepsen/R/>). Only significant main and
   interaction effects are reported. P-values are rounded for the third
-  digit and partial eta squared values are provided when possible.
-  Attention: the independent variables of the formula and the term
-  specifying the participant must be factors (i.e., use as.factor()).
+  digit and partial eta squared values, with a two-sided 95% confidence
+  interval, are provided when possible. A term is reported as an
+  interaction when its name contains `":"`. Attention: the independent
+  variables of the formula and the term specifying the participant must
+  be factors (i.e., use as.factor()).
 
 ## Effect sizes
 
@@ -241,7 +238,8 @@ APA-compliant, LaTeX-ready sentences and tables for each model family.
   *number of measurements*.
 
 - [`rFromWilcoxAdjusted()`](https://m-colley.github.io/colleyRstats/reference/rFromWilcoxAdjusted.md)
-  : rFromWilcoxAdjusted
+  **\[deprecated\]** : Effect size r from a multiplicity-inflated
+  Wilcoxon p-value (deprecated)
 
 - [`rFromNPAV()`](https://m-colley.github.io/colleyRstats/reference/rFromNPAV.md)
   :

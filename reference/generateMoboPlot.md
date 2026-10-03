@@ -43,7 +43,10 @@ plot_mobo(
 - x:
 
   A string representing the column name in `data` to be used for the
-  x-axis. Can be either numeric or factor.
+  x-axis. Can be either numeric or a factor whose labels are numbers; it
+  is plotted on a continuous axis either way, so the data, the phase
+  guides and the fitted equation all refer to the iteration values (not
+  to factor positions).
 
 - y:
 
@@ -68,7 +71,10 @@ plot_mobo(
 - numberSamplingSteps:
 
   An integer specifying the number of initial sampling steps before the
-  optimization phase begins. Default is 5.
+  optimization phase begins, counted in distinct iterations from the
+  first one (so it also works when iterations start at 0 or are spaced
+  by more than 1). Must be smaller than the number of iterations.
+  Default is 5.
 
 - labelPosFormulaY:
 
@@ -118,6 +124,7 @@ df <- data.frame(
 generateMoboPlot(df, x = "x", y = "y")
 
 
+# \donttest{
 # Example with factor x-axis
 df <- data.frame(
   x = factor(rep(1:5, each = 4)),
@@ -125,4 +132,6 @@ df <- data.frame(
   ConditionID = rep(c("A", "B"), 10)
 )
 generateMoboPlot(df, x = "x", y = "y", numberSamplingSteps = 3)
+
+# }
 ```

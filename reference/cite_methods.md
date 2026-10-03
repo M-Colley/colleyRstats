@@ -27,7 +27,12 @@ cite_methods(methods = c("ggstatsplot", "effectsize"), bibtex = TRUE)
 
 Invisibly returns the generated lines as a character vector; the text is
 also emitted via [`message()`](https://rdrr.io/r/base/message.html).
-Methods whose package is not installed are skipped with a message.
+Methods whose package is not installed are skipped with a message. Every
+BibTeX entry gets a citation key – the package name, with `-2`, `-3`,
+... for a package's further entries – because R's citation entries carry
+none, and BibTeX keeps only the first of several keyless entries
+("Repeated entry"). The methods phrase then cites those keys
+(`\cite{ARTool,ARTool-2}`).
 
 ## Examples
 

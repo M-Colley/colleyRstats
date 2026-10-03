@@ -40,6 +40,8 @@ latex_preamble()
 #> \newcommand{\sd}{\textit{SD=}}
 #> \newcommand{\df}{\textit{df=}}
 #> \newcommand{\chisq}{$\chi^2$}
+#> \newcommand{\mdn}{\textit{Mdn=}}
+#> \newcommand{\iqr}{\textit{IQR=}}
 #> \newcommand{\rankbiserial}[1]{$r_{rb} = #1$}
 #> \newcommand{\effectsize}{\textit{r=}}
 ```

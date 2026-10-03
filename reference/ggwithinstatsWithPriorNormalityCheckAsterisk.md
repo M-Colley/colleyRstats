@@ -1,8 +1,15 @@
 # Check the data's distribution. If non-normal, take the non-parametric variant of *ggwithinstats*. x and y have to be in parentheses, e.g., "ConditionID". Add Asterisks instead of p-values.
 
-Check the data's distribution. If non-normal, take the non-parametric
-variant of *ggwithinstats*. x and y have to be in parentheses, e.g.,
-"ConditionID". Add Asterisks instead of p-values.
+As
+[`ggwithinstatsWithPriorNormalityCheck()`](https://m-colley.github.io/colleyRstats/reference/ggwithinstatsWithPriorNormalityCheck.md)
+– including pairing by `subject` and dropping participants who lack a
+condition – but the significant comparisons are drawn as asterisk
+brackets (\*\*\* p \< .001, \*\* p \< .01, \* p \< .05) instead of
+p-values. The brackets come from the same test as the figure: with two
+conditions, the omnibus paired test in the subtitle; with more, the
+Holm-adjusted paired Student's t (parametric) or Durbin-Conover
+(non-parametric) tests ggstatsplot itself would compute, paired by
+participant.
 
 ## Usage
 
@@ -13,17 +20,26 @@ ggwithinstatsWithPriorNormalityCheckAsterisk(
   y,
   ylab,
   xlabels,
-  plotType = "boxviolin"
+  plotType = "boxviolin",
+  subject
 )
 
-plot_within_stats_asterisk(data, x, y, ylab, xlabels, plotType = "boxviolin")
+plot_within_stats_asterisk(
+  data,
+  x,
+  y,
+  ylab,
+  xlabels,
+  plotType = "boxviolin",
+  subject
+)
 ```
 
 ## Arguments
 
 - data:
 
-  the data frame
+  the data frame, in long format (one row per participant and condition)
 
 - x:
 
@@ -44,6 +60,12 @@ plot_within_stats_asterisk(data, x, y, ylab, xlabels, plotType = "boxviolin")
 - plotType:
 
   either "box", "violin", or "boxviolin" (default)
+
+- subject:
+
+  the participant-ID column, as a string (e.g. `"participant"`).
+  Required. It is the last argument so that existing positional calls
+  keep their meaning.
 
 ## Value
 
@@ -72,7 +94,7 @@ unchanged.
 
 set.seed(123)
 
-# Toy within-subject style data
+# Toy within-subject data: every participant sees every condition
 main_df <- data.frame(
   Participant = factor(rep(1:20, each = 3)),
   CondID      = factor(rep(c("A", "B", "C"), times = 20)),
@@ -86,7 +108,8 @@ labels_xlab <- c("Condition A", "Condition B", "Condition C")
 ggwithinstatsWithPriorNormalityCheckAsterisk(
   data = main_df,
   x = "CondID", y = "tlx_mental",
-  ylab = "Mental Demand", xlabels = labels_xlab
+  ylab = "Mental Demand", xlabels = labels_xlab,
+  subject = "Participant"
 )
 #> Scale for x is already present.
 #> Adding another scale for x, which will replace the existing scale.

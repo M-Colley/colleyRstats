@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,9 +37,121 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.1/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/M-Colley/colleyRstats/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.0" id="colleyrstats-030">colleyRstats 0.3.0<a class="anchor" aria-label="anchor" href="#colleyrstats-030"></a></h2>
+<p>This release fixes a set of defects that could put a wrong number, a wrong direction or a wrong label into a manuscript without any error. <strong>Re-run within-subjects analyses, post-hoc sentences from rank-based tests, mixed-model reports and <code>prefix =</code> questionnaire scoring made with earlier versions.</strong></p>
+<div class="section level3">
+<h3 id="breaking-changes-0-3-0">BREAKING CHANGES<a class="anchor" aria-label="anchor" href="#breaking-changes-0-3-0"></a></h3>
+<ul><li>
+<code><a href="../reference/ggwithinstatsWithPriorNormalityCheck.html">ggwithinstatsWithPriorNormalityCheck()</a></code> / <code><a href="../reference/ggwithinstatsWithPriorNormalityCheck.html">plot_within_stats()</a></code>, the asterisk variant, and <code><a href="../reference/analyze_and_report.html">analyze_and_report()</a></code> / <code><a href="../reference/report_all.html">report_all()</a></code> with <code>design = "within"</code> require a new <code>subject =</code> argument naming the participant column. Without it, <code>ggstatsplot</code> paired the k-th row of each condition: shuffling one condition’s rows moved p from 3e-7 to 0.30, and one participant missing a condition shifted every later pair. Participants lacking a condition are now dropped with a message naming them, and more than one row per participant and condition is an error (aggregate repeated trials first). <code>subject</code> is the last argument, so existing positional calls are not silently remapped.</li>
+<li>R (&gt;= 4.3.0) is required: the declared <code>ggstatsplot</code> (&gt;= 1.0.0) and <code>statsExpressions</code> (&gt;= 2.0.0) need it, so the previous R (&gt;= 4.2.0) could not be satisfied. <code>ggplot2</code> (&gt;= 3.5.0) is required for the inside-legend placement used by the themes and plots.</li>
+<li>
+<code><a href="../reference/score_questionnaire.html">score_questionnaire()</a></code> stops with an error when an item column holds text (“Strongly agree”, “5 - Strongly agree”, “2,5”), names duplicate columns, or gets a <code>prefix</code> whose column names do not identify the items. All three used to score silently and wrongly.</li>
+<li>
+<code><a href="../reference/use_study_project.html">use_study_project()</a></code> no longer initialises renv by default; pass <code>renv = TRUE</code>, which now runs <code><a href="https://rstudio.github.io/renv/reference/init.html" class="external-link">renv::init()</a></code> in a separate R process so the calling session’s library paths, environment variables and options are untouched.</li>
+<li>
+<code><a href="../reference/not_empty.html">not_empty()</a></code> rejects a data frame without rows.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-0-3-0">BUG FIXES<a class="anchor" aria-label="anchor" href="#bug-fixes-0-3-0"></a></h3>
+<div class="section level4">
+<h4 id="within-subjects-analyses-0-3-0">Within-subjects analyses<a class="anchor" aria-label="anchor" href="#within-subjects-analyses-0-3-0"></a></h4>
+<ul><li>
+<code><a href="../reference/check_normality_by_group.html">check_normality_by_group()</a></code> gains <code>subject =</code> and then tests what a repeated-measures analysis assumes to be normal: the per-participant differences (two conditions) or the residuals of <code>y ~ condition + participant</code> (more), not the raw scores per condition. Between subjects, the per-group p-values are now Holm-corrected (six normal groups used to send about one analysis in four to the non-parametric branch), and a group that cannot be tested – fewer than three values, or a rating item at ceiling – counts as non-normal instead of passing silently.</li>
+<li>
+<code><a href="../reference/assumption_methods_text.html">assumption_methods_text()</a></code> gains <code>subject</code> and describes the check that was actually run, names untestable groups, labels adjusted p-values as such, and names the variance test as run (Brown-Forsythe, the median-centred Levene test <code>rstatix</code> uses). With <code>subject</code>, <code>include_homogeneity</code> is ignored with a message: equal variances across conditions are not a repeated-measures assumption, and the Welch clause it could add has no meaning there.</li>
+<li>
+<code><a href="../reference/checkAssumptionsForAnova.html">checkAssumptionsForAnova()</a></code> treats every factor as categorical (numeric condition codes were fitted as one linear covariate, so identical data got opposite advice depending on the coding), Holm-corrects its per-cell tests, reports cells too small to test instead of crashing, and gains <code>subject =</code> to test the residuals a repeated-measures ANOVA assumes.</li>
+<li>With a single two-level within-subject factor, <code><a href="../reference/checkAssumptionsForAnova.html">checkAssumptionsForAnova()</a></code> and <code><a href="../reference/recommend_test.html">recommend_test()</a></code> test the per-participant differences, as <code><a href="../reference/check_normality_by_group.html">check_normality_by_group()</a></code> does, rather than the model residuals: each participant’s two residuals are mirror images, a symmetrised sample in which Shapiro-Wilk missed skewed differences about half the time.</li>
+<li>Every within-subjects entry point – the plot wrappers, <code><a href="../reference/check_normality_by_group.html">check_normality_by_group()</a></code>, <code><a href="../reference/checkAssumptionsForAnova.html">checkAssumptionsForAnova()</a></code>, the post-hoc descriptives and <code><a href="../reference/generateEffectPlot.html">generateEffectPlot()</a></code>’s within-subject intervals – now decides who is analysed by one shared rule (one row per participant and condition; participants lacking a condition are left out), so the methods sentence, the test, the figure and the descriptives always describe the same participants.</li>
+<li>
+<code><a href="../reference/generateEffectPlot.html">generateEffectPlot()</a></code>’s main-effect line uses unweighted marginal means (it drew 9 vs 1 where the cell means average 5 vs 5 in an unbalanced design); a new <code>subject</code> gives within-subject (Cousineau-Morey) intervals matching <code>afex</code>.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="post-hoc-and-omnibus-sentences-0-3-0">Post-hoc and omnibus sentences<a class="anchor" aria-label="anchor" href="#post-hoc-and-omnibus-sentences-0-3-0"></a></h4>
+<ul><li>
+<code><a href="../reference/reportDunnTest.html">reportDunnTest()</a></code>, <code><a href="../reference/reportArtCon.html">reportArtCon()</a></code> and <code><a href="../reference/reportggstatsplotPostHoc.html">reportggstatsplotPostHoc()</a></code> decided which level “was significantly higher” from the raw means, which contradicts a rank-based test exactly when outliers or skew made one necessary: a Dunn test with Z = -4.05 was reported as “A was significantly higher (M = 10.87)”. The direction now comes from the test (sign of Z, the ART-C estimate, mean ranks, within-participant rank sums, or trimmed means), and the descriptives match it by default – <code>\mdn{}</code>/<code>\iqr{}</code> for rank-based tests – via a new <code>descriptives</code> argument, with a warning when forced means would contradict the test.</li>
+<li>Dunn and ART-C results computed without a correction were labelled <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>p</mi><mrow><mi>a</mi><mi>d</mi><mi>j</mi></mrow></msub><annotation encoding="application/x-tex">p_{adj}</annotation></semantics></math> and “p-adjusted”; they now use <code>\p{}</code> and “p”, and the sentences name the test and the correction (“A Dunn post-hoc test (Holm-adjusted) found …”).</li>
+<li>
+<code><a href="../reference/reportArtCon.html">reportArtCon()</a></code> crashed (and <code><a href="../reference/reportArtConTable.html">reportArtConTable()</a></code> printed NA effect sizes) for numeric-looking levels or levels containing <code>-</code>, <code>+</code>, <code>*</code> or <code>/</code>, which emmeans rewrites in its labels.</li>
+<li>The partial eta squared “95% CI” of <code><a href="../reference/reportART.html">reportART()</a></code> and <code><a href="../reference/reportNPAV.html">reportNPAV()</a></code> was one-sided (upper bound always 1.00); it is now two-sided.</li>
+<li>
+<code><a href="../reference/reportggstatsplotPostHoc.html">reportggstatsplotPostHoc()</a></code> gains <code>subject</code>, so its descriptives describe the participants <code><a href="https://www.indrapatil.com/ggstatsplot/reference/ggwithinstats.html" class="external-link">ggwithinstats()</a></code> tested; it writes <code>sink_to</code> when nothing is significant, so a stale significant result no longer survives in the manuscript; and it refuses Bayesian tables instead of calling them non-significant. <code><a href="../reference/reportggstatsplot.html">reportggstatsplot()</a></code> reports Bayes factors and Yuen’s t(df), and no longer writes “An A heteroscedastic …”.</li>
+<li>p-values are never rounded across .10, .05 or .01: p = 0.0496 used to print as “p = .050” inside a sentence calling the result significant. Beyond eight digits they are truncated (0.0499999999 prints as 0.04999999).</li>
+<li>
+<code><a href="../reference/reportggstatsplotPostHoc.html">reportggstatsplotPostHoc()</a></code> warns whenever a within-subjects plot is reported without <code>subject</code> (equal row counts per level do not show that every participant is complete); its direction warning under <code>descriptives = "auto"</code> no longer recommends the setting already in use. Between-subjects Yuen plots are no longer mistaken for within-subjects ones (“independent samples” contains “dependent samples”). Bayes factors below 1 keep two significant digits (0.014, not 0.01).</li>
+</ul></div>
+<div class="section level4">
+<h4 id="mixed-models-recommend_test-and-fit_recommended-0-3-0">Mixed models, <code>recommend_test()</code> and <code>fit_recommended()</code>
+<a class="anchor" aria-label="anchor" href="#mixed-models-recommend_test-and-fit_recommended-0-3-0"></a></h4>
+<ul><li>
+<code><a href="../reference/reportGLMM.html">reportGLMM()</a></code> reported linear mixed models with the residual df: t(116), p = .030 where lmerTest’s Satterthwaite test gives t(10), p = .053. LMM coefficients now use Satterthwaite df, and the sentence says so.</li>
+<li>
+<code><a href="../reference/reportGLMM.html">reportGLMM()</a></code> / <code><a href="../reference/reportCLMM.html">reportCLMM()</a></code> report a Type III omnibus test for every model term (Satterthwaite F for LMMs, Wald chi-square via <code><a href="https://rvlenth.github.io/emmeans/reference/joint_tests.html" class="external-link">emmeans::joint_tests()</a></code> otherwise) before the coefficients, which are labelled as the treatment contrasts they are (“B vs. A of cond, at b = b1”) instead of “the effect of condB” – in a model with an interaction that coefficient is a simple effect, and a 2x2 example had read “significant, p &lt; .001” where the Type III test gave p = .26. New argument <code>omnibus = TRUE</code>.</li>
+<li>Odds-ratio and IRR labels follow the link (a probit model printed “OR”); thresholds, scale effects and zero-inflation coefficients are no longer reported as predictor effects.</li>
+<li>Count outcomes are checked for over-dispersion and fitted as negative binomial when needed (Poisson had given p = .037 where the negative-binomial model gives p = .43). <code><a href="../reference/classify_outcome.html">classify_outcome()</a></code> no longer silently treats bounded scores as counts (raw NASA-TLX in steps of 5 is continuous, and every count classification is announced) or a two-valued non-0/1 item as binary.</li>
+<li>
+<code><a href="../reference/recommend_test.html">recommend_test()</a></code> tests normality on the residuals of the model it recommends and homogeneity across all design cells; recommends HC3-robust Type III ANOVA instead of a one-way Welch test for heteroscedastic factorial designs; and only recommends models that can be fitted (no ART with covariates, no nparLD without a within factor). A clustered nominal outcome is fitted with <code><a href="https://melff.github.io/mclogit/reference/mblogit.html" class="external-link">mclogit::mblogit()</a></code> instead of a <code>multinom()</code> that ignored the clustering.</li>
+<li>
+<code><a href="../reference/fit_recommended.html">fit_recommended()</a></code> uses order-independent Type III sums of squares for unbalanced between-subjects factorials (Type I gave F = 2.03 or 0.14 depending on predictor order); fits by-participant random slopes when trials repeat within a condition, simplifying them when the fit is singular; computes post-hoc contrasts per factor, with simple effects only for a significant interaction in the model; no longer turns a numeric covariate with few values into a factor (new <code>factors =</code> argument declares categorical predictors); handles column names with spaces; records singular and non-converged fits and the function actually called; and escapes its LaTeX methods sentence.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="questionnaire-scoring-0-3-0">Questionnaire scoring<a class="anchor" aria-label="anchor" href="#questionnaire-scoring-0-3-0"></a></h4>
+<ul><li>
+<code>score_questionnaire(prefix =)</code> matched columns to items by sort order: NASA-TLX Mental Demand was filled from the Effort column, TiA and IPQ reversals landed on the wrong items, AttrakDiff PQ and ATT swapped, and <code>SUS_10_1</code> was read as item 2. Columns are now matched by name or by an unambiguous item number running 1..n.</li>
+<li>The scoring message shows the observed response range; NASA-TLX data that never exceed 21, and codings that look shifted by one point, draw a warning unless <code>scale</code> is given.</li>
+<li>
+<code>reverse_items</code> warns when it un-reverses an item the published key already reverses (passing <code>c(2, 4, 6, 8, 10)</code> for the SUS gave a perfect respondent 50); new <code>unreverse_items</code> does that on purpose.</li>
+<li>With <code>min_valid &lt; 1</code>, missing SUS items count as the centre point, as Brooke (1996) instructs; new <code>impute =</code> chooses the rule explicitly.</li>
+<li>
+<code><a href="../reference/score_reliability.html">score_reliability()</a></code> adds a whole-scale row, a Spearman-Brown coefficient for two-item scales, and a <code>note</code> column; omega comes from an unrotated one-factor solution, so it no longer silently returns <code>NA</code> without ‘GPArotation’.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="utilities-0-3-0">Utilities<a class="anchor" aria-label="anchor" href="#utilities-0-3-0"></a></h4>
+<ul><li>
+<code><a href="../reference/rFromWilcox.html">rFromWilcox()</a></code> and <code><a href="../reference/rFromNPAV.html">rFromNPAV()</a></code> no longer halve one-sided p-values, which overstated r; <code><a href="../reference/rFromNPAV.html">rFromNPAV()</a></code> warns for omnibus F tests with more than one numerator df.</li>
+<li>
+<code><a href="../reference/remove_outliers_REI.html">remove_outliers_REI()</a></code> takes proportions over the items each respondent answered, as Tawa (2021) defines the index; matches <code>variables</code> by exact name rather than as regular expressions; and flags nobody, instead of everybody, when all indices are equal.</li>
+<li>
+<code><a href="../reference/add_pareto_moocore_column.html">add_pareto_moocore_column()</a></code> and <code><a href="../reference/add_pareto_emoa_column.html">add_pareto_emoa_column()</a></code> agree on tied points (moocore kept only the first copy); emoa accepts integer columns; rows with a missing objective get <code>NA</code>.</li>
+<li>
+<code><a href="../reference/check_homogeneity_by_group.html">check_homogeneity_by_group()</a></code> and the plot wrappers accept column names with spaces and numeric condition codes. <code><a href="../reference/debug_contr_error.html">debug_contr_error()</a></code> reported unobserved factor levels as real when a character column came first. <code><a href="../reference/reshape_data.html">reshape_data()</a></code> stacked the columns before the first marker as a data slice.</li>
+</ul></div>
+</div>
+<div class="section level3">
+<h3 id="latex-output-0-3-0">LATEX OUTPUT<a class="anchor" aria-label="anchor" href="#latex-output-0-3-0"></a></h3>
+<ul><li>Variable names that are already LaTeX commands (<code>time</code>, <code>L</code>, <code>small</code>, <code>value</code>, …) are written as text instead of <code>\time</code> (a compile error), <code>\L</code> (the letter Ł) or <code>\small</code> (a font switch). The list of reserved names is generated from TeX itself (<code>data-raw/latex_reserved.R</code>). Name macros are written as <code>\Name{}</code>, so TeX no longer swallows the following space (“cylon mpg”).</li>
+<li>
+<code><a href="../reference/reportNparLD.html">reportNparLD()</a></code> output did not compile (nested math in <code>\F{..}{$\infty$}{..}</code>), rounded the ATS df to an integer, and promised a relative treatment effect that real fits never carry. <code><a href="../reference/reportART.html">reportART()</a></code>, <code><a href="../reference/reportNPAV.html">reportNPAV()</a></code> and <code><a href="../reference/reportNparLD.html">reportNparLD()</a></code> decided “interaction” by searching for a capital X (a main effect <code>UX</code> became an interaction) and emitted names like <code>Video_Type</code> as uncompilable macros.</li>
+<li>
+<code><a href="../reference/emit_overleaf.html">emit_overleaf()</a></code> no longer lets sections overwrite each other (<code>Q1</code> and <code>Q2</code> both became <code>Q.tex</code>), checks every path before writing anything, and produces a non-empty bibliography (<code>\nocite{*}</code>, and <code><a href="../reference/cite_methods.html">cite_methods()</a></code> now gives each BibTeX entry a key). <code><a href="../reference/define_result_macro.html">define_result_macro()</a></code> spells digits out (<code>tlx_1</code> becomes <code>\tlxOne</code>), refuses names that would redefine a command, and replaces an existing definition instead of duplicating it. <code><a href="../reference/cite_methods.html">cite_methods()</a></code> cites a method named twice (<code>c("art", "ART")</code>) only once.</li>
+<li>
+<code><a href="../reference/reportMeanAndSD.html">reportMeanAndSD()</a></code> wrote only LaTeX comments, and <code><a href="../reference/latexify_report.html">latexify_report()</a></code> left <code>_ &amp; # ^ &lt; &gt;</code> unescaped.</li>
+<li>New <code>\mdn{}</code> and <code>\iqr{}</code> macros in <code><a href="../reference/latex_preamble.html">latex_preamble()</a></code> and <code>colleyRstats.sty</code>; re-copy the <code>.sty</code> into existing Overleaf projects with <code>use_colleyrstats_sty(overwrite = TRUE)</code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="new-features-0-3-0">NEW FEATURES<a class="anchor" aria-label="anchor" href="#new-features-0-3-0"></a></h3>
+<ul><li>New questionnaire key <code>attrakdiff_official</code>: the AttrakDiff 2 word pairs in the order and with the poles of the administered sheet. The existing <code>attrakdiff</code> key (blocked by dimension, negative pole first) is unchanged.</li>
+<li>
+<code>showPairwiseComp</code> and <code>plotType</code> work again (ignored since ‘ggstatsplot’ 0.12.0); non-parametric figures label medians; two-group asterisk brackets use the test shown in the subtitle.</li>
+<li>A factor iteration axis in <code><a href="../reference/generateMoboPlot.html">generateMoboPlot()</a></code> / <code><a href="../reference/generateMoboPlot2.html">generateMoboPlot2()</a></code> lines up with its phase guides and fitted equation.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="deprecations-0-3-0">DEPRECATIONS<a class="anchor" aria-label="anchor" href="#deprecations-0-3-0"></a></h3>
+<ul><li>
+<code><a href="../reference/rFromWilcoxAdjusted.html">rFromWilcoxAdjusted()</a></code> is deprecated: inflating p by the number of comparisons shrank r (0.34 to 0.21 with six comparisons) although the effect was unchanged. Effect sizes are not multiplicity-adjusted; use <code><a href="../reference/rFromWilcox.html">rFromWilcox()</a></code>.</li>
+<li>
+<code>generateEffectPlot(numberColors =)</code> is deprecated; it was never used.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="packaging-0-3-0">PACKAGING<a class="anchor" aria-label="anchor" href="#packaging-0-3-0"></a></h3>
+<ul><li>Removed ten suggested packages that nothing used, and the unused <code>roxyglobals</code> configuration. Added ‘callr’, ‘MASS’, ‘mclogit’, ‘performance’ and ‘WRS2’ to Suggests.</li>
+<li>CI also checks on the previous R release. The spell-check workflow passes again.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.1" id="colleyrstats-021">colleyRstats 0.2.1<a class="anchor" aria-label="anchor" href="#colleyrstats-021"></a></h2>
 <div class="section level3">
@@ -60,7 +172,7 @@
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.2.0" id="colleyrstats-020">colleyRstats 0.2.0<a class="anchor" aria-label="anchor" href="#colleyrstats-020"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.2.0" id="colleyrstats-020">colleyRstats 0.2.0<a class="anchor" aria-label="anchor" href="#colleyrstats-020"></a></h2><p class="text-muted">CRAN release: 2026-09-02</p>
 <div class="section level3">
 <h3 id="new-features-0-2-0">NEW FEATURES<a class="anchor" aria-label="anchor" href="#new-features-0-2-0"></a></h3>
 <div class="section level4">

@@ -23,7 +23,9 @@ score_questionnaire(
   min_valid = 1,
   append = FALSE,
   prefix_out = NULL,
-  verbose = TRUE
+  verbose = TRUE,
+  unreverse_items = NULL,
+  impute = c("default", "prorate", "midpoint")
 )
 ```
 
@@ -50,9 +52,16 @@ score_questionnaire(
 - prefix:
 
   Optional column-name prefix selecting the item columns, e.g. `"sus_"`.
-  Matching columns are sorted numerically, so `sus_2` comes before
-  `sus_10`. Must select exactly as many columns as the instrument has
-  items.
+  Must select exactly as many columns as the instrument has items. The
+  columns are then matched to items *by their names*, never by sort
+  order: either what follows the prefix is the item's code, label or
+  (for a single-item subscale) subscale name, compared without case or
+  punctuation (`tlx_mental`, `tlx_Mental_Demand`, `tia_rc1`, `ipq_SP2`);
+  or it carries one item number per column, and those numbers are
+  exactly `1..n` (`sus_2`, `SUS[2]`, `Q5_2`; in `SUS_2_1` the number
+  that varies across the columns is the item). Anything else – numbering
+  from 0, numbers that do not run `1..n`, names that only partly match –
+  is an error asking for a named `items` mapping, rather than a guess.
 
 - scale:
 
@@ -60,23 +69,28 @@ score_questionnaire(
   used, e.g. `c(1, 21)` for the 21-point NASA-TLX sheet or `c(0, 4)` for
   a zero-based SUS. Responses are rescaled onto the instrument's own
   range before scoring. Defaults to the instrument's range; responses
-  outside it are an error rather than a silent rescale.
+  outside it are an error rather than a silent rescale. Without `scale`,
+  a coding that fits the range but looks shifted against it draws a
+  warning (see Details); passing `scale` explicitly confirms the coding
+  and silences it.
 
 - reverse_items:
 
-  Optional items to *toggle* the reverse-coding of, given as item
-  numbers or item codes. Naming an item the scoring key already reverses
-  un-reverses it, which is what an export that stores a pair the other
-  way round needs.
+  Optional items to reverse-code in addition to the scoring key's own,
+  given as item numbers or item codes – for a survey that printed a pair
+  the other way round. For backward compatibility it *toggles*: naming
+  an item the key already reverses un-reverses it, and because passing
+  an instrument's own reverse set (e.g. `c(2, 4, 6, 8, 10)` for the SUS)
+  is a common mistake that would do exactly that, it raises a warning.
+  Use `unreverse_items` to undo a key reversal on purpose.
 
 - min_valid:
 
   Minimum proportion of a subscale's items that must be answered for a
   score to be produced. The default `1` scores only complete subscales
   and returns `NA` otherwise – no silent imputation. Relax it (e.g.
-  `0.8`) to score partially complete responses, in which case a subscale
-  is the mean of the items present, and a sum-scored instrument is
-  scaled up proportionally so it stays on its published range.
+  `0.8`) to score partially complete responses; how the missing items
+  are then completed is set by `impute`.
 
 - append:
 
@@ -94,12 +108,49 @@ score_questionnaire(
   Logical. If `TRUE` (default), emit the one-time mapping message
   described above.
 
+- unreverse_items:
+
+  Optional items the scoring key reverses that should *not* be reversed,
+  because the export already stored them reverse-coded. Naming an item
+  the key does not reverse is an error.
+
+- impute:
+
+  How the missing items of a row that clears `min_valid` are completed.
+  `"default"` applies the instrument's published rule: for the SUS, each
+  missing item counts as the scale's centre point, as Brooke (1996)
+  instructs respondents who cannot answer an item; for every other
+  instrument, a subscale is the mean of the items present (a summed
+  score is scaled up proportionally, so it stays on its published
+  range). `"prorate"` uses the mean of the items present everywhere, and
+  `"midpoint"` the scale centre everywhere. Irrelevant with the default
+  `min_valid = 1`.
+
 ## Value
 
 A data frame with one row per row of `data` and one column per subscale,
 plus the instrument's overall score where it defines one. The instrument
 definition and the resolved column mapping are attached as the
 `"instrument"` and `"mapping"` attributes.
+
+## Details
+
+Item columns must hold numbers. Factors are read by their labels when
+the labels are numbers, and by level order only when the factor is
+ordered. Text that is not a number (`"Strongly agree"`,
+`"5 - Strongly agree"`, a decimal comma) is an error naming the values,
+because converting it would silently turn responses into missing values;
+blank cells are missing. A fractional response on an instrument answered
+in whole scale points draws a warning.
+
+The scoring message reports the observed response range next to the
+assumed one. Without an explicit `scale`, three codings that fit the
+assumed range but look shifted draw a warning: NASA-TLX responses that
+never exceed 21 on the 0–100 scale (the 21-point sheet); and, for
+multi-item whole-point instruments with at least five respondents, no
+response at 0 on a zero-based scale (a 1-based export, e.g. IPQ 1–7) or
+no response at the top of a one-based scale (a 0-based export, e.g. SUS
+0–4).
 
 ## Caution – verify the mapping against your own survey
 
@@ -126,7 +177,13 @@ session (silence it with
 
 A named `items` argument (`items = c(mental = "tlx_md", ...)`) removes
 the positional assumption altogether and is the safer choice for an
-export you did not lay out yourself.
+export you did not lay out yourself. A `prefix` maps columns by what
+their names say – an item code or label, or one item number per column
+running 1 to the number of items – never by sort order, and stops when
+the names do not identify the items. Note that the `attrakdiff` key is
+blocked by dimension with the negative pole first; data stored as
+answered on the official AttrakDiff sheet belong to
+`attrakdiff_official`.
 
 ## See also
 
@@ -147,7 +204,7 @@ sus_raw <- as.data.frame(matrix(sample(1:5, 10 * 6, TRUE), nrow = 6))
 names(sus_raw) <- paste0("sus_", 1:10)
 
 score_questionnaire(sus_raw, "sus", prefix = "sus_")
-#> Scoring System Usability Scale (SUS) from 10 columns (sus_1 ... sus_10); reverse-coded: sus2, sus4, sus6, sus8, sus10.
+#> Scoring System Usability Scale (SUS) from 10 columns (sus_1 ... sus_10, matched by item number); responses observed 1 to 5 on the assumed range 1 to 5; reverse-coded: sus2, sus4, sus6, sus8, sus10.
 #> CAUTION: item numbers, order and polarity depend on how the questionnaire
 #> was administered -- survey tools renumber items, translations reorder them,
 #> and short forms drop them. This package applies the PUBLISHED key. If your
@@ -169,7 +226,7 @@ tlx <- data.frame(
   performance = c(6, 2), effort = c(13, 5), frustration = c(9, 1)
 )
 score_questionnaire(tlx, "nasa_tlx", scale = c(1, 21))
-#> Scoring NASA Task Load Index, raw (RTLX) from 6 columns (mental ... frustration); no items reverse-coded.
+#> Scoring NASA Task Load Index, raw (RTLX) from 6 columns (mental ... frustration, matched by item code); responses observed 1 to 14 on the assumed range 1 to 21; no items reverse-coded.
 #> CAUTION: item numbers, order and polarity depend on how the questionnaire
 #> was administered -- survey tools renumber items, translations reorder them,
 #> and short forms drop them. This package applies the PUBLISHED key. If your

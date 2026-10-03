@@ -43,7 +43,12 @@ Two things matter before any analysis:
 - the participant and condition columns must be **factors** (they are
   above);
 - decide up front whether the design is within- or between-subjects – it
-  changes the tests, the plots, and the effect sizes.
+  changes the tests, the plots, and the effect sizes;
+- for a within-subjects design, every function that pairs observations
+  takes the participant column as `subject =`. Paired tests compare each
+  participant with themselves, so without it the rows would be paired by
+  their position in the data frame – and sorting or filtering the data
+  would change the result.
 
 ## The quick route: one call per dependent variable
 
@@ -59,11 +64,11 @@ significant post-hoc comparisons.
 res <- analyze_and_report(
   main_df,
   dv = "tlx_mental", iv = "ConditionID",
-  design = "within",
+  design = "within", subject = "Participant",
   ylab = "Mental Demand (TLX)"
 )
-#> Shapiro--Wilk tests indicated no significant deviation from normality in any group (all $p \geq 0.05$); therefore, parametric tests were used.
-#> An ANOVA estimation for factorial designs using 'afex' found a significant effect of \ConditionID on tlx\_mental (\F{1.92}{44.2}{5.75}, \p{0.007}, $\omega_{p}^{2}$ = 0.11).
+#> A Shapiro--Wilk test on the residuals of the additive model with participant and ConditionID as factors ($n = 72$) indicated no significant deviation from normality ($W = 0.98$, $p = 0.245$); therefore, parametric tests were used.
+#> An ANOVA estimation for factorial designs using 'afex' found a significant effect of \ConditionID{} on tlx\_mental (\F{1.92}{44.2}{5.75}, \p{0.007}, $\omega_{p}^{2}$ = 0.11).
 #> A Student's t post-hoc test (Holm-adjusted) found that Baseline was significantly higher (\m{54.92}, \sd{11.10}) in terms of tlx\_mental compared to HUD (\m{45.88}, \sd{9.76}; \padj{0.033}).
 #> A Student's t post-hoc test (Holm-adjusted) found that Baseline was significantly higher (\m{54.92}, \sd{11.10}) in terms of tlx\_mental compared to LED (\m{45.21}, \sd{12.51}; \padj{0.015}).
 ```
@@ -81,9 +86,9 @@ res$plot
 ``` r
 
 res$methods  # for the Methods section
-#> [1] "Shapiro--Wilk tests indicated no significant deviation from normality in any group (all $p \\geq 0.05$); therefore, parametric tests were used."
+#> [1] "A Shapiro--Wilk test on the residuals of the additive model with participant and ConditionID as factors ($n = 72$) indicated no significant deviation from normality ($W = 0.98$, $p = 0.245$); therefore, parametric tests were used."
 res$text     # the omnibus result
-#> [1] "An ANOVA estimation for factorial designs using 'afex' found a significant effect of \\ConditionID on tlx\\_mental (\\F{1.92}{44.2}{5.75}, \\p{0.007}, $\\omega_{p}^{2}$ = 0.11). "
+#> [1] "An ANOVA estimation for factorial designs using 'afex' found a significant effect of \\ConditionID{} on tlx\\_mental (\\F{1.92}{44.2}{5.75}, \\p{0.007}, $\\omega_{p}^{2}$ = 0.11). "
 res$posthoc  # significant pairwise comparisons (NULL for 2 groups)
 #> [1] "A Student's t post-hoc test (Holm-adjusted) found that Baseline was significantly higher (\\m{54.92}, \\sd{11.10}) in terms of tlx\\_mental compared to HUD (\\m{45.88}, \\sd{9.76}; \\padj{0.033}). " 
 #> [2] "A Student's t post-hoc test (Holm-adjusted) found that Baseline was significantly higher (\\m{54.92}, \\sd{11.10}) in terms of tlx\\_mental compared to LED (\\m{45.21}, \\sd{12.51}; \\padj{0.015}). "
@@ -100,24 +105,23 @@ battery <- report_all(
   main_df,
   dvs = c("tlx_mental", "trust"),
   iv = "ConditionID",
-  design = "within",
+  design = "within", subject = "Participant",
   labels = c(tlx_mental = "Mental Demand", trust = "Trust")
 )
-#> Shapiro--Wilk tests indicated no significant deviation from normality in any group (all $p \geq 0.05$); therefore, parametric tests were used.
-#> An ANOVA estimation for factorial designs using 'afex' found a significant effect of \ConditionID on tlx\_mental (\F{1.92}{44.2}{5.75}, \p{0.007}, $\omega_{p}^{2}$ = 0.11).
+#> A Shapiro--Wilk test on the residuals of the additive model with participant and ConditionID as factors ($n = 72$) indicated no significant deviation from normality ($W = 0.98$, $p = 0.245$); therefore, parametric tests were used.
+#> An ANOVA estimation for factorial designs using 'afex' found a significant effect of \ConditionID{} on tlx\_mental (\F{1.92}{44.2}{5.75}, \p{0.007}, $\omega_{p}^{2}$ = 0.11).
 #> A Student's t post-hoc test (Holm-adjusted) found that Baseline was significantly higher (\m{54.92}, \sd{11.10}) in terms of tlx\_mental compared to HUD (\m{45.88}, \sd{9.76}; \padj{0.033}).
 #> A Student's t post-hoc test (Holm-adjusted) found that Baseline was significantly higher (\m{54.92}, \sd{11.10}) in terms of tlx\_mental compared to LED (\m{45.21}, \sd{12.51}; \padj{0.015}).
-#> Shapiro--Wilk tests indicated a significant deviation from normality for at least one group (minimum $W = 0.79$, $p < 0.001$); therefore, non-parametric tests were used.
-#> A Friedman rank sum test found a significant effect of \ConditionID on trust (\chisq(2)=10.93, \p{0.004}, $W_{Kendall}$ = 0.23).
-#> A Durbin-Conover post-hoc test (Holm-adjusted) found that HUD was significantly higher (\m{4.12}, \sd{1.08}) in terms of \trust compared to Baseline (\m{3.42}, \sd{1.10}; \padj{0.024}).
-#> A Durbin-Conover post-hoc test (Holm-adjusted) found that LED was significantly higher (\m{4.46}, \sd{0.78}) in terms of \trust compared to Baseline (\m{3.42}, \sd{1.10}; \padj{0.003}).
+#> A Shapiro--Wilk test on the residuals of the additive model with participant and ConditionID as factors ($n = 72$) indicated no significant deviation from normality ($W = 0.97$, $p = 0.089$); therefore, parametric tests were used.
+#> An ANOVA estimation for factorial designs using 'afex' found a significant effect of \ConditionID{} on trust (\F{1.77}{40.77}{7.37}, \p{0.003}, $\omega_{p}^{2}$ = 0.14).
+#> A Student's t post-hoc test (Holm-adjusted) found that LED was significantly higher (\m{4.46}, \sd{0.78}) in terms of trust compared to Baseline (\m{3.42}, \sd{1.10}; \padj{0.002}).
 battery$summary
 #>           dv                                              method statistic
 #> 1 tlx_mental ANOVA estimation for factorial designs using 'afex'  5.754671
-#> 2      trust                              Friedman rank sum test 10.929577
+#> 2      trust ANOVA estimation for factorial designs using 'afex'  7.365422
 #>       p.value      p.holm
-#> 1 0.006577594 0.008466471
-#> 2 0.004233235 0.008466471
+#> 1 0.006577594 0.006577594
+#> 2 0.002635125 0.005270249
 ```
 
 ## Step by step, if you prefer control
@@ -126,14 +130,26 @@ battery$summary
 
 ``` r
 
-check_normality_by_group(main_df, "ConditionID", "tlx_mental")
+check_normality_by_group(main_df, "ConditionID", "tlx_mental", subject = "Participant")
 #> [1] TRUE
 #> attr(,"tests")
-#>   ConditionID         W   p_value
-#> 1    Baseline 0.9709072 0.6894229
-#> 2         HUD 0.9310723 0.1030198
-#> 3         LED 0.9589363 0.4174263
+#>       group  n         W   p_value p_adjusted testable
+#> 1 residuals 72 0.9781936 0.2448001  0.2448001     TRUE
+#> attr(,"method")
+#> [1] "residuals"
+#> attr(,"p_adjust")
+#> [1] "none"
+#> attr(,"untestable")
+#> character(0)
+#> attr(,"dropped_subjects")
+#> character(0)
 ```
+
+With `subject` given, the check tests what a repeated-measures analysis
+assumes to be normal: the residuals once participant and condition
+effects are removed (or, for two conditions, the per-participant
+differences) – not the raw scores per condition, which also carry the
+spread between participants.
 
 [`assumption_methods_text()`](https://m-colley.github.io/colleyRstats/reference/assumption_methods_text.md)
 turns the same checks into the sentence reviewers expect next to the
@@ -141,8 +157,8 @@ choice of test:
 
 ``` r
 
-assumption_methods_text(main_df, x = "ConditionID", y = "tlx_mental")
-#> Shapiro--Wilk tests indicated no significant deviation from normality in any group (all $p \geq 0.05$); therefore, parametric tests were used.
+assumption_methods_text(main_df, x = "ConditionID", y = "tlx_mental", subject = "Participant")
+#> A Shapiro--Wilk test on the residuals of the additive model with participant and ConditionID as factors ($n = 72$) indicated no significant deviation from normality ($W = 0.98$, $p = 0.245$); therefore, parametric tests were used.
 ```
 
 ### 2. Plot with automatic test selection
@@ -158,7 +174,8 @@ plot_within_stats_asterisk(
   data = main_df,
   x = "ConditionID", y = "tlx_mental",
   ylab = "Mental Demand (TLX)",
-  xlabels = c("Baseline", "HUD", "LED")
+  xlabels = c("Baseline", "HUD", "LED"),
+  subject = "Participant"
 )
 #> Scale for x is already present.
 #> Adding another scale for x, which will replace the existing scale.
@@ -187,7 +204,7 @@ m <- ARTool::art(
   data = main_df
 )
 reportART(anova(m), dv = "mental demand")
-#> The ART found a significant main effect of \ConditionID on mental demand (\F{2}{46}{5.56}, \p{0.007}, $\eta_{p}^{2}$ = 0.19, 95\% CI: [0.04, 1.00]).
+#> The ART found a significant main effect of \ConditionID{} on mental demand (\F{2}{46}{5.56}, \p{0.007}, $\eta_{p}^{2}$ = 0.19, 95\% CI: [0.02, 0.38]).
 ```
 
 ``` r
@@ -198,7 +215,7 @@ reportArtCon(
   data = main_df, iv = "ConditionID", dv = "tlx_mental",
   paired = TRUE, id = "Participant"
 )
-#> A post-hoc test found that tlx\_mental for the \ConditionID Baseline was significantly higher (\m{54.92}, \sd{11.10}) than for HUD (\m{45.88}, \sd{9.76}; \padj{0.016}, \rankbiserial{0.54}) and LED (\m{45.21}, \sd{12.51}; \padj{0.016}, \rankbiserial{0.64}).
+#> An ART-C post-hoc test (Holm-adjusted) found that tlx\_mental for the \ConditionID{} Baseline was significantly higher (\mdn{56.00}, \iqr{12.75}) than for HUD (\mdn{46.50}, \iqr{11.75}; \padj{0.016}, \rankbiserial{0.54}) and LED (\mdn{47.00}, \iqr{12.50}; \padj{0.016}, \rankbiserial{0.64}).
 ```
 
 ### 4. Descriptives
@@ -206,9 +223,9 @@ reportArtCon(
 ``` r
 
 reportMeanAndSD(main_df, iv = "ConditionID", dv = "tlx_mental")
-#> %Baseline: \m{54.92}, \sd{11.10}
-#> %HUD: \m{45.88}, \sd{9.76}
-#> %LED: \m{45.21}, \sd{12.51}
+#> Baseline: \m{54.92}, \sd{11.10}
+#> HUD: \m{45.88}, \sd{9.76}
+#> LED: \m{45.21}, \sd{12.51}
 ```
 
 ## Into the manuscript
@@ -224,7 +241,7 @@ full-width 7 in):
 
 fig_path <- file.path(tempdir(), "tlx-mental.pdf")
 save_paper_figure(res$plot, fig_path, columns = 2)
-#> Saved figure to '/tmp/RtmpLBFFDO/tlx-mental.pdf' (7 x 4.66666666666667 in, base font 9 pt).
+#> Saved figure to '/tmp/RtmpjcdLdl/tlx-mental.pdf' (7 x 4.66666666666667 in, base font 9 pt).
 ```
 
 The LaTeX macros used by the reporters (`\F`, `\p`, `\m`, …) are defined

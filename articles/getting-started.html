@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,7 +63,7 @@
       <h1>Getting started with colleyRstats</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.1/vignettes/getting-started.Rmd" class="external-link"><code>vignettes/getting-started.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/main/vignettes/getting-started.Rmd" class="external-link"><code>vignettes/getting-started.Rmd</code></a></small>
       <div class="d-none name"><code>getting-started.Rmd</code></div>
     </div>
 
@@ -123,18 +123,28 @@ to work with.</p>
 <div class="section level2">
 <h2 id="check-assumptions">Check assumptions<a class="anchor" aria-label="anchor" href="#check-assumptions"></a>
 </h2>
+<p>Every participant here saw both conditions, so the design is
+within-subjects. Name the participant column as <code>subject</code>:
+the check then tests the per-participant differences, which is what a
+paired test assumes to be normal.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/check_normality_by_group.html">check_normality_by_group</a></span><span class="op">(</span><span class="va">main_df</span>, <span class="st">"ConditionID"</span>, <span class="st">"score"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/check_normality_by_group.html">check_normality_by_group</a></span><span class="op">(</span><span class="va">main_df</span>, <span class="st">"ConditionID"</span>, <span class="st">"score"</span>, subject <span class="op">=</span> <span class="st">"Participant"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span>
 <span><span class="co">#&gt; attr(,"tests")</span></span>
-<span><span class="co">#&gt;   ConditionID         W   p_value</span></span>
-<span><span class="co">#&gt; 1     Control 0.9378270 0.2180765</span></span>
-<span><span class="co">#&gt; 2   Treatment 0.9667112 0.6844808</span></span>
-<span><span class="fu"><a href="../reference/check_homogeneity_by_group.html">check_homogeneity_by_group</a></span><span class="op">(</span><span class="va">main_df</span>, <span class="st">"ConditionID"</span>, <span class="st">"score"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] TRUE</span></span>
-<span><span class="co">#&gt; attr(,"test")</span></span>
-<span><span class="co">#&gt;   df1 df2 statistic         p</span></span>
-<span><span class="co">#&gt; 1   1  38 0.1081505 0.7440653</span></span></code></pre></div>
+<span><span class="co">#&gt;         group  n        W   p_value p_adjusted testable</span></span>
+<span><span class="co">#&gt; 1 differences 20 0.958116 0.5069337  0.5069337     TRUE</span></span>
+<span><span class="co">#&gt; attr(,"method")</span></span>
+<span><span class="co">#&gt; [1] "differences"</span></span>
+<span><span class="co">#&gt; attr(,"p_adjust")</span></span>
+<span><span class="co">#&gt; [1] "none"</span></span>
+<span><span class="co">#&gt; attr(,"untestable")</span></span>
+<span><span class="co">#&gt; character(0)</span></span>
+<span><span class="co">#&gt; attr(,"dropped_subjects")</span></span>
+<span><span class="co">#&gt; character(0)</span></span></code></pre></div>
+<p>For a between-subjects design, leave <code>subject</code> out: each
+group is then tested on its own (Holm-corrected across groups), and
+<code><a href="../reference/check_homogeneity_by_group.html">check_homogeneity_by_group()</a></code> adds the Brown-Forsythe test
+of equal variances.</p>
 </div>
 <div class="section level2">
 <h2 id="create-a-plot">Create a plot<a class="anchor" aria-label="anchor" href="#create-a-plot"></a>
@@ -148,6 +158,9 @@ to work with.</p>
 <span>  ytext <span class="op">=</span> <span class="st">"Score"</span>,</span>
 <span>  xtext <span class="op">=</span> <span class="st">"Condition"</span></span>
 <span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Not every combination of 'ConditionID' and 'Group' has data; the</span></span>
+<span><span class="co">#&gt; main-effect line averages only the cells that do, so its levels are not based</span></span>
+<span><span class="co">#&gt; on the same groups.</span></span>
 <span><span class="co">#&gt; `geom_line()`: Each group consists of only one observation.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Do you need to adjust the <span style="color: #00BB00;">group</span> aesthetic?</span></span></code></pre></div>
 <p><img src="getting-started_files/figure-html/unnamed-chunk-5-1.png" class="r-plt" alt="" width="700"></p>
@@ -166,7 +179,7 @@ to work with.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/reportART.html">report_art</a></span><span class="op">(</span><span class="va">art_summary</span>, dv <span class="op">=</span> <span class="st">"score"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; The ART found a significant main effect of \ConditionID on score (\F{1}{19}{5.42}, \p{0.027}, $\eta_{p}^{2}$ = 0.22, 95\% CI: [0.01, 1.00]).</span></span></code></pre></div>
+<span><span class="co">#&gt; The ART found a significant main effect of \ConditionID{} on score (\F{1}{19}{5.42}, \p{0.027}, $\eta_{p}^{2}$ = 0.22, 95\% CI: [0.00, 0.50]).</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>

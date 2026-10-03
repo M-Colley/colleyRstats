@@ -4,9 +4,13 @@ The report functions can emit variable and factor-level names as LaTeX
 commands (e.g. `\Video`) so their typography is controlled centrally.
 This writes the matching `\newcommand` definitions so those commands are
 never undefined – the classic "Undefined control sequence" that stops an
-Overleaf build. Only names that are valid LaTeX command names (letters
-only) get a macro; others are reported as skipped (the reporters emit
-those as escaped plain text instead).
+Overleaf build. A name gets a macro only when it can safely become a new
+command: letters only, and not already a LaTeX command. `time`, `L` or
+`small`, for instance, are TeX/LaTeX commands already, so
+`\newcommand{\time}` would stop the build ("Command \time already
+defined") and redefining them would break LaTeX itself; names starting
+with `end` are refused by LaTeX too. Such names are skipped with a
+warning, and the reporters emit them as escaped plain text instead.
 
 ## Usage
 
@@ -20,7 +24,8 @@ emit_name_macros(vars, path = NULL, labels = NULL)
 
   Character vector of variable/level names (e.g. the columns you pass as
   `iv`/`dv`), or a named character vector / list mapping a name to the
-  display label it should expand to.
+  display label it should expand to (unnamed elements are their own
+  label).
 
 - path:
 
@@ -33,8 +38,9 @@ emit_name_macros(vars, path = NULL, labels = NULL)
 
 ## Value
 
-Invisibly, the `\newcommand` lines as a character vector; also emitted
-via [`message()`](https://rdrr.io/r/base/message.html).
+Invisibly, the `\newcommand` lines as a character vector (one per
+distinct name); also emitted via
+[`message()`](https://rdrr.io/r/base/message.html).
 
 ## Examples
 

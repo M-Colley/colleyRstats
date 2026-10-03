@@ -1,6 +1,14 @@
 # Report statistical details for ggstatsplot.
 
-Report statistical details for ggstatsplot.
+Writes the omnibus test of a `ggbetweenstats()`/`ggwithinstats()` plot
+as a sentence, naming the test statsExpressions ran and the effect size
+it produced. Rank-based tests are reported with their \\\chi^2\\, *V* or
+*W* statistic, t tests (including Yuen's trimmed-means test) as *t(df)*,
+and ANOVA-type tests as *F(df1, df2)*. A plot made with `type = "bayes"`
+carries a Bayes factor instead of a p-value; it is reported as
+\\BF\_{10}\\ together with the evidence category of Jeffreys (1961), as
+classified by
+[`effectsize::interpret_bf()`](https://easystats.github.io/effectsize/reference/interpret_bf.html).
 
 ## Usage
 
@@ -87,6 +95,6 @@ library(dplyr)
 plt <- ggbetweenstats(mtcars, am, mpg)
 
 reportggstatsplot(plt, iv = "am", dv = "mpg")
-#> A Welch Two Sample t-test found a significant effect of \am on mpg (t(18.33)=-3.77, \p{0.001}, $g_{Hedges}$ = -1.35). 
+#> A Welch Two Sample t-test found a significant effect of \am{} on mpg (t(18.33)=-3.77, \p{0.001}, $g_{Hedges}$ = -1.35). 
 # }
 ```

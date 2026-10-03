@@ -15,7 +15,7 @@ the numbers instead of having them re-typed."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,7 +45,7 @@ the numbers instead of having them re-typed."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Scaffold a reproducible study analysis</h1>
-      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.1/R/study-project.R" class="external-link"><code>R/study-project.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/main/R/study-project.R" class="external-link"><code>R/study-project.R</code></a></small>
       <div class="d-none name"><code>use_study_project.Rd</code></div>
     </div>
 
@@ -63,7 +63,7 @@ the numbers instead of having them re-typed.</p>
 <span>  <span class="va">path</span>,</span>
 <span>  name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  questionnaires <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nasa_tlx"</span>, <span class="st">"sus"</span><span class="op">)</span>,</span>
-<span>  renv <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"renv"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>  renv <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  git <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  overwrite <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  quiet <span class="op">=</span> <span class="cn">FALSE</span></span>
@@ -91,9 +91,17 @@ call per instrument. See <code><a href="list_questionnaires.html">list_questionn
 
 <dt id="arg-renv">renv<a class="anchor" aria-label="anchor" href="#arg-renv"></a></dt>
 <dd><p>Logical. Initialise <span class="pkg">renv</span> in the project, pinning the
-package versions this analysis was run with. Default <code>TRUE</code> when
-<span class="pkg">renv</span> is installed. This is what makes the project still run in three
-years, and what makes it a usable open-science artifact.</p></dd>
+package versions this analysis was run with – which is what makes the
+project still run in three years, and what makes it a usable open-science
+artifact. Default <code>FALSE</code>: initialising discovers every package the
+scripts use and installs it into a project library, which can mean
+network downloads, so it is opt-in. With <code>TRUE</code>, <code><a href="https://rstudio.github.io/renv/reference/init.html" class="external-link">renv::init()</a></code>
+runs in a separate R process (via <span class="pkg">callr</span> when installed, otherwise
+<code>Rscript</code>), because activating a project rewrites the calling
+session's library paths, environment variables (<code>R_LIBS_USER</code>,
+<code>PATH</code>, <code>RENV_PATHS_*</code>), repository options and sandbox; your
+current session is left exactly as it was. Run <code><a href="https://rstudio.github.io/renv/reference/init.html" class="external-link">renv::init()</a></code>
+yourself later to opt in after the fact.</p></dd>
 
 
 <dt id="arg-git">git<a class="anchor" aria-label="anchor" href="#arg-git"></a></dt>
@@ -146,23 +154,23 @@ record of how each number was produced.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="va">project</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"driving-study"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">use_study_project</span><span class="op">(</span><span class="va">project</span>, questionnaires <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nasa_tlx"</span>, <span class="st">"sus"</span><span class="op">)</span>, renv <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Creating study project 'driving-study' in /tmp/Rtmp2Ft8yp/driving-study</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmp2Ft8yp/driving-study/_targets.R</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmp2Ft8yp/driving-study/R/read.R</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmp2Ft8yp/driving-study/R/prepare.R</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmp2Ft8yp/driving-study/R/analysis.R</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmp2Ft8yp/driving-study/R/figures.R</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmp2Ft8yp/driving-study/report/report.qmd</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmp2Ft8yp/driving-study/README.md</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmp2Ft8yp/driving-study/.gitignore</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmp2Ft8yp/driving-study/data-raw/example-study.csv</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmp2Ft8yp/driving-study/data-raw/README.md</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmp2Ft8yp/driving-study/paper/generated/README.md</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmp2Ft8yp/driving-study/output/figures/README.md</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmp2Ft8yp/driving-study/paper/colleyRstats.sty</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Creating study project 'driving-study' in /tmp/Rtmpb2vD81/driving-study</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpb2vD81/driving-study/_targets.R</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpb2vD81/driving-study/R/read.R</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpb2vD81/driving-study/R/prepare.R</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpb2vD81/driving-study/R/analysis.R</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpb2vD81/driving-study/R/figures.R</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpb2vD81/driving-study/report/report.qmd</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpb2vD81/driving-study/README.md</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpb2vD81/driving-study/.gitignore</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpb2vD81/driving-study/data-raw/example-study.csv</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpb2vD81/driving-study/data-raw/README.md</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpb2vD81/driving-study/paper/generated/README.md</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpb2vD81/driving-study/output/figures/README.md</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpb2vD81/driving-study/paper/colleyRstats.sty</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Done. Next:</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   1. setwd("/tmp/Rtmp2Ft8yp/driving-study")</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   1. setwd("/tmp/Rtmpb2vD81/driving-study")</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   2. targets::tar_make()            # runs end to end on the example data</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   3. replace data-raw/example-study.csv with yours, then edit R/read.R</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   4. targets::tar_visnetwork()      # see what is out of date</span>

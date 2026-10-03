@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,7 +63,7 @@
       <h1>Scoring questionnaires</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.1/vignettes/scoring-questionnaires.Rmd" class="external-link"><code>vignettes/scoring-questionnaires.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/main/vignettes/scoring-questionnaires.Rmd" class="external-link"><code>vignettes/scoring-questionnaires.Rmd</code></a></small>
       <div class="d-none name"><code>scoring-questionnaires.Rmd</code></div>
     </div>
 
@@ -88,28 +88,30 @@ own scoring key.</p>
 </h2>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_questionnaires.html">list_questionnaires</a></span><span class="op">(</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"key"</span>, <span class="st">"name"</span>, <span class="st">"n_items"</span>, <span class="st">"n_subscales"</span>, <span class="st">"scale"</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="co">#&gt;           key                                              name n_items</span></span>
-<span><span class="co">#&gt; 1  attrakdiff                                      AttrakDiff 2      28</span></span>
-<span><span class="co">#&gt; 2         fms                  Fast Motion Sickness Scale (FMS)       1</span></span>
-<span><span class="co">#&gt; 3         ipq               igroup Presence Questionnaire (IPQ)      14</span></span>
-<span><span class="co">#&gt; 4        misc                               Misery Scale (MISC)       1</span></span>
-<span><span class="co">#&gt; 5    nasa_tlx                  NASA Task Load Index, raw (RTLX)       6</span></span>
-<span><span class="co">#&gt; 6         ssq            Simulator Sickness Questionnaire (SSQ)      16</span></span>
-<span><span class="co">#&gt; 7         sus                      System Usability Scale (SUS)      10</span></span>
-<span><span class="co">#&gt; 8         tia                         Trust in Automation (TiA)      19</span></span>
-<span><span class="co">#&gt; 9         ueq    User Experience Questionnaire (UEQ), full form      26</span></span>
-<span><span class="co">#&gt; 10      ueq_s User Experience Questionnaire, short form (UEQ-S)       8</span></span>
-<span><span class="co">#&gt;    n_subscales scale</span></span>
-<span><span class="co">#&gt; 1            4   1-7</span></span>
-<span><span class="co">#&gt; 2            1  0-20</span></span>
-<span><span class="co">#&gt; 3            4   0-6</span></span>
-<span><span class="co">#&gt; 4            1  0-10</span></span>
-<span><span class="co">#&gt; 5            6 0-100</span></span>
-<span><span class="co">#&gt; 6            3   0-3</span></span>
-<span><span class="co">#&gt; 7            2   1-5</span></span>
-<span><span class="co">#&gt; 8            6   1-5</span></span>
-<span><span class="co">#&gt; 9            6   1-7</span></span>
-<span><span class="co">#&gt; 10           2   1-7</span></span></code></pre></div>
+<span><span class="co">#&gt;                    key                                              name</span></span>
+<span><span class="co">#&gt; 1           attrakdiff                                      AttrakDiff 2</span></span>
+<span><span class="co">#&gt; 2  attrakdiff_official     AttrakDiff 2 (official sheet order and poles)</span></span>
+<span><span class="co">#&gt; 3                  fms                  Fast Motion Sickness Scale (FMS)</span></span>
+<span><span class="co">#&gt; 4                  ipq               igroup Presence Questionnaire (IPQ)</span></span>
+<span><span class="co">#&gt; 5                 misc                               Misery Scale (MISC)</span></span>
+<span><span class="co">#&gt; 6             nasa_tlx                  NASA Task Load Index, raw (RTLX)</span></span>
+<span><span class="co">#&gt; 7                  ssq            Simulator Sickness Questionnaire (SSQ)</span></span>
+<span><span class="co">#&gt; 8                  sus                      System Usability Scale (SUS)</span></span>
+<span><span class="co">#&gt; 9                  tia                         Trust in Automation (TiA)</span></span>
+<span><span class="co">#&gt; 10                 ueq    User Experience Questionnaire (UEQ), full form</span></span>
+<span><span class="co">#&gt; 11               ueq_s User Experience Questionnaire, short form (UEQ-S)</span></span>
+<span><span class="co">#&gt;    n_items n_subscales scale</span></span>
+<span><span class="co">#&gt; 1       28           4   1-7</span></span>
+<span><span class="co">#&gt; 2       28           4   1-7</span></span>
+<span><span class="co">#&gt; 3        1           1  0-20</span></span>
+<span><span class="co">#&gt; 4       14           4   0-6</span></span>
+<span><span class="co">#&gt; 5        1           1  0-10</span></span>
+<span><span class="co">#&gt; 6        6           6 0-100</span></span>
+<span><span class="co">#&gt; 7       16           3   0-3</span></span>
+<span><span class="co">#&gt; 8       10           2   1-5</span></span>
+<span><span class="co">#&gt; 9       19           6   1-5</span></span>
+<span><span class="co">#&gt; 10      26           6   1-7</span></span>
+<span><span class="co">#&gt; 11       8           2   1-7</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="scoring">Scoring<a class="anchor" aria-label="anchor" href="#scoring"></a>
@@ -121,7 +123,7 @@ own scoring key.</p>
 <span><span class="va">study</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"sus_"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span>, <span class="kw">function</span><span class="op">(</span><span class="va">i</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="fl">8</span>, <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/score_questionnaire.html">score_questionnaire</a></span><span class="op">(</span><span class="va">study</span>, <span class="st">"sus"</span>, prefix <span class="op">=</span> <span class="st">"sus_"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Scoring System Usability Scale (SUS) from 10 columns (sus_1 ... sus_10); reverse-coded: sus2, sus4, sus6, sus8, sus10.</span></span>
+<span><span class="co">#&gt; Scoring System Usability Scale (SUS) from 10 columns (sus_1 ... sus_10, matched by item number); responses observed 1 to 5 on the assumed range 1 to 5; reverse-coded: sus2, sus4, sus6, sus8, sus10.</span></span>
 <span><span class="co">#&gt; CAUTION: item numbers, order and polarity depend on how the questionnaire</span></span>
 <span><span class="co">#&gt; was administered -- survey tools renumber items, translations reorder them,</span></span>
 <span><span class="co">#&gt; and short forms drop them. This package applies the PUBLISHED key. If your</span></span>
@@ -142,9 +144,54 @@ own scoring key.</p>
 puts it on 0–100. That is a percentage of the maximum,
 <strong>not</strong> a percentile: the mean SUS across published studies
 is about 68, so 68 is average rather than poor.</p>
+<p>A prefix selects the columns, and their <em>names</em> then say which
+item each one holds – never their sort order, which would put
+<code>sus_10</code> before <code>sus_2</code>, or
+<code>tlx_effort</code> before <code>tlx_mental</code>. Either what
+follows the prefix is the item’s code or label, compared without case or
+punctuation:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tlx_named</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  tlx_effort <span class="op">=</span> <span class="fl">50</span>, tlx_frustration <span class="op">=</span> <span class="fl">60</span>, tlx_mental <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>  tlx_performance <span class="op">=</span> <span class="fl">40</span>, tlx_physical <span class="op">=</span> <span class="fl">20</span>, tlx_temporal <span class="op">=</span> <span class="fl">30</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/score_questionnaire.html">score_questionnaire</a></span><span class="op">(</span><span class="va">tlx_named</span>, <span class="st">"nasa_tlx"</span>, prefix <span class="op">=</span> <span class="st">"tlx_"</span><span class="op">)</span><span class="op">$</span><span class="va">Mental_Demand</span></span>
+<span><span class="co">#&gt; Scoring NASA Task Load Index, raw (RTLX) from 6 columns (tlx_mental ... tlx_frustration, matched by item name); responses observed 10 to 60 on the assumed range 0 to 100; no items reverse-coded.</span></span>
+<span><span class="co">#&gt; CAUTION: item numbers, order and polarity depend on how the questionnaire</span></span>
+<span><span class="co">#&gt; was administered -- survey tools renumber items, translations reorder them,</span></span>
+<span><span class="co">#&gt; and short forms drop them. This package applies the PUBLISHED key. If your</span></span>
+<span><span class="co">#&gt; sheet differed, the scores will be wrong without any error being raised.</span></span>
+<span><span class="co">#&gt; Check the mapping against the survey your participants actually saw, and</span></span>
+<span><span class="co">#&gt; double-check any number before it goes into a paper.</span></span>
+<span><span class="co">#&gt;   See the full mapping with check_questionnaire(data, "nasa_tlx", ...); silence this note with options(colleyRstats.quiet_questionnaires = TRUE).</span></span>
+<span><span class="co">#&gt; [1] 10</span></span></code></pre></div>
+<p>or it carries one item number per column, running exactly 1 to the
+number of items (<code>sus_2</code>, <code>SUS[2]</code>, or
+<code>SUS_2_1</code>, where the number that varies across the columns is
+the item). Names that do neither – a partial match, numbering from 0 –
+are an error asking for a named <code>items</code> mapping rather than a
+guess.</p>
+<div class="section level3">
+<h3 id="item-columns-must-be-numbers">Item columns must be numbers<a class="anchor" aria-label="anchor" href="#item-columns-must-be-numbers"></a>
+</h3>
+<p>Survey exports often deliver responses as text. A column holding
+<code>"Strongly agree"</code>, <code>"5 - Strongly agree"</code> or a
+decimal comma such as <code>"2,5"</code> stops scoring with an error
+that names the values and says how to recode them: converting them would
+silently turn those answers into missing values, and with a relaxed
+<code>min_valid</code> the row would be scored as if the participant had
+skipped them. Blank cells are missing responses. Factors are read by
+their labels when those are numbers, and by level order only when the
+factor is ordered.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">text_export</span> <span class="op">&lt;-</span> <span class="va">study</span></span>
+<span><span class="va">text_export</span><span class="op">$</span><span class="va">sus_3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">text_export</span><span class="op">$</span><span class="va">sus_3</span><span class="op">)</span></span>
+<span><span class="va">text_export</span><span class="op">$</span><span class="va">sus_3</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">"Strongly agree"</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/try.html" class="external-link">try</a></span><span class="op">(</span><span class="fu"><a href="../reference/score_questionnaire.html">score_questionnaire</a></span><span class="op">(</span><span class="va">text_export</span>, <span class="st">"sus"</span>, prefix <span class="op">=</span> <span class="st">"sus_"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error : Column 'sus_3' holds values that are not numbers: 'Strongly agree'. Converting them would silently turn those responses into missing values and score the remaining items as if they had been skipped. Recode the column to numbers first. For response labels ("Strongly agree"): recode them to their scale values, e.g. unname(c("Strongly disagree" = 1, ..., "Strongly agree" = 5)[x]), or export numeric codes from the survey tool.</span></span></code></pre></div>
 <p>Every instrument’s notes say this sort of thing, and
 <code><a href="../reference/questionnaire_items.html">questionnaire_items()</a></code> prints them:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/questionnaire_items.html">questionnaire_items</a></span><span class="op">(</span><span class="st">"ueq_s"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; User Experience Questionnaire, short form (UEQ-S) -- Schrepp, Hinderks &amp; Thomaschewski (2017), IJIMAI 4(6)</span></span>
 <span><span class="co">#&gt; Response range 1-7; 8 items in 2 subscales.</span></span>
@@ -165,13 +212,14 @@ is about 68, so 68 is average rather than poor.</p>
 <span><span class="co">#&gt;     6 ueqs6 not interesting - interesting   Hedonic Quality   FALSE</span></span>
 <span><span class="co">#&gt;     7 ueqs7      conventional - inventive   Hedonic Quality   FALSE</span></span>
 <span><span class="co">#&gt;     8 ueqs8          usual - leading edge   Hedonic Quality   FALSE</span></span></code></pre></div>
+</div>
 <div class="section level3">
 <h3 id="declaring-the-response-range">Declaring the response range<a class="anchor" aria-label="anchor" href="#declaring-the-response-range"></a>
 </h3>
 <p>Instruments are administered on whatever scale the survey tool
 offered. Say which one you used and the responses are rescaled onto the
 instrument’s own range before scoring:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tlx</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  mental <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">14</span>, <span class="fl">3</span><span class="op">)</span>, physical <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">1</span><span class="op">)</span>, temporal <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">11</span>, <span class="fl">4</span><span class="op">)</span>,</span>
 <span>  performance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">6</span>, <span class="fl">2</span><span class="op">)</span>, effort <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">13</span>, <span class="fl">5</span><span class="op">)</span>, frustration <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">9</span>, <span class="fl">1</span><span class="op">)</span></span>
@@ -179,7 +227,7 @@ instrument’s own range before scoring:</p>
 <span></span>
 <span><span class="co"># The 21-point NASA-TLX sheet, scored onto the conventional 0-100</span></span>
 <span><span class="fu"><a href="../reference/score_questionnaire.html">score_questionnaire</a></span><span class="op">(</span><span class="va">tlx</span>, <span class="st">"nasa_tlx"</span>, scale <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">21</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Scoring NASA Task Load Index, raw (RTLX) from 6 columns (mental ... frustration); no items reverse-coded.</span></span>
+<span><span class="co">#&gt; Scoring NASA Task Load Index, raw (RTLX) from 6 columns (mental ... frustration, matched by item code); responses observed 1 to 14 on the assumed range 1 to 21; no items reverse-coded.</span></span>
 <span><span class="co">#&gt; CAUTION: item numbers, order and polarity depend on how the questionnaire</span></span>
 <span><span class="co">#&gt; was administered -- survey tools renumber items, translations reorder them,</span></span>
 <span><span class="co">#&gt; and short forms drop them. This package applies the PUBLISHED key. If your</span></span>
@@ -196,11 +244,34 @@ instrument’s own range before scoring:</p>
 <p>Responses outside the range you declare are an error rather than a
 silent rescale, which is what stops a 1–7 export from being scored as if
 it were the 0–100 TLX.</p>
+<p>The quieter failure is a coding that fits the range but is shifted
+against it. The scoring message prints the observed range next to the
+assumed one, and without an explicit <code>scale</code> three patterns
+draw a warning: NASA-TLX responses that never exceed 21 (the 21-point
+sheet, which scored as 0–100 understates workload about five-fold); no
+response at 0 on a zero-based instrument such as the IPQ or SSQ (a
+1-based export in which nobody chose the top point); and no response at
+the top of a one-based instrument such as the SUS (a 0-based export in
+which nobody chose 0). The last two need at least five respondents.
+Passing <code>scale</code> explicitly confirms the coding and silences
+them.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># The same 21-point responses, without saying so: RTLX comes out five times too low</span></span>
+<span><span class="fu"><a href="../reference/score_questionnaire.html">score_questionnaire</a></span><span class="op">(</span><span class="va">tlx</span>, <span class="st">"nasa_tlx"</span><span class="op">)</span><span class="op">$</span><span class="va">RTLX</span></span>
+<span><span class="co">#&gt; Warning: NASA Task Load Index, raw (RTLX): responses run only from 1 to 14,</span></span>
+<span><span class="co">#&gt; although the assumed range is 0-100. That is the signature of the 21-point</span></span>
+<span><span class="co">#&gt; paper sheet or a 20-point slider; scored as 0-100 it understates workload about</span></span>
+<span><span class="co">#&gt; five-fold. Pass scale = c(1, 21) (or c(1, 20)) if so, or scale = c(0, 100) to</span></span>
+<span><span class="co">#&gt; confirm the data really are on 0-100 and silence this warning.</span></span>
+<span><span class="co">#&gt; [1] 9.166667 2.666667</span></span></code></pre></div>
+<p>A fractional response on an instrument answered in whole scale points
+(every built-in one except the NASA-TLX) warns too: it is an averaged,
+imputed or mis-exported column rather than a response.</p>
 </div>
 <div class="section level3">
 <h3 id="adding-scores-to-the-data">Adding scores to the data<a class="anchor" aria-label="anchor" href="#adding-scores-to-the-data"></a>
 </h3>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">scored</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/score_questionnaire.html">score_questionnaire</a></span><span class="op">(</span><span class="va">study</span>, <span class="st">"sus"</span>, prefix <span class="op">=</span> <span class="st">"sus_"</span>, append <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">scored</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span><span class="op">]</span></span>
 <span><span class="co">#&gt; [1] "participant" "sus_1"       "sus_2"</span></span>
@@ -218,15 +289,26 @@ Survey tools renumber items, translations reorder them, short forms drop
 them from the middle, and semantic differentials get printed with the
 poles the other way round. This package applies each instrument’s
 <em>published</em> key — the right default, and still only a default.
-<code><a href="../reference/score_questionnaire.html">score_questionnaire()</a></code> maps your columns onto the
-instrument’s items <em>positionally</em>, so a shifted export produces
-scores that look entirely reasonable and are wrong.</p>
+Whatever your columns are called, the instrument’s item 3 is taken to be
+the question your participants saw third; if your sheet ordered, worded
+or poled them differently, the scores look entirely reasonable and are
+wrong. (An unnamed <code>items</code> vector is mapped by position,
+too.)</p>
+<p>AttrakDiff is the case in point. The <code>attrakdiff</code> key
+lists its 28 word pairs blocked by dimension, each with its negative
+term first – the layout of data that has already been re-sorted and
+re-poled, not of the official form. Data stored as answered on the
+official sheet, which interleaves the pairs and prints 15 of them with
+the positive term on the left, belong to
+<code>"attrakdiff_official"</code>. Both keys use the same item codes
+for the same word pairs, so a named <code>items</code> mapping works
+with either.</p>
 <p>Nothing errors when that happens, which is why R says it out loud:
 the first time each distinct mapping is scored in a session, the mapping
 and a caution print together. Read them rather than tuning them out, and
 double-check any number before it reaches a paper.</p>
 <p>Run this once per instrument, per study, and read what it prints:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/invisible.html" class="external-link">invisible</a></span><span class="op">(</span><span class="fu"><a href="../reference/check_questionnaire.html">check_questionnaire</a></span><span class="op">(</span><span class="va">study</span>, <span class="st">"sus"</span>, prefix <span class="op">=</span> <span class="st">"sus_"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; System Usability Scale (SUS) -- Brooke (1996), Usability Evaluation in Industry; Lewis &amp; Sauro (2009), HCII</span></span>
 <span><span class="co">#&gt; CAUTION: item numbers, order and polarity depend on how the questionnaire</span></span>
@@ -236,6 +318,7 @@ double-check any number before it reaches a paper.</p>
 <span><span class="co">#&gt; Check the mapping against the survey your participants actually saw, and</span></span>
 <span><span class="co">#&gt; double-check any number before it goes into a paper.</span></span>
 <span><span class="co">#&gt; Assumed response range: 1-5 (the instrument's own; pass `scale` if your survey differed)</span></span>
+<span><span class="co">#&gt; Observed responses: 1 to 5</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Item mapping (verify against the survey your participants saw):</span></span>
 <span><span class="co">#&gt;  item  code column     subscale reverse observed_min observed_max n_missing</span></span>
@@ -252,21 +335,23 @@ double-check any number before it reaches a paper.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Notes:</span></span>
 <span><span class="co">#&gt;   - The SUS score is the sum of the ten recoded items multiplied by 2.5, giving 0-100. That is a percentage of the maximum, NOT a percentile: the mean SUS across studies is about 68, so 68 is average rather than poor.</span></span>
-<span><span class="co">#&gt;   - Usability (8 items, x 3.125) and Learnability (2 items, x 12.5) follow Lewis &amp; Sauro (2009) and are likewise on 0-100. The two are strongly correlated; report them only if the study has a reason to separate them.</span></span></code></pre></div>
+<span><span class="co">#&gt;   - Usability (8 items, x 3.125) and Learnability (2 items, x 12.5) follow Lewis &amp; Sauro (2009) and are likewise on 0-100. The two are strongly correlated; report them only if the study has a reason to separate them.</span></span>
+<span><span class="co">#&gt;   - Missing items: Brooke (1996) instructs a respondent who cannot answer an item to mark the centre point of the scale, so when `min_valid` &lt; 1 lets an incomplete row be scored, each missing item counts as the centre (3 on 1-5). One missing item in an otherwise perfect response therefore gives 95, not 100. Pass impute = "prorate" to scale up from the answered items instead, and say which rule you used.</span></span>
+<span><span class="co">#&gt;   - Learnability has only two items. score_reliability() reports the Spearman-Brown coefficient for it, which Eisinga, te Grotenhuis &amp; Pelzer (2013) recommend over alpha for two-item scales.</span></span></code></pre></div>
 <p>It shows which column supplies which item, which subscale that item
 loads on, whether it is reverse-coded, and the observed range of each
 column – so a column of all-3s where you expected variation, or a 1–7
 export where the instrument expects 1–5, is visible immediately.</p>
-<p>If your survey stored a pair the other way round,
-<code>reverse_items</code> toggles it. Naming an item that the key
-already reverses <em>un</em>-reverses it:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<p>If your survey printed a pair the other way round,
+<code>reverse_items</code> reverses it in addition to the key’s own
+reversals:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># A survey that anchored NASA-TLX performance "Good" at the high end</span></span>
 <span><span class="va">scores</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/score_questionnaire.html">score_questionnaire</a></span><span class="op">(</span><span class="va">tlx</span>, <span class="st">"nasa_tlx"</span>,</span>
 <span>  scale <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">21</span><span class="op">)</span>,</span>
 <span>  reverse_items <span class="op">=</span> <span class="st">"performance"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Scoring NASA Task Load Index, raw (RTLX) from 6 columns (mental ... frustration); reverse-coded: performance.</span></span>
+<span><span class="co">#&gt; Scoring NASA Task Load Index, raw (RTLX) from 6 columns (mental ... frustration, matched by item code); responses observed 1 to 14 on the assumed range 1 to 21; reverse-coded: performance.</span></span>
 <span><span class="co">#&gt; CAUTION: item numbers, order and polarity depend on how the questionnaire</span></span>
 <span><span class="co">#&gt; was administered -- survey tools renumber items, translations reorder them,</span></span>
 <span><span class="co">#&gt; and short forms drop them. This package applies the PUBLISHED key. If your</span></span>
@@ -276,10 +361,39 @@ already reverses <em>un</em>-reverses it:</p>
 <span><span class="co">#&gt;   See the full mapping with check_questionnaire(data, "nasa_tlx", ...); silence this note with options(colleyRstats.quiet_questionnaires = TRUE).</span></span>
 <span><span class="va">scores</span><span class="op">$</span><span class="va">Performance</span></span>
 <span><span class="co">#&gt; [1] 75 95</span></span></code></pre></div>
+<p>Do not pass an instrument’s own reverse set there.
+<code>reverse_items</code> <em>toggles</em>, for backward compatibility,
+so <code>reverse_items = c(2, 4, 6, 8, 10)</code> on the SUS – a line
+many tutorials contain – un-reverses all five negatively worded items,
+and a perfect respondent scores 50. That now raises a warning. If an
+export genuinely stored items that the key reverses already reversed,
+say so with <code>unreverse_items</code>, which does the same on purpose
+and without a warning:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">perfect</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">5</span>, <span class="fl">1</span>, <span class="fl">5</span>, <span class="fl">1</span>, <span class="fl">5</span>, <span class="fl">1</span>, <span class="fl">5</span>, <span class="fl">1</span>, <span class="fl">5</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">perfect</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"sus_"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/score_questionnaire.html">score_questionnaire</a></span><span class="op">(</span><span class="va">perfect</span>, <span class="st">"sus"</span>, prefix <span class="op">=</span> <span class="st">"sus_"</span><span class="op">)</span><span class="op">$</span><span class="va">SUS</span></span>
+<span><span class="co">#&gt; [1] 100</span></span>
+<span></span>
+<span><span class="co"># Items 2 and 4 were stored pre-reversed by the survey tool</span></span>
+<span><span class="va">pre_reversed</span> <span class="op">&lt;-</span> <span class="va">perfect</span></span>
+<span><span class="va">pre_reversed</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sus_2"</span>, <span class="st">"sus_4"</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">5</span></span>
+<span><span class="fu"><a href="../reference/score_questionnaire.html">score_questionnaire</a></span><span class="op">(</span><span class="va">pre_reversed</span>, <span class="st">"sus"</span>, prefix <span class="op">=</span> <span class="st">"sus_"</span>,</span>
+<span>  unreverse_items <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sus2"</span>, <span class="st">"sus4"</span><span class="op">)</span></span>
+<span><span class="op">)</span><span class="op">$</span><span class="va">SUS</span></span>
+<span><span class="co">#&gt; Scoring System Usability Scale (SUS) from 10 columns (sus_1 ... sus_10, matched by item number); responses observed 1 to 5 on the assumed range 1 to 5; reverse-coded: sus6, sus8, sus10.</span></span>
+<span><span class="co">#&gt; CAUTION: item numbers, order and polarity depend on how the questionnaire</span></span>
+<span><span class="co">#&gt; was administered -- survey tools renumber items, translations reorder them,</span></span>
+<span><span class="co">#&gt; and short forms drop them. This package applies the PUBLISHED key. If your</span></span>
+<span><span class="co">#&gt; sheet differed, the scores will be wrong without any error being raised.</span></span>
+<span><span class="co">#&gt; Check the mapping against the survey your participants actually saw, and</span></span>
+<span><span class="co">#&gt; double-check any number before it goes into a paper.</span></span>
+<span><span class="co">#&gt;   See the full mapping with check_questionnaire(data, "sus", ...); silence this note with options(colleyRstats.quiet_questionnaires = TRUE).</span></span>
+<span><span class="co">#&gt; [1] 100</span></span></code></pre></div>
 <p>A named <code>items</code> argument avoids positional mapping
 altogether, and is the safer choice for an export you did not lay out
 yourself:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/score_questionnaire.html">score_questionnaire</a></span><span class="op">(</span></span>
 <span>  <span class="va">tlx</span>, <span class="st">"nasa_tlx"</span>,</span>
 <span>  scale <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">21</span><span class="op">)</span>,</span>
@@ -288,7 +402,7 @@ yourself:</p>
 <span>    performance <span class="op">=</span> <span class="st">"performance"</span>, effort <span class="op">=</span> <span class="st">"effort"</span>, frustration <span class="op">=</span> <span class="st">"frustration"</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span><span class="op">$</span><span class="va">RTLX</span></span>
-<span><span class="co">#&gt; Scoring NASA Task Load Index, raw (RTLX) from 6 columns (mental ... frustration); no items reverse-coded.</span></span>
+<span><span class="co">#&gt; Scoring NASA Task Load Index, raw (RTLX) from 6 columns (mental ... frustration, matched by item code (named `items`)); responses observed 1 to 14 on the assumed range 1 to 21; no items reverse-coded.</span></span>
 <span><span class="co">#&gt; CAUTION: item numbers, order and polarity depend on how the questionnaire</span></span>
 <span><span class="co">#&gt; was administered -- survey tools renumber items, translations reorder them,</span></span>
 <span><span class="co">#&gt; and short forms drop them. This package applies the PUBLISHED key. If your</span></span>
@@ -304,40 +418,78 @@ yourself:</p>
 <p>By default a subscale is scored only if every one of its items was
 answered, and is <code>NA</code> otherwise. Nothing is imputed
 silently.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">gappy</span> <span class="op">&lt;-</span> <span class="va">study</span></span>
 <span><span class="va">gappy</span><span class="op">$</span><span class="va">sus_3</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/score_questionnaire.html">score_questionnaire</a></span><span class="op">(</span><span class="va">gappy</span>, <span class="st">"sus"</span>, prefix <span class="op">=</span> <span class="st">"sus_"</span><span class="op">)</span><span class="op">$</span><span class="va">SUS</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span></span>
+<span><span class="co">#&gt; Scoring System Usability Scale (SUS) from 10 columns (sus_1 ... sus_10, matched by item number); responses observed 1 to 5 on the assumed range 1 to 5; reverse-coded: sus2, sus4, sus6, sus8, sus10.</span></span>
+<span><span class="co">#&gt; CAUTION: item numbers, order and polarity depend on how the questionnaire</span></span>
+<span><span class="co">#&gt; was administered -- survey tools renumber items, translations reorder them,</span></span>
+<span><span class="co">#&gt; and short forms drop them. This package applies the PUBLISHED key. If your</span></span>
+<span><span class="co">#&gt; sheet differed, the scores will be wrong without any error being raised.</span></span>
+<span><span class="co">#&gt; Check the mapping against the survey your participants actually saw, and</span></span>
+<span><span class="co">#&gt; double-check any number before it goes into a paper.</span></span>
+<span><span class="co">#&gt;   See the full mapping with check_questionnaire(data, "sus", ...); silence this note with options(colleyRstats.quiet_questionnaires = TRUE).</span></span>
 <span><span class="co">#&gt; [1] NA</span></span>
 <span></span>
 <span><span class="co"># Score responses that are at least 80% complete</span></span>
 <span><span class="fu"><a href="../reference/score_questionnaire.html">score_questionnaire</a></span><span class="op">(</span><span class="va">gappy</span>, <span class="st">"sus"</span>, prefix <span class="op">=</span> <span class="st">"sus_"</span>, min_valid <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span><span class="op">$</span><span class="va">SUS</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span></span>
+<span><span class="co">#&gt; [1] 45</span></span></code></pre></div>
+<p>With <code>min_valid</code> relaxed, the missing items are completed
+by the instrument’s published rule. For the SUS that is Brooke’s (1996):
+a respondent who cannot answer an item marks the centre point, so each
+missing item counts as 3 on 1–5. One missing item in an otherwise
+perfect response gives 95, not 100. For every other instrument a
+subscale is the mean of the items present, with a summed score scaled up
+proportionally so it stays on its published range.
+<code>impute = "prorate"</code> or <code>impute = "midpoint"</code>
+chooses a rule explicitly – report which one you used:</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/score_questionnaire.html">score_questionnaire</a></span><span class="op">(</span><span class="va">gappy</span>, <span class="st">"sus"</span>, prefix <span class="op">=</span> <span class="st">"sus_"</span>, min_valid <span class="op">=</span> <span class="fl">0.8</span>,</span>
+<span>  impute <span class="op">=</span> <span class="st">"prorate"</span></span>
+<span><span class="op">)</span><span class="op">$</span><span class="va">SUS</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span></span>
 <span><span class="co">#&gt; [1] 44.44444</span></span></code></pre></div>
-<p>With <code>min_valid</code> relaxed, a subscale is the mean of the
-items present, and a sum-scored instrument such as the SUS is scaled up
-proportionally so it stays on its published 0–100 range.</p>
 </div>
 <div class="section level2">
 <h2 id="internal-consistency">Internal consistency<a class="anchor" aria-label="anchor" href="#internal-consistency"></a>
 </h2>
 <p><code><a href="../reference/score_reliability.html">score_reliability()</a></code> computes Cronbach’s alpha on the
 same recoded matrix that is aggregated, so reverse-coded items are
-already flipped:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+already flipped. It reports every subscale, plus the whole scale where
+the instrument defines an overall score – the ten-item SUS alpha that
+SUS papers report:</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/score_reliability.html">score_reliability</a></span><span class="op">(</span><span class="va">study</span>, <span class="st">"sus"</span>, prefix <span class="op">=</span> <span class="st">"sus_"</span><span class="op">)</span></span>
-<span><span class="co">#&gt;       subscale n_items n_complete      alpha     omega mean_item_cor</span></span>
-<span><span class="co">#&gt; 1    Usability       8          8 0.08806964 0.7100107   0.000716434</span></span>
-<span><span class="co">#&gt; 2 Learnability       2          8 0.73003802        NA   0.575355962</span></span></code></pre></div>
+<span><span class="co">#&gt;       subscale n_items n_complete      alpha     omega spearman_brown</span></span>
+<span><span class="co">#&gt; 1    Usability       8          8 0.08806964 0.2891371             NA</span></span>
+<span><span class="co">#&gt; 2 Learnability       2          8 0.73003802        NA      0.7304457</span></span>
+<span><span class="co">#&gt; 3          SUS      10          8 0.38154446 0.5230492             NA</span></span>
+<span><span class="co">#&gt;   mean_item_cor</span></span>
+<span><span class="co">#&gt; 1   0.000716434</span></span>
+<span><span class="co">#&gt; 2   0.575355962</span></span>
+<span><span class="co">#&gt; 3   0.056951282</span></span>
+<span><span class="co">#&gt;                                                                               note</span></span>
+<span><span class="co">#&gt; 1                                                                                 </span></span>
+<span><span class="co">#&gt; 2 two items: report spearman_brown (Eisinga et al., 2013); omega is not identified</span></span>
+<span><span class="co">#&gt; 3</span></span></code></pre></div>
 <p>Because the reversal has already happened, a negative alpha means a
 real problem – the items of that subscale do not point the same way –
 rather than a forgotten flip. It warns when one appears.</p>
+<p>McDonald’s omega (total) comes from an unrotated one-factor solution
+(<code><a href="https://rdrr.io/pkg/psych/man/fa.html" class="external-link">psych::fa()</a></code>), so it needs ‘psych’ but not ‘GPArotation’,
+and – unlike <code><a href="https://rdrr.io/pkg/psych/man/omega.html" class="external-link">psych::omega()</a></code> – does not flip negatively
+loading items, which would hide the very reversal error a negative alpha
+exposes. For two-item scales, such as SUS Learnability, omega is not
+identified and alpha understates reliability whenever the two item
+variances differ; <code>spearman_brown</code> gives the coefficient
+Eisinga, te Grotenhuis and Pelzer (2013) recommend instead. The
+<code>note</code> column says why any coefficient is missing.</p>
 <p>Do not read the values above as anything: the example responses are
-random, so <code>Usability</code> is near zero as it should be, while
-the two-item <code>Learnability</code> looks respectable purely by
-chance. Eight participants is far too few to estimate alpha at all,
-which is itself worth remembering – <code>n_complete</code> is reported
-next to it for that reason.</p>
+random, so any coefficient that looks respectable does so purely by
+chance. Eight participants is far too few to estimate reliability at
+all, which is itself worth remembering – <code>n_complete</code> is
+reported next to it for that reason.</p>
 </div>
 <div class="section level2">
 <h2 id="your-own-instruments">Your own instruments<a class="anchor" aria-label="anchor" href="#your-own-instruments"></a>
@@ -345,7 +497,7 @@ next to it for that reason.</p>
 <p><code><a href="../reference/define_questionnaire.html">define_questionnaire()</a></code> registers one, after which it
 behaves exactly like a built-in. Put the call in a project’s setup
 script and every analysis in that project scores it identically:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/define_questionnaire.html">define_questionnaire</a></span><span class="op">(</span></span>
 <span>  key <span class="op">=</span> <span class="st">"acceptance"</span>,</span>
 <span>  name <span class="op">=</span> <span class="st">"Van der Laan acceptance scale"</span>,</span>
@@ -366,7 +518,7 @@ script and every analysis in that project scores it identically:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">vdl</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"item"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">9</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/score_questionnaire.html">score_questionnaire</a></span><span class="op">(</span><span class="va">vdl</span>, <span class="st">"acceptance"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Scoring Van der Laan acceptance scale from 9 columns (item1 ... item9); reverse-coded: item1, item2, item4, item5, item7, item9.</span></span>
+<span><span class="co">#&gt; Scoring Van der Laan acceptance scale from 9 columns (item1 ... item9, matched by item code); responses observed -2 to 2 on the assumed range -2 to 2; reverse-coded: item1, item2, item4, item5, item7, item9.</span></span>
 <span><span class="co">#&gt; CAUTION: item numbers, order and polarity depend on how the questionnaire</span></span>
 <span><span class="co">#&gt; was administered -- survey tools renumber items, translations reorder them,</span></span>
 <span><span class="co">#&gt; and short forms drop them. This package applies the PUBLISHED key. If your</span></span>
@@ -384,7 +536,7 @@ script and every analysis in that project scores it identically:</p>
 the analysis lives in the time course rather than in any one
 measurement. <code><a href="../reference/summarize_sickness.html">summarize_sickness()</a></code> produces the
 per-participant measures those studies report:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ratings</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  participant <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"p1"</span>, <span class="st">"p2"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">5</span><span class="op">)</span>,</span>
 <span>  minute <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span><span class="op">:</span><span class="fl">4</span>, <span class="fl">2</span><span class="op">)</span>,</span>
@@ -409,10 +561,10 @@ Analyse it with an ordinal model rather than by taking means.</p>
 values than <code><a href="../reference/classify_outcome.html">classify_outcome()</a></code>’s
 <code>ordinal_max_levels</code> of 7, so left to itself it is taken for
 a count and <code><a href="../reference/recommend_test.html">recommend_test()</a></code> proposes a Poisson GLMM:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">misc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>misc <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">3</span>, <span class="fl">6</span>, <span class="fl">10</span>, <span class="fl">2</span>, <span class="fl">4</span>, <span class="fl">8</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/classify_outcome.html">classify_outcome</a></span><span class="op">(</span><span class="fu"><a href="../reference/score_questionnaire.html">score_questionnaire</a></span><span class="op">(</span><span class="va">misc</span>, <span class="st">"misc"</span><span class="op">)</span><span class="op">$</span><span class="va">MISC</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Scoring Misery Scale (MISC) from 1 columns (misc ... misc); no items reverse-coded.</span></span>
+<span><span class="co">#&gt; Scoring Misery Scale (MISC) from 1 column (misc, matched by item code); responses observed 0 to 10 on the assumed range 0 to 10; no items reverse-coded.</span></span>
 <span><span class="co">#&gt; CAUTION: item numbers, order and polarity depend on how the questionnaire</span></span>
 <span><span class="co">#&gt; was administered -- survey tools renumber items, translations reorder them,</span></span>
 <span><span class="co">#&gt; and short forms drop them. This package applies the PUBLISHED key. If your</span></span>
@@ -420,6 +572,7 @@ a count and <code><a href="../reference/recommend_test.html">recommend_test()</a
 <span><span class="co">#&gt; Check the mapping against the survey your participants actually saw, and</span></span>
 <span><span class="co">#&gt; double-check any number before it goes into a paper.</span></span>
 <span><span class="co">#&gt;   See the full mapping with check_questionnaire(data, "misc", ...); silence this note with options(colleyRstats.quiet_questionnaires = TRUE).</span></span>
+<span><span class="co">#&gt; The outcome holds non-negative whole numbers (8 distinct values, 0-10), so it is classified as a count and modelled with a Poisson (or, if over-dispersed, negative-binomial) model. If it is a rating, a summed questionnaire score or another bounded scale rather than a count of events, pass outcome_type = "continuous" (or "ordinal").</span></span>
 <span><span class="co">#&gt; [1] "count"</span></span></code></pre></div>
 <p>Pass <code>outcome_type = "ordinal"</code> to
 <code><a href="../reference/fit_recommended.html">fit_recommended()</a></code>, or raise <code>ordinal_max_levels</code>
@@ -431,7 +584,7 @@ to 11.</p>
 <p><code><a href="../reference/fit_recommended.html">fit_recommended()</a></code> takes the scored data and fits the
 model each outcome calls for. Here is the whole path, from raw items to
 a manuscript sentence:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">7</span><span class="op">)</span></span>
 <span><span class="va">trial</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/expand.grid.html" class="external-link">expand.grid</a></span><span class="op">(</span></span>
 <span>  participant <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">12</span><span class="op">)</span>,</span>
@@ -458,19 +611,22 @@ a manuscript sentence:</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">fit</span><span class="op">$</span><span class="va">recommendation</span><span class="op">$</span><span class="va">recommendation</span></span>
-<span><span class="co">#&gt; [1] "Linear Mixed Model (LMM) / parametric within-subjects"</span></span>
+<span><span class="co">#&gt; [1] "Linear Mixed Model (LMM)"</span></span>
 <span><span class="va">fit</span><span class="op">$</span><span class="va">text</span></span>
-<span><span class="co">#&gt; [1] "A linear mixed model was fitted for SUS."                                                                                                    </span></span>
-<span><span class="co">#&gt; [2] "The effect of \\textit{conditionbaseline} on SUS was significant ($b = 15.42$, 95\\% CI $[10.96, 19.88]$, $t(31) = 7.05$, \\pminor{0.001})." </span></span>
-<span><span class="co">#&gt; [3] "The effect of \\textit{conditionexplicit} on SUS was significant ($b = 24.79$, 95\\% CI $[20.33, 29.25]$, $t(31) = 11.34$, \\pminor{0.001})."</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "A linear mixed model was fitted for SUS. Model terms were tested with Type III $F$-tests and coefficients with $t$-tests, using Satterthwaite's degrees of freedom. Coefficients are treatment contrasts against each factor's reference level."</span></span>
+<span><span class="co">#&gt; [2] "The main effect of \\textit{condition} on SUS was significant (\\F{2}{22}{65.57}, \\pminor{0.001})."                                                                                                                                            </span></span>
+<span><span class="co">#&gt; [3] "The contrast \\textit{baseline} vs.\\ \\textit{ambient} of \\textit{condition} on SUS was significant ($b = 15.42$, 95\\% CI $[10.88, 19.95]$, $t(22) = 7.05$, \\pminor{0.001})."                                                               </span></span>
+<span><span class="co">#&gt; [4] "The contrast \\textit{explicit} vs.\\ \\textit{ambient} of \\textit{condition} on SUS was significant ($b = 24.79$, 95\\% CI $[20.26, 29.33]$, $t(22) = 11.34$, \\pminor{0.001})."</span></span></code></pre></div>
 <p>The sentence is LaTeX; <code><a href="../reference/expand_latex_macros.html">expand_latex_macros()</a></code> renders it
 as plain text if you want to read it here rather than paste it into a
 manuscript.</p>
-<p>Watch the classification when an outcome stays whole-numbered — a raw
-NASA-TLX subscale or a MISC rating is taken for a count unless you say
-<code>outcome_type = "continuous"</code> or <code>"ordinal"</code>. SUS
-and RTLX are fractional, so they classify as continuous on their
-own.</p>
+<p>Watch the classification when an outcome stays whole-numbered. A raw
+NASA-TLX subscale scored onto 0–100 moves in steps of 5 and is
+recognised as a bounded score (continuous), but a MISC rating or another
+whole-numbered rating is taken for a count – with a message saying so –
+unless you pass <code>outcome_type = "continuous"</code> or
+<code>"ordinal"</code>. SUS and RTLX are fractional, so they classify as
+continuous on their own.</p>
 <p><code><a href="../reference/use_study_project.html">use_study_project()</a></code> scaffolds a whole analysis around
 this – scoring, models, figures, and the generated LaTeX a manuscript
 reads – as a <code>targets</code> pipeline, and writes those

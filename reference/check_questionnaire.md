@@ -17,7 +17,8 @@ check_questionnaire(
   items = NULL,
   prefix = NULL,
   scale = NULL,
-  reverse_items = NULL
+  reverse_items = NULL,
+  unreverse_items = NULL
 )
 ```
 
@@ -44,9 +45,16 @@ check_questionnaire(
 - prefix:
 
   Optional column-name prefix selecting the item columns, e.g. `"sus_"`.
-  Matching columns are sorted numerically, so `sus_2` comes before
-  `sus_10`. Must select exactly as many columns as the instrument has
-  items.
+  Must select exactly as many columns as the instrument has items. The
+  columns are then matched to items *by their names*, never by sort
+  order: either what follows the prefix is the item's code, label or
+  (for a single-item subscale) subscale name, compared without case or
+  punctuation (`tlx_mental`, `tlx_Mental_Demand`, `tia_rc1`, `ipq_SP2`);
+  or it carries one item number per column, and those numbers are
+  exactly `1..n` (`sus_2`, `SUS[2]`, `Q5_2`; in `SUS_2_1` the number
+  that varies across the columns is the item). Anything else – numbering
+  from 0, numbers that do not run `1..n`, names that only partly match –
+  is an error asking for a named `items` mapping, rather than a guess.
 
 - scale:
 
@@ -54,14 +62,26 @@ check_questionnaire(
   used, e.g. `c(1, 21)` for the 21-point NASA-TLX sheet or `c(0, 4)` for
   a zero-based SUS. Responses are rescaled onto the instrument's own
   range before scoring. Defaults to the instrument's range; responses
-  outside it are an error rather than a silent rescale.
+  outside it are an error rather than a silent rescale. Without `scale`,
+  a coding that fits the range but looks shifted against it draws a
+  warning (see Details); passing `scale` explicitly confirms the coding
+  and silences it.
 
 - reverse_items:
 
-  Optional items to *toggle* the reverse-coding of, given as item
-  numbers or item codes. Naming an item the scoring key already reverses
-  un-reverses it, which is what an export that stores a pair the other
-  way round needs.
+  Optional items to reverse-code in addition to the scoring key's own,
+  given as item numbers or item codes – for a survey that printed a pair
+  the other way round. For backward compatibility it *toggles*: naming
+  an item the key already reverses un-reverses it, and because passing
+  an instrument's own reverse set (e.g. `c(2, 4, 6, 8, 10)` for the SUS)
+  is a common mistake that would do exactly that, it raises a warning.
+  Use `unreverse_items` to undo a key reversal on purpose.
+
+- unreverse_items:
+
+  Optional items the scoring key reverses that should *not* be reversed,
+  because the export already stored them reverse-coded. Naming an item
+  the key does not reverse is an error.
 
 ## Value
 
@@ -69,6 +89,16 @@ Invisibly, a data frame with one row per item: the item number and code,
 the column it maps to, its subscale, whether it is reverse-coded, and
 the observed minimum, maximum and number of missing values of that
 column.
+
+## Details
+
+Problems that
+[`score_questionnaire()`](https://m-colley.github.io/colleyRstats/reference/score_questionnaire.md)
+would stop on (a column that is not numeric, responses outside the
+assumed range) are reported here as warnings instead, together with the
+warnings scoring would raise (a coding that looks shifted, an item named
+in `reverse_items` that the key already reverses), so the check can
+explain them rather than abort.
 
 ## Caution – verify the mapping against your own survey
 
@@ -93,7 +123,13 @@ each distinct mapping is scored in a session (silence it with
 
 A named `items` argument (`items = c(mental = "tlx_md", ...)`) removes
 the positional assumption altogether and is the safer choice for an
-export you did not lay out yourself.
+export you did not lay out yourself. A `prefix` maps columns by what
+their names say – an item code or label, or one item number per column
+running 1 to the number of items – never by sort order, and stops when
+the names do not identify the items. Note that the `attrakdiff` key is
+blocked by dimension with the negative pole first; data stored as
+answered on the official AttrakDiff sheet belong to
+`attrakdiff_official`.
 
 ## See also
 
@@ -115,6 +151,7 @@ check_questionnaire(d, "sus", prefix = "sus_")
 #> Check the mapping against the survey your participants actually saw, and
 #> double-check any number before it goes into a paper.
 #> Assumed response range: 1-5 (the instrument's own; pass `scale` if your survey differed)
+#> Observed responses: 1 to 5
 #> 
 #> Item mapping (verify against the survey your participants saw):
 #>  item  code column     subscale reverse observed_min observed_max n_missing
@@ -132,4 +169,6 @@ check_questionnaire(d, "sus", prefix = "sus_")
 #> Notes:
 #>   - The SUS score is the sum of the ten recoded items multiplied by 2.5, giving 0-100. That is a percentage of the maximum, NOT a percentile: the mean SUS across studies is about 68, so 68 is average rather than poor.
 #>   - Usability (8 items, x 3.125) and Learnability (2 items, x 12.5) follow Lewis & Sauro (2009) and are likewise on 0-100. The two are strongly correlated; report them only if the study has a reason to separate them.
+#>   - Missing items: Brooke (1996) instructs a respondent who cannot answer an item to mark the centre point of the scale, so when `min_valid` < 1 lets an incomplete row be scored, each missing item counts as the centre (3 on 1-5). One missing item in an otherwise perfect response therefore gives 95, not 100. Pass impute = "prorate" to scale up from the answered items instead, and say which rule you used.
+#>   - Learnability has only two items. score_reliability() reports the Spearman-Brown coefficient for it, which Eisinga, te Grotenhuis & Pelzer (2013) recommend over alpha for two-item scales.
 ```

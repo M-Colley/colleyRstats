@@ -1,9 +1,14 @@
 # Report ART contrasts (art.con) as a LaTeX table. Customizable with sensible defaults. Companion to [`reportDunnTestTable()`](https://m-colley.github.io/colleyRstats/reference/reportDunnTestTable.md).
 
-Required commands in LaTeX:
-`\newcommand{\padjminor}{\textit{p$_{adj}<$}}`
-`\newcommand{\padj}{\textit{p$_{adj}$=}}`
-`\newcommand{\rankbiserial}[1]{$r_{rb} = #1$}`
+The table lists the significant contrasts with their test statistic – a
+column headed *t*, or *z* when emmeans reports z ratios – its degrees of
+freedom (fractional Kenward-Roger or Satterthwaite dfs are shown to two
+decimals, not rounded to integers; the column is omitted for z ratios),
+the p-value and the rank-biserial correlation. The p-value column is
+headed "p-adjusted" and the caption names the correction read from the
+contrast summary; with `adjust = "none"` the header is "p" and the
+caption says the p-values are not adjusted. A positive statistic means
+the first-named level is higher on the aligned-rank scale.
 
 ## Usage
 
@@ -135,13 +140,13 @@ if (requireNamespace("ARTool", quietly = TRUE) &&
 }
 #> NOTE: Results may be misleading due to involvement in interactions
 #> % latex table generated in R 4.6.1 by xtable 1.8-8 package
-#> % Tue Sep  1 17:40:40 2026
+#> % Sat Oct  3 05:35:35 2026
 #> \begin{table}[ht]
 #> \centering
-#> \caption{Post-hoc ART contrasts for independent variable \mode and dependent variable \score. Positive t-values mean that the first-named level is sig. higher than the second-named (on the aligned-rank scale). For negative t-values, the opposite is true. Effect size reported as rank-biserial correlation (r).} 
+#> \caption{Post-hoc ART-C contrasts for independent variable \mode{} and dependent variable \score{}. Positive t-values mean that the first-named level is higher than the second-named on the aligned-rank scale; for negative t-values, the second-named level is. p-values are Holm-adjusted. Effect size reported as rank-biserial correlation (r).} 
 #> \label{tab:artcon-mode-score}
 #> \begingroup\small
-#> \begin{tabular}{lrrll}
+#> \begin{tabular}{lrlll}
 #>   \hline
 #> Comparison & t & df & p-adjusted & r \\ 
 #>   \hline

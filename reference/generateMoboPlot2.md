@@ -53,7 +53,10 @@ plot_mobo2(
 - x:
 
   A string representing the column name in `data` to be used for the
-  x-axis. Can be either numeric or factor. Default is `"Iteration"`.
+  x-axis. Can be either numeric or a factor whose labels are numbers; it
+  is plotted on a continuous axis either way, so the data, the phase
+  guides and the fitted equation all refer to the iteration values (not
+  to factor positions). Default is `"Iteration"`.
 
 - y:
 

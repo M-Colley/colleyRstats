@@ -5,7 +5,10 @@ transforms it to a long format. It includes a customizable "ID" column
 in the first position and repeats it for each slice. The function
 identifies sections of columns between markers that start with a
 user-defined string (default is "videoinfo") and appends those sections
-under the first section, aligning by column index.
+under the first section, aligning by column index. Columns before the
+first marker (e.g. a survey export's metadata or demographics) are not a
+section: like the ID column, they are repeated for every slice. The
+marker columns themselves are dropped.
 
 ## Usage
 

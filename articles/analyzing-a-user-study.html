@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,7 +63,7 @@
       <h1>Analyzing a typical user study</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.1/vignettes/analyzing-a-user-study.Rmd" class="external-link"><code>vignettes/analyzing-a-user-study.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/main/vignettes/analyzing-a-user-study.Rmd" class="external-link"><code>vignettes/analyzing-a-user-study.Rmd</code></a></small>
       <div class="d-none name"><code>analyzing-a-user-study.Rmd</code></div>
     </div>
 
@@ -105,7 +105,12 @@ survey export; here we simulate it.</p>
 <li>the participant and condition columns must be
 <strong>factors</strong> (they are above);</li>
 <li>decide up front whether the design is within- or between-subjects –
-it changes the tests, the plots, and the effect sizes.</li>
+it changes the tests, the plots, and the effect sizes;</li>
+<li>for a within-subjects design, every function that pairs observations
+takes the participant column as <code>subject =</code>. Paired tests
+compare each participant with themselves, so without it the rows would
+be paired by their position in the data frame – and sorting or filtering
+the data would change the result.</li>
 </ul>
 </div>
 <div class="section level2">
@@ -121,11 +126,11 @@ comparisons.</p>
 <code class="sourceCode R"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/analyze_and_report.html">analyze_and_report</a></span><span class="op">(</span></span>
 <span>  <span class="va">main_df</span>,</span>
 <span>  dv <span class="op">=</span> <span class="st">"tlx_mental"</span>, iv <span class="op">=</span> <span class="st">"ConditionID"</span>,</span>
-<span>  design <span class="op">=</span> <span class="st">"within"</span>,</span>
+<span>  design <span class="op">=</span> <span class="st">"within"</span>, subject <span class="op">=</span> <span class="st">"Participant"</span>,</span>
 <span>  ylab <span class="op">=</span> <span class="st">"Mental Demand (TLX)"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Shapiro--Wilk tests indicated no significant deviation from normality in any group (all $p \geq 0.05$); therefore, parametric tests were used.</span></span>
-<span><span class="co">#&gt; An ANOVA estimation for factorial designs using 'afex' found a significant effect of \ConditionID on tlx\_mental (\F{1.92}{44.2}{5.75}, \p{0.007}, $\omega_{p}^{2}$ = 0.11).</span></span>
+<span><span class="co">#&gt; A Shapiro--Wilk test on the residuals of the additive model with participant and ConditionID as factors ($n = 72$) indicated no significant deviation from normality ($W = 0.98$, $p = 0.245$); therefore, parametric tests were used.</span></span>
+<span><span class="co">#&gt; An ANOVA estimation for factorial designs using 'afex' found a significant effect of \ConditionID{} on tlx\_mental (\F{1.92}{44.2}{5.75}, \p{0.007}, $\omega_{p}^{2}$ = 0.11).</span></span>
 <span><span class="co">#&gt; A Student's t post-hoc test (Holm-adjusted) found that Baseline was significantly higher (\m{54.92}, \sd{11.10}) in terms of tlx\_mental compared to HUD (\m{45.88}, \sd{9.76}; \padj{0.033}).</span></span>
 <span><span class="co">#&gt; A Student's t post-hoc test (Holm-adjusted) found that Baseline was significantly higher (\m{54.92}, \sd{11.10}) in terms of tlx\_mental compared to LED (\m{45.21}, \sd{12.51}; \padj{0.015}).</span></span></code></pre></div>
 <p>The result carries everything separately, so you can place the pieces
@@ -135,9 +140,9 @@ where they belong:</p>
 <p><img src="analyzing-a-user-study_files/figure-html/unnamed-chunk-5-1.png" class="r-plt" alt="" width="672"></p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res</span><span class="op">$</span><span class="va">methods</span>  <span class="co"># for the Methods section</span></span>
-<span><span class="co">#&gt; [1] "Shapiro--Wilk tests indicated no significant deviation from normality in any group (all $p \\geq 0.05$); therefore, parametric tests were used."</span></span>
+<span><span class="co">#&gt; [1] "A Shapiro--Wilk test on the residuals of the additive model with participant and ConditionID as factors ($n = 72$) indicated no significant deviation from normality ($W = 0.98$, $p = 0.245$); therefore, parametric tests were used."</span></span>
 <span><span class="va">res</span><span class="op">$</span><span class="va">text</span>     <span class="co"># the omnibus result</span></span>
-<span><span class="co">#&gt; [1] "An ANOVA estimation for factorial designs using 'afex' found a significant effect of \\ConditionID on tlx\\_mental (\\F{1.92}{44.2}{5.75}, \\p{0.007}, $\\omega_{p}^{2}$ = 0.11). "</span></span>
+<span><span class="co">#&gt; [1] "An ANOVA estimation for factorial designs using 'afex' found a significant effect of \\ConditionID{} on tlx\\_mental (\\F{1.92}{44.2}{5.75}, \\p{0.007}, $\\omega_{p}^{2}$ = 0.11). "</span></span>
 <span><span class="va">res</span><span class="op">$</span><span class="va">posthoc</span>  <span class="co"># significant pairwise comparisons (NULL for 2 groups)</span></span>
 <span><span class="co">#&gt; [1] "A Student's t post-hoc test (Holm-adjusted) found that Baseline was significantly higher (\\m{54.92}, \\sd{11.10}) in terms of tlx\\_mental compared to HUD (\\m{45.88}, \\sd{9.76}; \\padj{0.033}). " </span></span>
 <span><span class="co">#&gt; [2] "A Student's t post-hoc test (Holm-adjusted) found that Baseline was significantly higher (\\m{54.92}, \\sd{11.10}) in terms of tlx\\_mental compared to LED (\\m{45.21}, \\sd{12.51}; \\padj{0.015}). "</span></span></code></pre></div>
@@ -149,24 +154,23 @@ dependent variables:</p>
 <span>  <span class="va">main_df</span>,</span>
 <span>  dvs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"tlx_mental"</span>, <span class="st">"trust"</span><span class="op">)</span>,</span>
 <span>  iv <span class="op">=</span> <span class="st">"ConditionID"</span>,</span>
-<span>  design <span class="op">=</span> <span class="st">"within"</span>,</span>
+<span>  design <span class="op">=</span> <span class="st">"within"</span>, subject <span class="op">=</span> <span class="st">"Participant"</span>,</span>
 <span>  labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>tlx_mental <span class="op">=</span> <span class="st">"Mental Demand"</span>, trust <span class="op">=</span> <span class="st">"Trust"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Shapiro--Wilk tests indicated no significant deviation from normality in any group (all $p \geq 0.05$); therefore, parametric tests were used.</span></span>
-<span><span class="co">#&gt; An ANOVA estimation for factorial designs using 'afex' found a significant effect of \ConditionID on tlx\_mental (\F{1.92}{44.2}{5.75}, \p{0.007}, $\omega_{p}^{2}$ = 0.11).</span></span>
+<span><span class="co">#&gt; A Shapiro--Wilk test on the residuals of the additive model with participant and ConditionID as factors ($n = 72$) indicated no significant deviation from normality ($W = 0.98$, $p = 0.245$); therefore, parametric tests were used.</span></span>
+<span><span class="co">#&gt; An ANOVA estimation for factorial designs using 'afex' found a significant effect of \ConditionID{} on tlx\_mental (\F{1.92}{44.2}{5.75}, \p{0.007}, $\omega_{p}^{2}$ = 0.11).</span></span>
 <span><span class="co">#&gt; A Student's t post-hoc test (Holm-adjusted) found that Baseline was significantly higher (\m{54.92}, \sd{11.10}) in terms of tlx\_mental compared to HUD (\m{45.88}, \sd{9.76}; \padj{0.033}).</span></span>
 <span><span class="co">#&gt; A Student's t post-hoc test (Holm-adjusted) found that Baseline was significantly higher (\m{54.92}, \sd{11.10}) in terms of tlx\_mental compared to LED (\m{45.21}, \sd{12.51}; \padj{0.015}).</span></span>
-<span><span class="co">#&gt; Shapiro--Wilk tests indicated a significant deviation from normality for at least one group (minimum $W = 0.79$, $p &lt; 0.001$); therefore, non-parametric tests were used.</span></span>
-<span><span class="co">#&gt; A Friedman rank sum test found a significant effect of \ConditionID on trust (\chisq(2)=10.93, \p{0.004}, $W_{Kendall}$ = 0.23).</span></span>
-<span><span class="co">#&gt; A Durbin-Conover post-hoc test (Holm-adjusted) found that HUD was significantly higher (\m{4.12}, \sd{1.08}) in terms of \trust compared to Baseline (\m{3.42}, \sd{1.10}; \padj{0.024}).</span></span>
-<span><span class="co">#&gt; A Durbin-Conover post-hoc test (Holm-adjusted) found that LED was significantly higher (\m{4.46}, \sd{0.78}) in terms of \trust compared to Baseline (\m{3.42}, \sd{1.10}; \padj{0.003}).</span></span>
+<span><span class="co">#&gt; A Shapiro--Wilk test on the residuals of the additive model with participant and ConditionID as factors ($n = 72$) indicated no significant deviation from normality ($W = 0.97$, $p = 0.089$); therefore, parametric tests were used.</span></span>
+<span><span class="co">#&gt; An ANOVA estimation for factorial designs using 'afex' found a significant effect of \ConditionID{} on trust (\F{1.77}{40.77}{7.37}, \p{0.003}, $\omega_{p}^{2}$ = 0.14).</span></span>
+<span><span class="co">#&gt; A Student's t post-hoc test (Holm-adjusted) found that LED was significantly higher (\m{4.46}, \sd{0.78}) in terms of trust compared to Baseline (\m{3.42}, \sd{1.10}; \padj{0.002}).</span></span>
 <span><span class="va">battery</span><span class="op">$</span><span class="va">summary</span></span>
 <span><span class="co">#&gt;           dv                                              method statistic</span></span>
 <span><span class="co">#&gt; 1 tlx_mental ANOVA estimation for factorial designs using 'afex'  5.754671</span></span>
-<span><span class="co">#&gt; 2      trust                              Friedman rank sum test 10.929577</span></span>
+<span><span class="co">#&gt; 2      trust ANOVA estimation for factorial designs using 'afex'  7.365422</span></span>
 <span><span class="co">#&gt;       p.value      p.holm</span></span>
-<span><span class="co">#&gt; 1 0.006577594 0.008466471</span></span>
-<span><span class="co">#&gt; 2 0.004233235 0.008466471</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 0.006577594 0.006577594</span></span>
+<span><span class="co">#&gt; 2 0.002635125 0.005270249</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="step-by-step-if-you-prefer-control">Step by step, if you prefer control<a class="anchor" aria-label="anchor" href="#step-by-step-if-you-prefer-control"></a>
@@ -175,18 +179,29 @@ dependent variables:</p>
 <h3 id="check-the-assumptions">1. Check the assumptions<a class="anchor" aria-label="anchor" href="#check-the-assumptions"></a>
 </h3>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/check_normality_by_group.html">check_normality_by_group</a></span><span class="op">(</span><span class="va">main_df</span>, <span class="st">"ConditionID"</span>, <span class="st">"tlx_mental"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/check_normality_by_group.html">check_normality_by_group</a></span><span class="op">(</span><span class="va">main_df</span>, <span class="st">"ConditionID"</span>, <span class="st">"tlx_mental"</span>, subject <span class="op">=</span> <span class="st">"Participant"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span>
 <span><span class="co">#&gt; attr(,"tests")</span></span>
-<span><span class="co">#&gt;   ConditionID         W   p_value</span></span>
-<span><span class="co">#&gt; 1    Baseline 0.9709072 0.6894229</span></span>
-<span><span class="co">#&gt; 2         HUD 0.9310723 0.1030198</span></span>
-<span><span class="co">#&gt; 3         LED 0.9589363 0.4174263</span></span></code></pre></div>
+<span><span class="co">#&gt;       group  n         W   p_value p_adjusted testable</span></span>
+<span><span class="co">#&gt; 1 residuals 72 0.9781936 0.2448001  0.2448001     TRUE</span></span>
+<span><span class="co">#&gt; attr(,"method")</span></span>
+<span><span class="co">#&gt; [1] "residuals"</span></span>
+<span><span class="co">#&gt; attr(,"p_adjust")</span></span>
+<span><span class="co">#&gt; [1] "none"</span></span>
+<span><span class="co">#&gt; attr(,"untestable")</span></span>
+<span><span class="co">#&gt; character(0)</span></span>
+<span><span class="co">#&gt; attr(,"dropped_subjects")</span></span>
+<span><span class="co">#&gt; character(0)</span></span></code></pre></div>
+<p>With <code>subject</code> given, the check tests what a
+repeated-measures analysis assumes to be normal: the residuals once
+participant and condition effects are removed (or, for two conditions,
+the per-participant differences) – not the raw scores per condition,
+which also carry the spread between participants.</p>
 <p><code><a href="../reference/assumption_methods_text.html">assumption_methods_text()</a></code> turns the same checks into the
 sentence reviewers expect next to the choice of test:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/assumption_methods_text.html">assumption_methods_text</a></span><span class="op">(</span><span class="va">main_df</span>, x <span class="op">=</span> <span class="st">"ConditionID"</span>, y <span class="op">=</span> <span class="st">"tlx_mental"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Shapiro--Wilk tests indicated no significant deviation from normality in any group (all $p \geq 0.05$); therefore, parametric tests were used.</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/assumption_methods_text.html">assumption_methods_text</a></span><span class="op">(</span><span class="va">main_df</span>, x <span class="op">=</span> <span class="st">"ConditionID"</span>, y <span class="op">=</span> <span class="st">"tlx_mental"</span>, subject <span class="op">=</span> <span class="st">"Participant"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; A Shapiro--Wilk test on the residuals of the additive model with participant and ConditionID as factors ($n = 72$) indicated no significant deviation from normality ($W = 0.98$, $p = 0.245$); therefore, parametric tests were used.</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="plot-with-automatic-test-selection">2. Plot with automatic test selection<a class="anchor" aria-label="anchor" href="#plot-with-automatic-test-selection"></a>
@@ -200,7 +215,8 @@ comparisons with APA-style stars instead of p-values:</p>
 <span>  data <span class="op">=</span> <span class="va">main_df</span>,</span>
 <span>  x <span class="op">=</span> <span class="st">"ConditionID"</span>, y <span class="op">=</span> <span class="st">"tlx_mental"</span>,</span>
 <span>  ylab <span class="op">=</span> <span class="st">"Mental Demand (TLX)"</span>,</span>
-<span>  xlabels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Baseline"</span>, <span class="st">"HUD"</span>, <span class="st">"LED"</span><span class="op">)</span></span>
+<span>  xlabels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Baseline"</span>, <span class="st">"HUD"</span>, <span class="st">"LED"</span><span class="op">)</span>,</span>
+<span>  subject <span class="op">=</span> <span class="st">"Participant"</span></span>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt; Scale for <span style="color: #00BB00;">x</span> is already present.</span></span>
 <span><span class="co">#&gt; Adding another scale for <span style="color: #00BB00;">x</span>, which will replace the existing scale.</span></span></code></pre></div>
@@ -223,7 +239,7 @@ rank-biserial effect sizes:</p>
 <span>  data <span class="op">=</span> <span class="va">main_df</span></span>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/reportART.html">reportART</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/anova.html" class="external-link">anova</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span>, dv <span class="op">=</span> <span class="st">"mental demand"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; The ART found a significant main effect of \ConditionID on mental demand (\F{2}{46}{5.56}, \p{0.007}, $\eta_{p}^{2}$ = 0.19, 95\% CI: [0.04, 1.00]).</span></span></code></pre></div>
+<span><span class="co">#&gt; The ART found a significant main effect of \ConditionID{} on mental demand (\F{2}{46}{5.56}, \p{0.007}, $\eta_{p}^{2}$ = 0.19, 95\% CI: [0.02, 0.38]).</span></span></code></pre></div>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ac</span> <span class="op">&lt;-</span> <span class="fu">ARTool</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/ARTool/man/art.con.html" class="external-link">art.con</a></span><span class="op">(</span><span class="va">m</span>, <span class="op">~</span> <span class="va">ConditionID</span>, adjust <span class="op">=</span> <span class="st">"holm"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/reportArtCon.html">reportArtCon</a></span><span class="op">(</span></span>
@@ -231,16 +247,16 @@ rank-biserial effect sizes:</p>
 <span>  data <span class="op">=</span> <span class="va">main_df</span>, iv <span class="op">=</span> <span class="st">"ConditionID"</span>, dv <span class="op">=</span> <span class="st">"tlx_mental"</span>,</span>
 <span>  paired <span class="op">=</span> <span class="cn">TRUE</span>, id <span class="op">=</span> <span class="st">"Participant"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; A post-hoc test found that tlx\_mental for the \ConditionID Baseline was significantly higher (\m{54.92}, \sd{11.10}) than for HUD (\m{45.88}, \sd{9.76}; \padj{0.016}, \rankbiserial{0.54}) and LED (\m{45.21}, \sd{12.51}; \padj{0.016}, \rankbiserial{0.64}).</span></span></code></pre></div>
+<span><span class="co">#&gt; An ART-C post-hoc test (Holm-adjusted) found that tlx\_mental for the \ConditionID{} Baseline was significantly higher (\mdn{56.00}, \iqr{12.75}) than for HUD (\mdn{46.50}, \iqr{11.75}; \padj{0.016}, \rankbiserial{0.54}) and LED (\mdn{47.00}, \iqr{12.50}; \padj{0.016}, \rankbiserial{0.64}).</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="descriptives">4. Descriptives<a class="anchor" aria-label="anchor" href="#descriptives"></a>
 </h3>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/reportMeanAndSD.html">reportMeanAndSD</a></span><span class="op">(</span><span class="va">main_df</span>, iv <span class="op">=</span> <span class="st">"ConditionID"</span>, dv <span class="op">=</span> <span class="st">"tlx_mental"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; %Baseline: \m{54.92}, \sd{11.10}</span></span>
-<span><span class="co">#&gt; %HUD: \m{45.88}, \sd{9.76}</span></span>
-<span><span class="co">#&gt; %LED: \m{45.21}, \sd{12.51}</span></span></code></pre></div>
+<span><span class="co">#&gt; Baseline: \m{54.92}, \sd{11.10}</span></span>
+<span><span class="co">#&gt; HUD: \m{45.88}, \sd{9.76}</span></span>
+<span><span class="co">#&gt; LED: \m{45.21}, \sd{12.51}</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -254,7 +270,7 @@ write its sentences to a file your manuscript can <code>\input{}</code>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fig_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"tlx-mental.pdf"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/save_paper_figure.html">save_paper_figure</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">plot</span>, <span class="va">fig_path</span>, columns <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Saved figure to '/tmp/RtmpLBFFDO/tlx-mental.pdf' (7 x 4.66666666666667 in, base font 9 pt).</span></span></code></pre></div>
+<span><span class="co">#&gt; Saved figure to '/tmp/RtmpjcdLdl/tlx-mental.pdf' (7 x 4.66666666666667 in, base font 9 pt).</span></span></code></pre></div>
 <p>The LaTeX macros used by the reporters (<code>\F</code>,
 <code>\p</code>, <code>\m</code>, …) are defined by
 <code><a href="../reference/latex_preamble.html">latex_preamble()</a></code> or the shipped

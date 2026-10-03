@@ -63,20 +63,32 @@ main_df <- data.frame(
 
 ## Check assumptions
 
+Every participant here saw both conditions, so the design is
+within-subjects. Name the participant column as `subject`: the check
+then tests the per-participant differences, which is what a paired test
+assumes to be normal.
+
 ``` r
 
-check_normality_by_group(main_df, "ConditionID", "score")
+check_normality_by_group(main_df, "ConditionID", "score", subject = "Participant")
 #> [1] TRUE
 #> attr(,"tests")
-#>   ConditionID         W   p_value
-#> 1     Control 0.9378270 0.2180765
-#> 2   Treatment 0.9667112 0.6844808
-check_homogeneity_by_group(main_df, "ConditionID", "score")
-#> [1] TRUE
-#> attr(,"test")
-#>   df1 df2 statistic         p
-#> 1   1  38 0.1081505 0.7440653
+#>         group  n        W   p_value p_adjusted testable
+#> 1 differences 20 0.958116 0.5069337  0.5069337     TRUE
+#> attr(,"method")
+#> [1] "differences"
+#> attr(,"p_adjust")
+#> [1] "none"
+#> attr(,"untestable")
+#> character(0)
+#> attr(,"dropped_subjects")
+#> character(0)
 ```
+
+For a between-subjects design, leave `subject` out: each group is then
+tested on its own (Holm-corrected across groups), and
+[`check_homogeneity_by_group()`](https://m-colley.github.io/colleyRstats/reference/check_homogeneity_by_group.md)
+adds the Brown-Forsythe test of equal variances.
 
 ## Create a plot
 
@@ -90,6 +102,9 @@ plot_effect(
   ytext = "Score",
   xtext = "Condition"
 )
+#> Warning: Not every combination of 'ConditionID' and 'Group' has data; the
+#> main-effect line averages only the cells that do, so its levels are not based
+#> on the same groups.
 #> `geom_line()`: Each group consists of only one observation.
 #> ℹ Do you need to adjust the group aesthetic?
 ```
@@ -110,7 +125,7 @@ art_summary <- data.frame(
 )
 
 report_art(art_summary, dv = "score")
-#> The ART found a significant main effect of \ConditionID on score (\F{1}{19}{5.42}, \p{0.027}, $\eta_{p}^{2}$ = 0.22, 95\% CI: [0.01, 1.00]).
+#> The ART found a significant main effect of \ConditionID{} on score (\F{1}{19}{5.42}, \p{0.027}, $\eta_{p}^{2}$ = 0.22, 95\% CI: [0.00, 0.50]).
 ```
 
 ## Next steps

@@ -113,6 +113,6 @@ out <- report_all(mtcars, dvs = c("mpg", "disp"), iv = "cyl")
 #> A Games-Howell post-hoc test (Holm-adjusted) found that 8 was significantly higher (\m{353.10}, \sd{67.77}) in terms of disp compared to 4 (\m{105.14}, \sd{26.87}; \padjminor{0.001}). 
 #> A Games-Howell post-hoc test (Holm-adjusted) found that 8 was significantly higher (\m{353.10}, \sd{67.77}) in terms of disp compared to 6 (\m{183.31}, \sd{41.56}; \padjminor{0.001}). 
 emit_overleaf(out, dir = file.path(tempdir(), "paper"), overwrite = TRUE)
-#> Wrote an Overleaf-ready project to '/tmp/RtmpBU5C9E/paper' (2 sections; \usepackage{colleyRstats}).
+#> Wrote an Overleaf-ready project to '/tmp/Rtmpox81T4/paper' (2 sections; \usepackage{colleyRstats}).
 # }
 ```

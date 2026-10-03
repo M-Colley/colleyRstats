@@ -63,7 +63,7 @@
       <h1>From R to Overleaf: publication-ready output</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/main/vignettes/overleaf.Rmd" class="external-link"><code>vignettes/overleaf.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.2/vignettes/overleaf.Rmd" class="external-link"><code>vignettes/overleaf.Rmd</code></a></small>
       <div class="d-none name"><code>overleaf.Rmd</code></div>
     </div>
 
@@ -115,9 +115,9 @@ package. <code>use_colleyrstats_sty(dir)</code> writes
 <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code> here so the vignette leaves nothing behind.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sty_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/use_colleyrstats_sty.html">use_colleyrstats_sty</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Wrote '/tmp/RtmpO0MUNq/colleyRstats.sty'. Add \usepackage{colleyRstats} to your document.</span></span>
+<span><span class="co">#&gt; Wrote '/tmp/RtmpYuHjtV/colleyRstats.sty'. Add \usepackage{colleyRstats} to your document.</span></span>
 <span><span class="va">sty_path</span></span>
-<span><span class="co">#&gt; [1] "/tmp/RtmpO0MUNq/colleyRstats.sty"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "/tmp/RtmpYuHjtV/colleyRstats.sty"</span></span></code></pre></div>
 <p>If you would rather not carry a preamble at all, set
 <code>options(colleyRstats.macros = FALSE)</code>. The sinks and the
 <code><a href="../reference/emit_overleaf.html">emit_overleaf()</a></code> bundle then expand every macro to
@@ -180,7 +180,7 @@ both are installed.</p>
 <span><span class="co">#&gt; FWER = 0.05</span></span>
 <span><span class="co">#&gt; Reject Ho if adjusted p ≤ FWER with stopping rule, where (unadjusted) p = Pr(|Z| ≥ |z|)</span></span>
 <span><span class="co">#&gt; % latex table generated in R 4.6.1 by xtable 1.8-8 package</span></span>
-<span><span class="co">#&gt; % Sat Oct  3 08:37:45 2026</span></span>
+<span><span class="co">#&gt; % Sat Oct  3 08:41:44 2026</span></span>
 <span><span class="co">#&gt; \begin{table}[ht]</span></span>
 <span><span class="co">#&gt; \centering</span></span>
 <span><span class="co">#&gt; \caption{Dunn post-hoc comparisons for independent variable \group{} and dependent variable \score{}. Positive Z-values mean that the first-named level has the higher mean rank; for negative Z-values, the second-named level does. p-values are Holm-adjusted. Effect size reported as rank-biserial correlation (r).} </span></span>
@@ -245,7 +245,7 @@ the text contains name macros) <code>names.tex</code>.</p>
 <span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/emit_overleaf.html">emit_overleaf</a></span><span class="op">(</span><span class="va">study</span>, dir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"paper"</span><span class="op">)</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Wrote an Overleaf-ready project to '/tmp/RtmpO0MUNq/paper' (2 sections; \usepackage{colleyRstats}).</span></span>
+<span><span class="co">#&gt; Wrote an Overleaf-ready project to '/tmp/RtmpYuHjtV/paper' (2 sections; \usepackage{colleyRstats}).</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="va">out</span><span class="op">$</span><span class="va">dir</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "colleyRstats.sty"      "main.tex"              "names.tex"            </span></span>
 <span><span class="co">#&gt; [4] "references.bib"        "results.tex"           "sections/trust.tex"   </span></span>
@@ -258,7 +258,7 @@ the same call then expands the macros inline and omits the
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">old</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>colleyRstats.macros <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="va">plain</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/emit_overleaf.html">emit_overleaf</a></span><span class="op">(</span><span class="va">study</span>, dir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"paper-plain"</span><span class="op">)</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Wrote an Overleaf-ready project to '/tmp/RtmpO0MUNq/paper-plain' (2 sections; macros expanded inline).</span></span>
+<span><span class="co">#&gt; Wrote an Overleaf-ready project to '/tmp/RtmpYuHjtV/paper-plain' (2 sections; macros expanded inline).</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span><span class="va">old</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="va">plain</span><span class="op">$</span><span class="va">dir</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>

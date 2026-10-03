@@ -63,7 +63,7 @@
       <h1>Choosing the right test (and mixed models)</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/main/vignettes/choosing-a-test.Rmd" class="external-link"><code>vignettes/choosing-a-test.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.2/vignettes/choosing-a-test.Rmd" class="external-link"><code>vignettes/choosing-a-test.Rmd</code></a></small>
       <div class="d-none name"><code>choosing-a-test.Rmd</code></div>
     </div>
 
@@ -247,8 +247,8 @@ multiplicative change in the odds of a higher rating):</p>
 <span><span class="fu"><a href="../reference/reportCLMM.html">reportCLMM</a></span><span class="op">(</span><span class="va">m_clmm</span>, dv <span class="op">=</span> <span class="st">"rating"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; A cumulative link mixed model (logit link) was fitted for rating. Model terms were tested with Type III Wald $\chi^2$ tests. Coefficients are reported as odds ratios (OR) and are treatment contrasts against each factor's reference level.</span></span>
 <span><span class="co">#&gt; The main effect of \textit{cond} on rating was significant ($\chi^2(2) = 30.60$, \pminor{0.001}).</span></span>
-<span><span class="co">#&gt; The contrast \textit{B} vs.\ \textit{A} of \textit{cond} on rating was significant ($OR = 309.89$, 95\% CI $[26.21, 3663.95]$, $z = 4.55$, \pminor{0.001}).</span></span>
-<span><span class="co">#&gt; The contrast \textit{C} vs.\ \textit{A} of \textit{cond} on rating was significant ($OR = 10085.81$, 95\% CI $[384.38, 264641.13]$, $z = 5.53$, \pminor{0.001}).</span></span></code></pre></div>
+<span><span class="co">#&gt; The contrast \textit{B} vs.\ \textit{A} of \textit{cond} on rating was significant ($OR = 309.89$, 95\% CI $[26.21, 3664.11]$, $z = 4.55$, \pminor{0.001}).</span></span>
+<span><span class="co">#&gt; The contrast \textit{C} vs.\ \textit{A} of \textit{cond} on rating was significant ($OR = 10085.81$, 95\% CI $[384.36, 264659.80]$, $z = 5.53$, \pminor{0.001}).</span></span></code></pre></div>
 <p>For the <strong>binary</strong> recommendation, fit the binomial GLMM
 and report it with <code><a href="../reference/reportGLMM.html">reportGLMM()</a></code>; the binomial family is
 likewise exponentiated to odds ratios, with a <code>z</code>

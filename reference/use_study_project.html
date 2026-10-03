@@ -45,7 +45,7 @@ the numbers instead of having them re-typed."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Scaffold a reproducible study analysis</h1>
-      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/main/R/study-project.R" class="external-link"><code>R/study-project.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.2/R/study-project.R" class="external-link"><code>R/study-project.R</code></a></small>
       <div class="d-none name"><code>use_study_project.Rd</code></div>
     </div>
 
@@ -154,23 +154,23 @@ record of how each number was produced.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="va">project</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"driving-study"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">use_study_project</span><span class="op">(</span><span class="va">project</span>, questionnaires <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nasa_tlx"</span>, <span class="st">"sus"</span><span class="op">)</span>, renv <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Creating study project 'driving-study' in /tmp/RtmpBU5C9E/driving-study</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/RtmpBU5C9E/driving-study/_targets.R</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/RtmpBU5C9E/driving-study/R/read.R</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/RtmpBU5C9E/driving-study/R/prepare.R</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/RtmpBU5C9E/driving-study/R/analysis.R</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/RtmpBU5C9E/driving-study/R/figures.R</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/RtmpBU5C9E/driving-study/report/report.qmd</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/RtmpBU5C9E/driving-study/README.md</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/RtmpBU5C9E/driving-study/.gitignore</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/RtmpBU5C9E/driving-study/data-raw/example-study.csv</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/RtmpBU5C9E/driving-study/data-raw/README.md</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/RtmpBU5C9E/driving-study/paper/generated/README.md</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/RtmpBU5C9E/driving-study/output/figures/README.md</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/RtmpBU5C9E/driving-study/paper/colleyRstats.sty</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Creating study project 'driving-study' in /tmp/Rtmpox81T4/driving-study</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpox81T4/driving-study/_targets.R</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpox81T4/driving-study/R/read.R</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpox81T4/driving-study/R/prepare.R</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpox81T4/driving-study/R/analysis.R</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpox81T4/driving-study/R/figures.R</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpox81T4/driving-study/report/report.qmd</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpox81T4/driving-study/README.md</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpox81T4/driving-study/.gitignore</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpox81T4/driving-study/data-raw/example-study.csv</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpox81T4/driving-study/data-raw/README.md</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpox81T4/driving-study/paper/generated/README.md</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpox81T4/driving-study/output/figures/README.md</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   wrote: /tmp/Rtmpox81T4/driving-study/paper/colleyRstats.sty</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Done. Next:</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   1. setwd("/tmp/RtmpBU5C9E/driving-study")</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   1. setwd("/tmp/Rtmpox81T4/driving-study")</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   2. targets::tar_make()            # runs end to end on the example data</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   3. replace data-raw/example-study.csv with yours, then edit R/read.R</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   4. targets::tar_visnetwork()      # see what is out of date</span>

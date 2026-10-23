@@ -13,6 +13,55 @@ test_that("reportNPAV emits deprecation warning and reports results", {
   )
 })
 
+test_that("contrast lookup handles rewritten labels and refuses ambiguous pairs", {
+  match_pair <- colleyRstats:::.match_contrast_pair
+  lookup <- colleyRstats:::.contrast_pair_lookup(c("Both", "Hand-only", "Eye+Hand"))
+  expect_identical(match_pair("  Both   -   (Hand-only) ", lookup = lookup),
+                   c("Both", "Hand-only"))
+  expect_identical(match_pair("(Eye+Hand) - Both", lookup = lookup),
+                   c("Eye+Hand", "Both"))
+  expect_null(match_pair("Missing - Both", lookup = lookup))
+
+  numeric_lookup <- colleyRstats:::.contrast_pair_lookup(c("1", "2", "3"), prefix = "mode")
+  expect_identical(match_pair("mode1 - mode2", lookup = numeric_lookup), c("1", "2"))
+  expect_identical(match_pair("(mode3) - 1", lookup = numeric_lookup), c("3", "1"))
+
+  # Both (A, B - C) and (A - B, C) spell this comparison identically.
+  ambiguous <- colleyRstats:::.contrast_pair_lookup(c("A", "B - C", "A - B", "C"))
+  expect_null(match_pair("A - B - C", lookup = ambiguous))
+  expect_identical(match_pair("A - (B - C)", lookup = ambiguous), c("A", "B - C"))
+})
+
+test_that("Dunn and ART reporters index contrast spellings once per report", {
+  # Count index construction rather than elapsed time: every additional
+  # contrast must reuse it, on slow CI machines as well as fast local ones.
+  build_lookup <- colleyRstats:::.contrast_pair_lookup
+  builds <- 0L
+  local_mocked_bindings(.contrast_pair_lookup = function(...) {
+    builds <<- builds + 1L
+    build_lookup(...)
+  })
+  data <- data.frame(g = rep(c("A", "B", "C"), each = 3), y = 9:1)
+  labels <- c("A - B", "A - C", "B - C")
+  d <- list(method = "Holm", res = data.frame(
+    Comparison = labels, Z = c(2, 3, 2), P.adj = c(0.01, 0.001, 0.01)
+  ))
+  ac <- data.frame(contrast = labels, estimate = c(3, 6, 3),
+                   t.ratio = c(3, 6, 3), df = 6, p.value = c(0.01, 0.001, 0.01))
+  attr(ac, "adjust") <- "holm"
+  reports <- list(
+    function() reportDunnTest(d, data, "g", "y"),
+    function() reportDunnTestTable(d, data, "g", "y"),
+    function() reportArtCon(ac, data, "g", "y"),
+    function() reportArtConTable(ac, data, "g", "y")
+  )
+  for (report in reports) {
+    builds <- 0L
+    expect_no_error(invisible(capture.output(suppressMessages(report()))))
+    expect_identical(builds, 1L)
+  }
+})
+
 test_that("reportART reports significant effects", {
   model <- data.frame(
     Effect = c("Video", "gesture:eHMI"),

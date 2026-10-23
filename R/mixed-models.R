@@ -235,8 +235,9 @@ classify_outcome <- function(y, ordinal_max_levels = 7L) {
 
 
 # Internal: random-effect terms, from the maximal justified structure down to
-# random intercepts only. Slopes are proposed only for within-cluster factors
-# whose levels are replicated within a cluster (Barr et al., 2013); the
+# random intercepts only. Slopes are proposed for within-cluster factors
+# whose levels are replicated and numeric covariates with enough repeated
+# observations to estimate a slope (Barr et al., 2013); the
 # interaction slope only when the full within-cells are replicated (several
 # trials per participant and condition) and the fixed part has the interaction.
 .random_terms <- function(cluster, slopes = character(0), slope_interaction = FALSE,
@@ -259,7 +260,7 @@ classify_outcome <- function(y, ordinal_max_levels = 7L) {
 # reason for a random effect, and lme4 refuses one. `design = "between"` with
 # repeated rows per cluster still has to model the cluster: ignoring it would
 # treat each participant's trials as independent observations.
-.design_info <- function(data, predictors, categorical, cluster, design) {
+.design_info <- function(data, predictors, categorical, cluster, design, random_slopes = NULL) {
   has_cluster <- !is.null(cluster)
   repeated <- has_cluster && anyDuplicated(data[[cluster]]) > 0L
   if (identical(design, "within") && has_cluster && !repeated) {
@@ -273,9 +274,9 @@ classify_outcome <- function(y, ordinal_max_levels = 7L) {
   clustered <- repeated || (identical(design, "within") && !has_cluster)
 
   cat_preds <- names(categorical)[categorical]
-  within <- stats::setNames(logical(length(cat_preds)), cat_preds)
+  within <- stats::setNames(logical(length(predictors)), predictors)
   if (repeated) {
-    for (p in cat_preds) {
+    for (p in predictors) {
       within[[p]] <- any(tapply(
         as.character(data[[p]]), data[[cluster]],
         function(x) length(unique(x)) > 1L
@@ -284,7 +285,7 @@ classify_outcome <- function(y, ordinal_max_levels = 7L) {
     if (identical(design, "between") && any(within)) {
       warning(
         "`design = \"between\"`, but ", paste0("`", names(within)[within], "`", collapse = ", "),
-        " varies within `", cluster, "`; it is analysed as a within-cluster factor.",
+        " varies within `", cluster, "`; it is analysed as a within-cluster predictor.",
         call. = FALSE
       )
     }
@@ -301,15 +302,36 @@ classify_outcome <- function(y, ordinal_max_levels = 7L) {
       cells <- tab[tab > 0]
       length(cells) > 0 && mean(cells >= 2) >= 0.5
     }
-    for (p in w) replicated[[p]] <- rep_share(data[[p]])
-    trial_replicates <- rep_share(interaction(data[w], drop = TRUE))
+    for (p in w) {
+      replicated[[p]] <- if (isTRUE(categorical[[p]])) {
+        rep_share(data[[p]])
+      } else {
+        # A numeric slope needs variation and more observations than its two
+        # random coefficients, not repeated observations at identical values.
+        enough <- tapply(data[[p]], cl, function(v) length(v) >= 3L && length(unique(v)) >= 2L)
+        sum(enough, na.rm = TRUE) >= 2L && mean(enough, na.rm = TRUE) >= 0.5
+      }
+    }
+    wc <- intersect(w, cat_preds)
+    trial_replicates <- length(wc) > 0 && rep_share(interaction(data[wc], drop = TRUE))
   }
   slopes <- names(replicated)[replicated]
-  slope_interaction <- length(w) >= 2L && trial_replicates && length(slopes) == length(w)
+  if (!is.null(random_slopes)) {
+    if (!is.character(random_slopes) || anyNA(random_slopes) ||
+        any(!random_slopes %in% predictors)) {
+      stop("`random_slopes` must be NULL or a character vector of predictor names.", call. = FALSE)
+    }
+    if (any(!random_slopes %in% w)) {
+      stop("Every predictor in `random_slopes` must vary within `cluster`.", call. = FALSE)
+    }
+    slopes <- unique(random_slopes)
+  }
+  slope_interaction <- length(w) >= 2L && all(w %in% cat_preds) &&
+    trial_replicates && setequal(slopes, w)
 
   resolved <- if (!clustered) {
     "between"
-  } else if (length(cat_preds) > 0 && !any(within)) {
+  } else if (length(predictors) > 0 && !any(within)) {
     "between (clustered)"
   } else if (any(within) && any(!within)) {
     "mixed"
@@ -368,7 +390,7 @@ classify_outcome <- function(y, ordinal_max_levels = 7L) {
 .residual_normality <- function(data, outcome, predictors, cluster, dsg) {
   w <- names(dsg$within)[dsg$within]
   if (isTRUE(dsg$clustered) && !is.null(cluster) && length(w) == 1L &&
-      !isTRUE(dsg$replicated[[w]]) && all(predictors %in% names(dsg$within)) &&
+      !isTRUE(dsg$replicated[[w]]) && all(vapply(data[predictors], is.factor, logical(1))) &&
       length(unique(stats::na.omit(as.character(data[[w]])))) == 2L) {
     diffs <- tryCatch(
       .paired_differences(data, outcome, w, cluster, between = setdiff(predictors, w)),
@@ -548,7 +570,8 @@ classify_outcome <- function(y, ordinal_max_levels = 7L) {
 #'     makes the design clustered, whatever \code{design} says: the cluster then
 #'     needs a random effect, i.e. a *mixed* model. For a categorical predictor
 #'     that varies within clusters and whose levels are replicated within a
-#'     cluster, by-cluster random slopes are added (Barr et al., 2013);
+#'     cluster, or a numeric covariate with enough repeated observations,
+#'     by-cluster random slopes are added (Barr et al., 2013);
 #'     [fit_recommended()] simplifies the structure when the fit is singular.
 #'   \item \strong{For a continuous outcome, do the parametric assumptions
 #'     hold?} A Shapiro--Wilk test on the residuals of the model that would be
@@ -593,6 +616,13 @@ classify_outcome <- function(y, ordinal_max_levels = 7L) {
 #'   least twice (and for at least two clusters). Factor, character and logical
 #'   predictors are always categorical; \code{factors = character(0)} keeps
 #'   every numeric predictor numeric.
+#' @param random_slopes Optional character vector of predictors to include as
+#'   by-cluster random slopes. \code{NULL} (default) includes replicated
+#'   within-cluster factors and numeric covariates that vary within clusters
+#'   with at least three observations in most clusters. Every named predictor
+#'   must vary within \code{cluster}. \code{character(0)} requests random
+#'   intercepts only. Unidentifiable or nonconverged structures may still be
+#'   simplified by [fit_recommended()].
 #'
 #' @return An object of class \code{"colley_recommendation"} (a list) with
 #'   components including \code{outcome_type}, \code{clustered}, \code{design}
@@ -600,7 +630,7 @@ classify_outcome <- function(y, ordinal_max_levels = 7L) {
 #'   \code{"between (clustered)"} for between-cluster predictors with repeated
 #'   rows per cluster), \code{n_obs} (complete rows),
 #'   \code{categorical} (which predictors are categorical), \code{within}
-#'   (which categorical predictors vary within clusters), \code{random} (the
+#'   (which predictors vary within clusters), \code{random} (the
 #'   random-effect structure), \code{family}, \code{assumptions} (normality and
 #'   homogeneity results with their test statistics), \code{dispersion} (for
 #'   counts), \code{recommendation} (human-readable label),
@@ -633,7 +663,7 @@ recommend_test <- function(data, outcome, predictors = NULL, cluster = NULL,
                              "auto", "continuous", "ordinal",
                              "binary", "count", "nominal"
                            ),
-                           ordinal_max_levels = 7L, factors = NULL) {
+                           ordinal_max_levels = 7L, factors = NULL, random_slopes = NULL) {
   not_empty(data)
   not_empty(outcome)
   design <- match.arg(design)
@@ -658,7 +688,7 @@ recommend_test <- function(data, outcome, predictors = NULL, cluster = NULL,
   }
 
   categorical <- .categorical_predictors(d, predictors, cluster, factors)
-  dsg <- .design_info(d, predictors, categorical, cluster, design)
+  dsg <- .design_info(d, predictors, categorical, cluster, design, random_slopes)
 
   # A working copy with the categorical predictors as factors, so the checks
   # below estimate the same model the recommendation describes (a condition
@@ -975,16 +1005,16 @@ recommend_test <- function(data, outcome, predictors = NULL, cluster = NULL,
     has_within <- any(ctx$within)
     # Several trials per participant and condition: the rank-based repeated-
     # measures methods need one value per participant and cell, and would treat
-    # the trials as independent replicates. The LMM with random slopes models
-    # them properly and its fixed-effect tests are robust to moderate
+    # the trials as independent replicates. The LMM models the dependence
+    # within clusters and its fixed-effect tests are robust to moderate
     # non-normality of the residuals.
     if (has_within && isTRUE(ctx$trial_replicates)) {
       return(lmm(
         paste0(
           "the outcome is continuous and its residuals depart from normality, but each `", cl,
           "` contributed several observations per condition; rank-based repeated-measures methods ",
-          "(ART, nparLD) assume one value per `", cl, "` and condition, so a linear mixed model with ",
-          "by-`", cl, "` random slopes is recommended -- its fixed-effect tests are robust to moderate ",
+          "(ART, nparLD) assume one value per `", cl, "` and condition, so a linear mixed model ",
+          "is recommended -- its fixed-effect tests are robust to moderate ",
           "non-normality, while ignoring the replication is not"
         ),
         alternatives = paste0(
@@ -1172,7 +1202,7 @@ recommend_test <- function(data, outcome, predictors = NULL, cluster = NULL,
         sl <- paste0(sl, " and their interaction")
       }
       lead <- paste0(
-        "Because each `", x$cluster, "` contributed several observations per level of ", sl,
+        "To account for within-`", x$cluster, "` variation in ", sl,
         ", by-`", x$cluster, "` random slopes for ", sl
       )
       s <- c(s, if (!is.null(rnd$dropped)) {

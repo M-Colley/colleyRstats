@@ -35,6 +35,25 @@ test_that("replace_values only modifies matching numeric entries", {
   expect_identical(result$keep, df$keep)
 })
 
+test_that("replace_values promotes integer columns when replacements require it", {
+  df <- data.frame(code = 1:3, keep = 4:6)
+
+  fractional <- replace_values(df, 2, 2.5)
+  expect_identical(fractional$code, c(1, 2.5, 3))
+  expect_identical(fractional$keep, df$keep)
+
+  large <- replace_values(df, 2, 2147483648)
+  expect_identical(large$code, c(1, 2147483648, 3))
+  expect_identical(large$keep, df$keep)
+
+  # The smallest signed integer is reserved for NA in R.
+  small <- replace_values(df, 2, -2147483648)
+  expect_identical(small$code, c(1, -2147483648, 3))
+
+  integral <- replace_values(df, 2, 5)
+  expect_identical(integral$code, c(1L, 5L, 3L))
+})
+
 test_that(".p_to_asterisk follows APA boundaries", {
   expect_identical(
     colleyRstats:::.p_to_asterisk(c(0.0005, 0.001, 0.005, 0.01, 0.03, 0.05, 0.5, NA)),
@@ -988,6 +1007,27 @@ test_that("debug_contr_error accepts ordered factors and date-times", {
 # -------------------------------------------------------------------------
 # Pareto fronts: ties and missing values
 # -------------------------------------------------------------------------
+
+for (backend in c("emoa", "moocore")) {
+  test_that(paste("the", backend, "Pareto front ignores data-frame grouping"), {
+    skip_if_not_installed(backend)
+    score <- get(paste0("add_pareto_", backend, "_column"))
+    result_col <- paste0("PARETO_", toupper(backend))
+
+    for (group in list(1:3, c("a", "b", "c"))) {
+      d <- data.frame(group = group, x = 3:1, y = 3:1)
+      grouped <- dplyr::group_by(d, group)
+
+      minimum <- score(grouped, c("x", "y"))
+      expect_identical(minimum[[result_col]], c(FALSE, FALSE, TRUE))
+      expect_identical(dplyr::group_vars(minimum), "group")
+      expect_identical(dplyr::group_data(minimum), dplyr::group_data(grouped))
+
+      maximum <- score(grouped, c("x", "y"), maximise = TRUE)
+      expect_identical(maximum[[result_col]], c(TRUE, FALSE, FALSE))
+    }
+  })
+}
 
 test_that("both Pareto backends keep every copy of a tied non-dominated point", {
   skip_if_not_installed("emoa")

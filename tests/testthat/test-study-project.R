@@ -48,12 +48,16 @@ test_that("the generated pipeline runs end to end on its own example data", {
   results <- suppressWarnings(suppressMessages(env$run_models(scored)))
   expect_equal(nrow(results$summary), length(env$OUTCOMES))
 
-  tex <- env$write_manuscript_tex(results, scored)
+  tex <- env$write_manuscript_tex(results)
   expect_true(all(file.exists(tex)))
   expect_true(any(grepl("SUS", readLines(file.path("paper", "generated", "SUS.tex")))))
 
-  # The figure stage too: its within-subject plots need the participant column.
-  figures <- suppressWarnings(suppressMessages(env$make_figures(scored)))
+  # Figures use the fitted tests, and their analyzed rows, rather than another
+  # test selected independently by a plotting wrapper.
+  plots <- env$make_plots(results)
+  expect_identical(names(plots), names(results$fits))
+  expect_match(plots$SUS$labels$subtitle, results$fits$SUS$recommendation$recommendation, fixed = TRUE)
+  figures <- suppressWarnings(suppressMessages(env$make_figures(plots)))
   expect_true(all(file.exists(figures)))
 })
 
@@ -220,19 +224,17 @@ test_that("renv is opt-in, and runs outside the calling session", {
 })
 
 
-test_that("the generated figures pass the participant column to within-subject plots", {
-  # plot_within_stats() requires `subject` to pair observations across
-  # conditions; a call without it would not run. The figure code lives in one
-  # function, which the report reuses rather than re-typing the column names.
+test_that("the generated report reads the plots cached by the pipeline", {
   path <- scaffold()
   figures <- readLines(file.path(path, "R", "figures.R"))
   report <- readLines(file.path(path, "report", "report.qmd"))
+  pipeline <- readLines(file.path(path, "_targets.R"))
 
-  code <- grep("^[[:space:]]*#", figures, value = TRUE, invert = TRUE)
-  calls <- grep("plot_within_stats(", code, fixed = TRUE, value = TRUE)
-  expect_length(calls, 1L)
-  expect_match(calls, "subject = cluster", fixed = TRUE)
-  expect_true(any(grepl("plot_outcome(scored, dv)", report, fixed = TRUE)))
+  expect_true(any(grepl("plot_fit(results$fits[[dv]]", figures, fixed = TRUE)))
+  expect_true(any(grepl("tar_target(plots, make_plots(results))", pipeline, fixed = TRUE)))
+  expect_true(any(grepl("make_figures(plots)", pipeline, fixed = TRUE)))
+  expect_true(any(grepl("plots <- tar_read(plots, store = store)", report, fixed = TRUE)))
+  expect_true(any(grepl("print(plots[[dv]])", report, fixed = TRUE)))
   expect_false(any(grepl("\"participant\"", report, fixed = TRUE)))
 })
 
@@ -253,14 +255,78 @@ test_that("the generated figures follow a between-subjects design (CLUSTER <- NU
   between <- scored[paste(scored$participant, scored$condition) %in% paste(ids, pick), , drop = FALSE]
   expect_false(anyDuplicated(between$participant) > 0)
   env$CLUSTER <- NULL
-  figures <- suppressWarnings(suppressMessages(env$make_figures(between)))
+  results <- suppressWarnings(suppressMessages(env$run_models(between)))
+  plots <- env$make_plots(results)
+  figures <- suppressWarnings(suppressMessages(env$make_figures(plots)))
   expect_true(all(file.exists(figures)))
 
-  # with the cluster declared, a factor that does not vary within participants
-  # is still plotted between subjects, after averaging repeated rows
+  # Declaring clusters with repeated trials averages only for display; the
+  # plotted test is still the test of the fitted mixed model.
   env$CLUSTER <- "participant"
-  p <- suppressWarnings(suppressMessages(env$plot_outcome(between, "SUS")))
+  env$OUTCOMES <- "completion_time"
+  set.seed(91)
+  repeated <- between[rep(seq_len(nrow(between)), each = 5), ]
+  repeated$completion_time <- repeated$completion_time + rnorm(nrow(repeated), sd = 0.3)
+  results <- suppressWarnings(suppressMessages(env$run_models(repeated)))
+  p <- env$plot_outcome(results, "completion_time")
   expect_s3_class(p, "ggplot")
+  expect_equal(nrow(p$data), nrow(between))
+  expect_match(p$labels$subtitle, results$fits$completion_time$recommendation$recommendation, fixed = TRUE)
+})
+
+
+test_that("individual and combined figures reuse each outcome plot", {
+  skip_if_not_installed("patchwork")
+  path <- scaffold(questionnaires = character(0))
+  env <- new.env(parent = globalenv())
+  for (f in list.files(file.path(path, "R"), full.names = TRUE)) sys.source(f, envir = env)
+  calls <- character(0)
+  env$plot_outcome <- function(results, dv) {
+    calls <<- c(calls, dv)
+    ggplot2::ggplot(data.frame(x = 1, y = 1), ggplot2::aes(x, y)) + ggplot2::geom_point()
+  }
+  saved <- list()
+  env$save_paper_figure <- function(plot, filename, ...) {
+    saved[[basename(filename)]] <<- plot
+    writeLines("saved", filename)
+  }
+  results <- list(fits = list(first = list(), second = list()))
+  plots <- env$make_plots(results)
+  files <- env$make_figures(plots, dir = file.path(path, "output", "figures"))
+  expect_identical(calls, c("first", "second"))
+  expect_identical(saved[["first.pdf"]], plots$first)
+  expect_identical(saved[["second.pdf"]], plots$second)
+  expect_s3_class(saved[["all-scales.pdf"]], "patchwork")
+  expect_true(all(file.exists(files)))
+})
+
+
+test_that("manuscript descriptives use each outcome's final analyzed sample", {
+  path <- scaffold(questionnaires = character(0))
+  env <- new.env(parent = globalenv())
+  for (f in list.files(file.path(path, "R"), full.names = TRUE)) sys.source(f, envir = env)
+  described <- list()
+  env$report_mean_sd <- function(data, dv, iv) {
+    described[[dv]] <<- data
+    "descriptives"
+  }
+  first <- data.frame(condition = factor(c("A", "B")), first = c(1, 2))
+  second <- data.frame(condition = factor(c("A", "A", "B")), second = c(3, 4, 5))
+  results <- list(fits = list(
+    first = list(data = first, sentences = "first test"),
+    second = list(data = second, sentences = "second test")
+  ))
+  files <- env$write_manuscript_tex(results, dir = file.path(path, "paper", "generated"))
+  expect_identical(described$first, first)
+  expect_identical(described$second, second)
+  expect_true(all(file.exists(files)))
+  ordinal <- list(data = data.frame(condition = factor(c("A", "A", "B"), levels = c("A", "B", "C")),
+                                    rating = ordered(c("low", "high", "high"), levels = c("low", "high"))),
+                  recommendation = list(outcome_type = "ordinal"))
+  expect_no_warning(text <- env$describe_outcome(ordinal, "rating"))
+  expect_length(text, 2L)
+  expect_match(text[[1]], "low ($n = 1$)", fixed = TRUE)
+  expect_match(text[[1]], "high ($n = 1$)", fixed = TRUE)
 })
 
 

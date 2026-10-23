@@ -1,3 +1,35 @@
+# colleyRstats 0.3.1
+
+## BUG FIXES
+
+- Continuous predictors that vary within a cluster now receive random slopes
+  when the design supports them. `recommend_test()` and `fit_recommended()` gain
+  `random_slopes` to request particular slopes or an intercept-only structure.
+- `fit_recommended()` reports Welch, Wilcoxon and Kruskal-Wallis test statistics
+  and p-values in its omnibus table and manuscript sentences. Single-model
+  engines now report their actual convergence status.
+- Incomplete participants are excluded before the final nparLD recommendation
+  and assumption checks. Sample sizes, methods, figures and the fitted model use
+  the same analyzed rows, which are available as `fit$data`.
+- Both Pareto helpers ignore grouping columns when selecting objectives while
+  preserving grouping on their returned data.
+- `replace_values()` promotes integer columns when a replacement requires a
+  fraction, a non-finite value or a value outside the integer range.
+- Saving a figure resizes this package's significance-bracket labels along with
+  its theme, including nested patchwork panels, without changing the original
+  plot or user-added annotation layers.
+
+## FUNCTIONALITY AND PERFORMANCE
+
+- New `plot_fit()` draws the analyzed observations and the tests stored by
+  `fit_recommended()`, without running a separate model or significance test.
+- Generated study projects cache a `plots` target and reuse those plots in
+  individual PDFs, combined figures and the Quarto report. Re-scaffolded projects
+  retain existing files unless `overwrite = TRUE` is requested; update the
+  pipeline and figure/report scripts together to adopt the new workflow.
+- Dunn and ART contrast reporting builds the contrast-label lookup once per
+  report instead of regenerating every level pair for each comparison.
+
 # colleyRstats 0.3.0
 
 This release fixes a set of defects that could put a wrong number, a wrong direction or a wrong label into a manuscript without any error. **Re-run within-subjects analyses, post-hoc sentences from rank-based tests, mixed-model reports and `prefix =` questionnaire scoring made with earlier versions.**

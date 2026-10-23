@@ -34,10 +34,11 @@ list(
   tar_target(scored, score_scales(clean)),
 
   tar_target(results, run_models(scored)),
-  tar_target(figures, make_figures(scored), format = "file"),
+  tar_target(plots, make_plots(results)),
+  tar_target(figures, make_figures(plots), format = "file"),
 
   # The manuscript \input{}s these, so a number can never be re-typed wrongly.
-  tar_target(manuscript_tex, write_manuscript_tex(results, scored), format = "file")
+  tar_target(manuscript_tex, write_manuscript_tex(results), format = "file")
 )
 
 # To render report/report.qmd as part of the pipeline, install tarchetypes and

@@ -158,13 +158,19 @@
     ),
     .plot_type_args(plotType)
   )
-  if (design == "within") {
+  plot <- if (design == "within") {
     # Pair by participant, never by row order (see .require_subject()).
     args$subject.id <- nm[["subject"]]
     rlang::exec(ggstatsplot::ggwithinstats, !!!args)
   } else {
     rlang::exec(ggstatsplot::ggbetweenstats, !!!args)
   }
+  # These layers were created by this wrapper. Mark their size as relative to
+  # the figure base so save_paper_figure() can resize them along with the theme.
+  plot$layers <- lapply(plot$layers, function(layer) {
+    if (inherits(layer$geom, "GeomSignif")) .tag_signif_layer(layer) else layer
+  })
+  plot
 }
 
 
@@ -228,7 +234,7 @@
   step <- if (y_span > 0) 0.05 * y_span else 0.25
   y_positions_asterisks <- y_max + step * seq_len(nrow(df))
 
-  p + ggsignif::geom_signif(
+  p + .tag_signif_layer(ggsignif::geom_signif(
     comparisons = df$groups,
     map_signif_level = TRUE,
     annotations = df$asterisk_label,
@@ -238,7 +244,7 @@
     fontface = "bold",
     test = NULL,
     na.rm = TRUE
-  )
+  ))
 }
 
 

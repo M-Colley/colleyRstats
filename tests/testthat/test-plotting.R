@@ -20,6 +20,30 @@ test_that("generateEffectPlot returns a ggplot object", {
   expect_s3_class(p, "ggplot")
 })
 
+test_that("ggstatsplot wrapper bracket labels follow figure resizing", {
+  old <- ggplot2::theme_get()
+  on.exit(ggplot2::theme_set(old), add = TRUE)
+  ggplot2::theme_set(colley_theme(base_size = 17))
+  set.seed(151)
+  d <- data.frame(g = factor(rep(c("A", "B", "C"), each = 12)),
+                   y = rep(c(0, 5, 10), each = 12) + stats::rnorm(36))
+  for (asterisk in c(FALSE, TRUE)) {
+    p <- if (asterisk) {
+      suppressMessages(ggbetweenstatsWithPriorNormalityCheckAsterisk(
+        d, "g", "y", "Score", c("A", "B", "C")))
+    } else {
+      suppressMessages(ggbetweenstatsWithPriorNormalityCheck(d, "g", "y", "Score"))
+    }
+    q <- colleyRstats:::.resize_figure(p, 7)
+    brackets <- which(vapply(q$layers, function(layer) inherits(layer$geom, "GeomSignif"), logical(1)))
+    expect_gt(length(brackets), 0L)
+    for (i in brackets) {
+      expect_equal(unique(ggplot2::layer_data(q, i)$textsize),
+                    colleyRstats:::.pt_to_mm(7 * colleyRstats:::.SIGNIF_TEXT_RATIO))
+    }
+  }
+})
+
 test_that("generateEffectPlot errors on unknown effect type", {
   df <- data.frame(
     strat = rep(c("A", "B"), each = 10),

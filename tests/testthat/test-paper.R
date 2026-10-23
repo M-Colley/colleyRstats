@@ -498,6 +498,51 @@ test_that("a single plot still resizes through the plain `+` path", {
   )
 })
 
+test_that("figure resizing scales our bracket labels and preserves user annotations", {
+  old <- ggplot2::theme_get()
+  on.exit(ggplot2::theme_set(old), add = TRUE)
+  ggplot2::theme_set(colley_theme(base_size = 17))
+  d <- data.frame(g = c("A", "B"), y = c(1, 2))
+  p <- ggplot2::ggplot(d, ggplot2::aes(g, y)) + ggplot2::geom_point()
+  comparisons <- data.frame(asterisk_label = "***")
+  comparisons$groups <- list(c("A", "B"))
+  p <- colleyRstats:::.add_asterisk_brackets(p, comparisons, d$y) +
+    ggsignif::geom_signif(comparisons = list(c("A", "B")), annotations = "custom",
+                          y_position = 3, textsize = 8) +
+    ggplot2::annotate("text", x = 1, y = 4, label = "custom", size = 6)
+  q <- colleyRstats:::.resize_figure(p, 7)
+  target <- colleyRstats:::.pt_to_mm(7 * colleyRstats:::.SIGNIF_TEXT_RATIO)
+  expect_equal(unique(ggplot2::layer_data(q, 2)$textsize), target)
+  expect_equal(unique(ggplot2::layer_data(q, 3)$textsize), 8)
+  expect_equal(unique(ggplot2::layer_data(q, 4)$size), 6)
+  # ggproto layers are shared environments: resizing must clone the owned
+  # layer so a subsequent full-width save still starts from the original.
+  expect_equal(unique(ggplot2::layer_data(p, 2)$textsize),
+                colleyRstats:::.pt_to_mm(17 * colleyRstats:::.SIGNIF_TEXT_RATIO))
+})
+
+test_that("bracket resizing reaches nested patchwork panels", {
+  skip_if_not_installed("patchwork")
+  d <- data.frame(g = c("A", "B"), y = c(1, 2))
+  p <- ggplot2::ggplot(d, ggplot2::aes(g, y)) + ggplot2::geom_point()
+  comparisons <- data.frame(asterisk_label = "***")
+  comparisons$groups <- list(c("A", "B"))
+  p <- colleyRstats:::.add_asterisk_brackets(p, comparisons, d$y)
+  pw <- patchwork::wrap_plots(list(p, patchwork::wrap_plots(list(p, p))))
+  q <- colleyRstats:::.resize_figure(pw, 7)
+  bracket_sizes <- function(plot) {
+    own <- vapply(Filter(function(layer) inherits(layer$geom, "GeomSignif"), plot$layers),
+                   function(layer) layer$aes_params$textsize, numeric(1))
+    nested <- if (inherits(plot, "patchwork")) {
+      unlist(lapply(plot$patches$plots, bracket_sizes), use.names = FALSE)
+    }
+    c(own, nested)
+  }
+  expect_length(bracket_sizes(q), 3L)
+  expect_equal(bracket_sizes(q), rep(colleyRstats:::.pt_to_mm(
+    7 * colleyRstats:::.SIGNIF_TEXT_RATIO), 3))
+})
+
 
 test_that("assumption_methods_text skips the variance test for a within design", {
   set.seed(1)

@@ -20,7 +20,8 @@ decision follows a transparent three-question tree:
     design clustered, whatever `design` says: the cluster then needs a
     random effect, i.e. a *mixed* model. For a categorical predictor
     that varies within clusters and whose levels are replicated within a
-    cluster, by-cluster random slopes are added (Barr et al., 2013);
+    cluster, or a numeric covariate with enough repeated observations,
+    by-cluster random slopes are added (Barr et al., 2013);
     [`fit_recommended()`](https://m-colley.github.io/colleyRstats/reference/fit_recommended.md)
     simplifies the structure when the fit is singular.
 
@@ -42,7 +43,8 @@ recommend_test(
   design = c("auto", "between", "within"),
   outcome_type = c("auto", "continuous", "ordinal", "binary", "count", "nominal"),
   ordinal_max_levels = 7L,
-  factors = NULL
+  factors = NULL,
+  random_slopes = NULL
 )
 
 recommend_analysis(
@@ -53,7 +55,8 @@ recommend_analysis(
   design = c("auto", "between", "within"),
   outcome_type = c("auto", "continuous", "ordinal", "binary", "count", "nominal"),
   ordinal_max_levels = 7L,
-  factors = NULL
+  factors = NULL,
+  random_slopes = NULL
 )
 ```
 
@@ -108,6 +111,16 @@ recommend_analysis(
   logical predictors are always categorical; `factors = character(0)`
   keeps every numeric predictor numeric.
 
+- random_slopes:
+
+  Optional character vector of predictors to include as by-cluster
+  random slopes. `NULL` (default) includes replicated within-cluster
+  factors and numeric covariates that vary within clusters with at least
+  three observations in most clusters. Every named predictor must vary
+  within `cluster`. `character(0)` requests random intercepts only.
+  Unidentifiable or nonconverged structures may still be simplified by
+  [`fit_recommended()`](https://m-colley.github.io/colleyRstats/reference/fit_recommended.md).
+
 ## Value
 
 An object of class `"colley_recommendation"` (a list) with components
@@ -115,15 +128,14 @@ including `outcome_type`, `clustered`, `design` (`"between"`,
 `"within"`, `"mixed"`, or `"between (clustered)"` for between-cluster
 predictors with repeated rows per cluster), `n_obs` (complete rows),
 `categorical` (which predictors are categorical), `within` (which
-categorical predictors vary within clusters), `random` (the
-random-effect structure), `family`, `assumptions` (normality and
-homogeneity results with their test statistics), `dispersion` (for
-counts), `recommendation` (human-readable label), `model_function` (the
-R function to call, e.g. `"ordinal::clmm"`), `reporter` (the matching
-colleyRstats reporter), `fit_call` (a ready-to-edit call as a string),
-`alternatives`, `rationale`, `methods_text` (an APA-style sentence) and
-`methods_tex` (the same, escaped for LaTeX). A `print` method summarises
-it.
+predictors vary within clusters), `random` (the random-effect
+structure), `family`, `assumptions` (normality and homogeneity results
+with their test statistics), `dispersion` (for counts), `recommendation`
+(human-readable label), `model_function` (the R function to call, e.g.
+`"ordinal::clmm"`), `reporter` (the matching colleyRstats reporter),
+`fit_call` (a ready-to-edit call as a string), `alternatives`,
+`rationale`, `methods_text` (an APA-style sentence) and `methods_tex`
+(the same, escaped for LaTeX). A `print` method summarises it.
 
 ## Details
 

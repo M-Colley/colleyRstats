@@ -78,8 +78,12 @@ methods sentence you can edit.
 
 ## Plots
 
-`ggstatsplot` wrappers that pick the parametric or non-parametric test
-for you, effect plots, and multi-objective optimisation plots.
+Figures that reuse fitted model tests, `ggstatsplot` wrappers that pick
+the parametric or non-parametric test for you, effect plots, and
+multi-objective optimisation plots.
+
+- [`plot_fit()`](https://m-colley.github.io/colleyRstats/reference/plot_fit.md)
+  : Plot observations with the tests from a fitted analysis
 
 - [`ggbetweenstatsWithPriorNormalityCheck()`](https://m-colley.github.io/colleyRstats/reference/ggbetweenstatsWithPriorNormalityCheck.md)
   [`plot_between_stats()`](https://m-colley.github.io/colleyRstats/reference/ggbetweenstatsWithPriorNormalityCheck.md)

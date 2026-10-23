@@ -274,6 +274,13 @@ fit$contrasts   # Holm-adjusted pairwise comparisons, one family per factor
 #> 3 condition    B - C   -2.77 0.700 Inf     -3.95  0.0002   holm
 ```
 
+`plot_fit(fit)` draws the analyzed observations and annotates them with
+the stored model tests, so the figure and the manuscript report the same
+analysis. It runs no new significance test. Repeated continuous
+responses are averaged per participant and displayed level for the
+figure; ordinal responses retain their categories. `fit$data` contains
+the final analyzed rows, including any participant exclusions.
+
 It covers cumulative link models with and without random effects, linear
 and generalized linear mixed models (with by-participant random slopes
 when trials repeat within a condition), negative-binomial models for

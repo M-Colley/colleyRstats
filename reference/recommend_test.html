@@ -14,7 +14,8 @@ A cluster column in which some cluster contributes several rows
 makes the design clustered, whatever design says: the cluster then
 needs a random effect, i.e. a mixed model. For a categorical predictor
 that varies within clusters and whose levels are replicated within a
-cluster, by-cluster random slopes are added (Barr et al., 2013);
+cluster, or a numeric covariate with enough repeated observations,
+by-cluster random slopes are added (Barr et al., 2013);
 fit_recommended() simplifies the structure when the fit is singular.
 For a continuous outcome, do the parametric assumptions
 hold? A Shapiro–Wilk test on the residuals of the model that would be
@@ -38,7 +39,8 @@ A cluster column in which some cluster contributes several rows
 makes the design clustered, whatever design says: the cluster then
 needs a random effect, i.e. a mixed model. For a categorical predictor
 that varies within clusters and whose levels are replicated within a
-cluster, by-cluster random slopes are added (Barr et al., 2013);
+cluster, or a numeric covariate with enough repeated observations,
+by-cluster random slopes are added (Barr et al., 2013);
 fit_recommended() simplifies the structure when the fit is singular.
 For a continuous outcome, do the parametric assumptions
 hold? A Shapiro–Wilk test on the residuals of the model that would be
@@ -55,7 +57,7 @@ parametric model and a rank-based alternative.
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -85,7 +87,7 @@ parametric model and a rank-based alternative.
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Recommend a principled analysis for one outcome</h1>
-      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.2/R/mixed-models.R" class="external-link"><code>R/mixed-models.R</code></a>, <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.2/R/zzz-aliases.R" class="external-link"><code>R/zzz-aliases.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/main/R/mixed-models.R" class="external-link"><code>R/mixed-models.R</code></a>, <a href="https://github.com/M-Colley/colleyRstats/blob/main/R/zzz-aliases.R" class="external-link"><code>R/zzz-aliases.R</code></a></small>
       <div class="d-none name"><code>recommend_test.Rd</code></div>
     </div>
 
@@ -104,7 +106,8 @@ A <code>cluster</code> column in which some cluster contributes several rows
 makes the design clustered, whatever <code>design</code> says: the cluster then
 needs a random effect, i.e. a <em>mixed</em> model. For a categorical predictor
 that varies within clusters and whose levels are replicated within a
-cluster, by-cluster random slopes are added (Barr et al., 2013);
+cluster, or a numeric covariate with enough repeated observations,
+by-cluster random slopes are added (Barr et al., 2013);
 <code><a href="fit_recommended.html">fit_recommended()</a></code> simplifies the structure when the fit is singular.</p></li>
 <li><p><strong>For a continuous outcome, do the parametric assumptions
 hold?</strong> A Shapiro–Wilk test on the residuals of the model that would be
@@ -124,7 +127,8 @@ parametric model and a rank-based alternative.</p></li>
 <span>  design <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"between"</span>, <span class="st">"within"</span><span class="op">)</span>,</span>
 <span>  outcome_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"continuous"</span>, <span class="st">"ordinal"</span>, <span class="st">"binary"</span>, <span class="st">"count"</span>, <span class="st">"nominal"</span><span class="op">)</span>,</span>
 <span>  ordinal_max_levels <span class="op">=</span> <span class="fl">7L</span>,</span>
-<span>  factors <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  factors <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  random_slopes <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">recommend_analysis</span><span class="op">(</span></span>
@@ -135,7 +139,8 @@ parametric model and a rank-based alternative.</p></li>
 <span>  design <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"between"</span>, <span class="st">"within"</span><span class="op">)</span>,</span>
 <span>  outcome_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"continuous"</span>, <span class="st">"ordinal"</span>, <span class="st">"binary"</span>, <span class="st">"count"</span>, <span class="st">"nominal"</span><span class="op">)</span>,</span>
 <span>  ordinal_max_levels <span class="op">=</span> <span class="fl">7L</span>,</span>
-<span>  factors <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  factors <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  random_slopes <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -188,6 +193,16 @@ least twice (and for at least two clusters). Factor, character and logical
 predictors are always categorical; <code>factors = character(0)</code> keeps
 every numeric predictor numeric.</p></dd>
 
+
+<dt id="arg-random-slopes">random_slopes<a class="anchor" aria-label="anchor" href="#arg-random-slopes"></a></dt>
+<dd><p>Optional character vector of predictors to include as
+by-cluster random slopes. <code>NULL</code> (default) includes replicated
+within-cluster factors and numeric covariates that vary within clusters
+with at least three observations in most clusters. Every named predictor
+must vary within <code>cluster</code>. <code>character(0)</code> requests random
+intercepts only. Unidentifiable or nonconverged structures may still be
+simplified by <code><a href="fit_recommended.html">fit_recommended()</a></code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -197,7 +212,7 @@ components including <code>outcome_type</code>, <code>clustered</code>, <code>de
 <code>"between (clustered)"</code> for between-cluster predictors with repeated
 rows per cluster), <code>n_obs</code> (complete rows),
 <code>categorical</code> (which predictors are categorical), <code>within</code>
-(which categorical predictors vary within clusters), <code>random</code> (the
+(which predictors vary within clusters), <code>random</code> (the
 random-effect structure), <code>family</code>, <code>assumptions</code> (normality and
 homogeneity results with their test statistics), <code>dispersion</code> (for
 counts), <code>recommendation</code> (human-readable label),

@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -253,6 +253,7 @@
 <span><span class="co">#&gt; 1 condition    A - B   -1.15 0.580 Inf     -1.98  0.0480   holm</span></span>
 <span><span class="co">#&gt; 2 condition    A - C   -3.91 0.800 Inf     -4.89 &lt;0.0001   holm</span></span>
 <span><span class="co">#&gt; 3 condition    B - C   -2.77 0.700 Inf     -3.95  0.0002   holm</span></span></code></pre></div>
+<p><code>plot_fit(fit)</code> draws the analyzed observations and annotates them with the stored model tests, so the figure and the manuscript report the same analysis. It runs no new significance test. Repeated continuous responses are averaged per participant and displayed level for the figure; ordinal responses retain their categories. <code>fit$data</code> contains the final analyzed rows, including any participant exclusions.</p>
 <p>It covers cumulative link models with and without random effects, linear and generalized linear mixed models (with by-participant random slopes when trials repeat within a condition), negative-binomial models for over-dispersed counts, GLMs, ART, nparLD, clustered multinomial models, Type III and HC3-robust factorial ANOVA, and the classical ANOVA / Welch / Kruskal-Wallis / Wilcoxon tests. Every model term gets an omnibus test before the coefficients, and linear mixed models use Satterthwaite degrees of freedom.</p>
 <p>One thing worth knowing: an outcome whose scores stay <strong>whole numbers</strong> is taken for a count, and <code><a href="reference/fit_recommended.html">fit_recommended()</a></code> says so in a message. Raw NASA-TLX subscales on 0-100 in steps of 5 are recognised as bounded scores and treated as continuous, but a single MISC rating or item-level ratings are not. Pass <code>outcome_type = "continuous"</code> (or <code>"ordinal"</code>) when the classification is wrong; <code><a href="reference/use_study_project.html">use_study_project()</a></code> writes those declarations for you.</p>
 </div>

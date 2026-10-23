@@ -24,7 +24,8 @@ fit_recommended(
   adjust = "holm",
   sink_to = NULL,
   verbose = TRUE,
-  factors = NULL
+  factors = NULL,
+  random_slopes = NULL
 )
 ```
 
@@ -103,19 +104,27 @@ fit_recommended(
   `NULL` (default) decides from the data, and every resulting coercion
   is announced.
 
+- random_slopes:
+
+  Optional character vector of by-cluster random-slope predictor names;
+  `NULL` selects slopes from the design and `character(0)` requests
+  random intercepts only. See
+  [`recommend_test()`](https://m-colley.github.io/colleyRstats/reference/recommend_test.md).
+
 ## Value
 
 An object of class `"colley_fit"`: a list with `recommendation` (the
 [`recommend_test()`](https://m-colley.github.io/colleyRstats/reference/recommend_test.md)
 object, updated to record the function, call and random effects actually
-used), `formula`, `model` (the fitted object), `engine`,
-`model_function` (the function actually called, e.g.
-`"lmerTest::lmer"`), `random` (the random-effects term kept), `singular`
-and `converged` (flags), `anova` (the omnibus table: term, df1, df2,
-statistic, stat_name, p), `emmeans` (a named list of the estimated
-marginal means grids) and `contrasts` (a data frame with one row per
-comparison: `term`, `by`, `contrast`, `estimate`, `scale`, `SE`, `df`,
-confidence limits, `statistic`, `p.value`, `adjust`; or `NULL`),
+used), `formula`, `model` (the fitted object), `data` (the final
+analyzed data, with model coercions and any incomplete-participant
+exclusions applied), `engine`, `model_function` (the function actually
+called, e.g. `"lmerTest::lmer"`), `random` (the random-effects term
+kept), `singular` and `converged` (flags), `anova` (the omnibus table:
+term, df1, df2, statistic, stat_name, p), `emmeans` (a named list of the
+estimated marginal means grids) and `contrasts` (a data frame with one
+row per comparison: `term`, `by`, `contrast`, `estimate`, `scale`, `SE`,
+`df`, confidence limits, `statistic`, `p.value`, `adjust`; or `NULL`),
 `methods` (plain text), `methods_tex` (LaTeX-escaped), `text` (result
 sentences, LaTeX), and `sentences` (`methods_tex` and `text`, in
 manuscript order – what `sink_to` writes). A `print` method summarises
@@ -148,7 +157,8 @@ says which one if it is not.
 A repeated-measures model starts from the maximal random-effects
 structure the design supports (Barr et al., 2013): by-cluster random
 slopes for every within-cluster factor whose levels are replicated
-within a cluster, and the interaction slope when there are several
+within a cluster, numeric covariates with enough repeated observations
+to estimate a slope, and the interaction slope when there are several
 trials per cluster and cell. When that fit is singular or does not
 converge, the structure is simplified step by step down to random
 intercepts; what was dropped, and why, is announced and written into
@@ -176,6 +186,8 @@ Memory and Language, 94*, 305–315.
 
 [`recommend_test()`](https://m-colley.github.io/colleyRstats/reference/recommend_test.md)
 for the choice alone,
+[`plot_fit()`](https://m-colley.github.io/colleyRstats/reference/plot_fit.md)
+for a figure using this model's tests,
 [`analyze_and_report()`](https://m-colley.github.io/colleyRstats/reference/analyze_and_report.md)
 for the figure-plus-sentence path through ggstatsplot.
 

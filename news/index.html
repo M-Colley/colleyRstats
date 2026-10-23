@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,9 +37,29 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/M-Colley/colleyRstats/blob/0.2.2/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/M-Colley/colleyRstats/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.1" id="colleyrstats-031">colleyRstats 0.3.1<a class="anchor" aria-label="anchor" href="#colleyrstats-031"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-0-3-1">BUG FIXES<a class="anchor" aria-label="anchor" href="#bug-fixes-0-3-1"></a></h3>
+<ul><li>Continuous predictors that vary within a cluster now receive random slopes when the design supports them. <code><a href="../reference/recommend_test.html">recommend_test()</a></code> and <code><a href="../reference/fit_recommended.html">fit_recommended()</a></code> gain <code>random_slopes</code> to request particular slopes or an intercept-only structure.</li>
+<li>
+<code><a href="../reference/fit_recommended.html">fit_recommended()</a></code> reports Welch, Wilcoxon and Kruskal-Wallis test statistics and p-values in its omnibus table and manuscript sentences. Single-model engines now report their actual convergence status.</li>
+<li>Incomplete participants are excluded before the final nparLD recommendation and assumption checks. Sample sizes, methods, figures and the fitted model use the same analyzed rows, which are available as <code>fit$data</code>.</li>
+<li>Both Pareto helpers ignore grouping columns when selecting objectives while preserving grouping on their returned data.</li>
+<li>
+<code><a href="../reference/replace_values.html">replace_values()</a></code> promotes integer columns when a replacement requires a fraction, a non-finite value or a value outside the integer range.</li>
+<li>Saving a figure resizes this package’s significance-bracket labels along with its theme, including nested patchwork panels, without changing the original plot or user-added annotation layers.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="functionality-and-performance-0-3-1">FUNCTIONALITY AND PERFORMANCE<a class="anchor" aria-label="anchor" href="#functionality-and-performance-0-3-1"></a></h3>
+<ul><li>New <code><a href="../reference/plot_fit.html">plot_fit()</a></code> draws the analyzed observations and the tests stored by <code><a href="../reference/fit_recommended.html">fit_recommended()</a></code>, without running a separate model or significance test.</li>
+<li>Generated study projects cache a <code>plots</code> target and reuse those plots in individual PDFs, combined figures and the Quarto report. Re-scaffolded projects retain existing files unless <code>overwrite = TRUE</code> is requested; update the pipeline and figure/report scripts together to adopt the new workflow.</li>
+<li>Dunn and ART contrast reporting builds the contrast-label lookup once per report instead of regenerating every level pair for each comparison.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.0" id="colleyrstats-030">colleyRstats 0.3.0<a class="anchor" aria-label="anchor" href="#colleyrstats-030"></a></h2>
 <p>This release fixes a set of defects that could put a wrong number, a wrong direction or a wrong label into a manuscript without any error. <strong>Re-run within-subjects analyses, post-hoc sentences from rank-based tests, mixed-model reports and <code>prefix =</code> questionnaire scoring made with earlier versions.</strong></p>

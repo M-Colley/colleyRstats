@@ -774,6 +774,25 @@ test_that("nparLD is fitted on the participants observed in every condition", {
   expect_equal(f$recommendation$assumptions, rechecked$assumptions)
 })
 
+test_that("nparLD completes numeric IDs and character conditions before coercion", {
+  skip_if_not_installed("nparLD")
+  set.seed(6)
+  d <- data.frame(id = rep(1:15, 3), cond = rep(c("A", "B", "C"), each = 15))
+  d$y <- rexp(45) + match(d$cond, c("A", "B", "C"))
+  d <- d[!(d$id == 4L & d$cond == "C"), ]
+
+  f <- fit_recommended(d, "y", "cond", cluster = "id", contrasts = FALSE, verbose = FALSE)
+
+  expect_identical(f$engine, "nparld")
+  expect_s3_class(f$data$id, "factor")
+  expect_s3_class(f$data$cond, "factor")
+  expect_identical(levels(f$data$cond), c("A", "B", "C"))
+  expect_false("4" %in% levels(f$data$id))
+  expect_equal(f$data$y, d$y[d$id != 4L])
+  expect_equal(f$recommendation$n_obs, 42L)
+  expect_equal(f$recommendation$n_clusters, 14L)
+})
+
 test_that("the Kruskal-Wallis route runs the Dunn follow-up its methods sentence names", {
   skip_if_not_installed("FSA")
   set.seed(7)

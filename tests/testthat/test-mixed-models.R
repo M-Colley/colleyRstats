@@ -336,6 +336,25 @@ test_that("numeric within-cluster covariates earn slopes with an explicit overri
     "must vary within")
 })
 
+test_that("a between declaration warns when a numeric predictor varies within clusters", {
+  set.seed(42)
+  d <- expand.grid(time = seq(-2, 2, length.out = 7), id = factor(1:12))
+  d$y <- rnorm(nrow(d))
+
+  expect_warning(
+    rec <- recommend_test(d, "y", "time", cluster = "id", design = "between",
+      outcome_type = "continuous"),
+    "`time` varies within `id`; it is analysed as a within-cluster predictor.",
+    fixed = TRUE
+  )
+
+  expect_true(rec$clustered)
+  expect_true(rec$within[["time"]])
+  expect_identical(rec$design, "within")
+  expect_identical(rec$random$term, "(1 + time | id)")
+  expect_match(rec$fit_call, "(1 + time | id)", fixed = TRUE)
+})
+
 test_that("the LaTeX methods text escapes names and typesets them as code", {
   d <- make_mixed_df()
   d$tlx_mental <- d$score

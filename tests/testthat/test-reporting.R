@@ -32,6 +32,15 @@ test_that("contrast lookup handles rewritten labels and refuses ambiguous pairs"
   expect_identical(match_pair("A - (B - C)", lookup = ambiguous), c("A", "B - C"))
 })
 
+test_that("standalone contrast matching builds its lookup from levels and prefix", {
+  # Direct callers still pass levels rather than a cached report-level index.
+  # Numeric emmeans labels need the prefix forwarded while building that index.
+  match_pair <- colleyRstats:::.match_contrast_pair
+  expect_identical(match_pair("mode1 - (mode2)", c("1", "2"), prefix = "mode"),
+                   c("1", "2"))
+  expect_null(match_pair("mode1 - mode3", c("1", "2"), prefix = "mode"))
+})
+
 test_that("Dunn and ART reporters index contrast spellings once per report", {
   # Count index construction rather than elapsed time: every additional
   # contrast must reuse it, on slow CI machines as well as fast local ones.

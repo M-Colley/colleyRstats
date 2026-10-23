@@ -11,13 +11,56 @@ test_that("fit plots reuse stored inference and analyzed rows without testing ag
     .omnibus_table = function(...) stop("must not compute another test"),
     check_normality_by_group = function(...) stop("must not check assumptions again")
   )
-  p <- plot_fit(fit)
+  p <- plot_fit(fit, xlabels = c("Control", "Treatment"), ylab = "Measured score")
   expect_s3_class(p, "ggplot")
   expect_equal(nrow(p$data), 49L)
   expect_match(p$labels$subtitle, fit$recommendation$recommendation, fixed = TRUE)
   expect_match(p$labels$subtitle, "p = 0.0496", fixed = TRUE)
   expect_equal(nrow(ggplot2::layer_data(p, 2)), 49L)
+  expect_identical(ggplot2::ggplot_build(p)$layout$panel_params[[1]]$x$get_labels(),
+                   c("Control", "Treatment"))
+  expect_identical(p$labels$y, "Measured score")
   expect_false(grepl("p =", plot_fit(fit, show_test = FALSE)$labels$subtitle, fixed = TRUE))
+})
+
+
+test_that("plots distinguish unavailable inference from a nonsignificant result", {
+  set.seed(12)
+  d <- data.frame(condition = factor(rep(c("A", "B"), each = 20)), y = rnorm(40))
+  fit <- suppressMessages(fit_recommended(d, "y", "condition", outcome_type = "continuous", verbose = FALSE))
+  stored <- fit$anova
+
+  # A saved analysis may have no omnibus table (for an unsupported test) or an
+  # unestimable p-value. Neither should become an invented test of the plot.
+  local_mocked_bindings(.omnibus_table = function(...) stop("must not compute another test"))
+  for (table in list(NULL, stored[FALSE, , drop = FALSE])) {
+    fit$anova <- table
+    p <- plot_fit(fit)
+    expect_match(p$labels$subtitle, "No omnibus test was available.", fixed = TRUE)
+    expect_false(grepl("p =|p <", p$labels$subtitle))
+    expect_false(grepl("Tests are from the fitted model", p$labels$caption, fixed = TRUE))
+    expect_equal(nrow(p$data), nrow(fit$data))
+  }
+  fit$anova <- stored
+  fit$anova$p[] <- NA_real_
+  p <- plot_fit(fit)
+  expect_match(p$labels$subtitle, "p unavailable", fixed = TRUE)
+  expect_false(grepl("p =|p <", p$labels$subtitle))
+  expect_match(p$labels$subtitle, colleyRstats:::.fmt_num(stored$statistic[[1]]), fixed = TRUE)
+})
+
+
+test_that("plots retain a failed model's convergence caution", {
+  d <- data.frame(time = seq(-10, 10, length.out = 200))
+  d$response <- as.integer(d$time > 0)
+  fit <- suppressWarnings(suppressMessages(fit_recommended(d, "response", "time",
+    outcome_type = "binary", contrasts = FALSE, verbose = FALSE)))
+  expect_false(fit$converged)
+  p <- plot_fit(fit)
+  expect_match(gsub("[[:space:]]+", " ", p$labels$caption),
+               "The model did not converge cleanly.", fixed = TRUE)
+  expect_identical(p$data$.y, fit$data$response)
+  expect_equal(sum(ggplot2::layer_data(p, 1)$n), nrow(fit$data))
 })
 
 

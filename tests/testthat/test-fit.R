@@ -765,6 +765,13 @@ test_that("nparLD is fitted on the participants observed in every condition", {
     "dropped 1 of 15 participants"
   )
   expect_identical(f$engine, "nparld")
+  expect_equal(nrow(f$data), 42L)
+  expect_equal(length(unique(f$data$id)), 14L)
+  expect_equal(f$recommendation$n_obs, 42L)
+  expect_equal(f$recommendation$n_clusters, 14L)
+  expect_match(f$methods, "14 clusters, 42 observations", fixed = TRUE)
+  rechecked <- suppressWarnings(recommend_test(f$data, "y", "cond", cluster = "id"))
+  expect_equal(f$recommendation$assumptions, rechecked$assumptions)
 })
 
 test_that("the Kruskal-Wallis route runs the Dunn follow-up its methods sentence names", {
@@ -796,4 +803,69 @@ test_that("a non-syntactic cluster name is not nested in backticks in the method
   f <- suppressWarnings(fit_recommended(d, "y", "cond", cluster = "P id", verbose = FALSE))
   expect_false(grepl("``", f$methods, fixed = TRUE))
   expect_false(grepl("\\texttt{(1 | }", f$methods_tex, fixed = TRUE))
+})
+
+
+test_that("a numeric time slope is tested across participants rather than trials", {
+  skip_if_not_installed("lmerTest")
+  set.seed(42)
+  d <- expand.grid(time = seq(-2, 2, length.out = 21), id = factor(1:20))
+  b0 <- rnorm(20)
+  b1 <- rep(c(-3, 3), 10)
+  d$y <- b0[as.integer(d$id)] + (0.5 + b1[as.integer(d$id)]) * d$time +
+    rnorm(nrow(d), sd = 0.2)
+  f <- fit_recommended(d, "y", "time", cluster = "id", outcome_type = "continuous",
+    contrasts = FALSE, verbose = FALSE)
+  expect_identical(f$random, "(1 + time | id)")
+  expect_gt(f$anova$p[[1]], 0.4)
+  expect_lt(f$anova$df2[[1]], 21)
+  expect_equal(f$data, d)
+  intercept <- fit_recommended(d, "y", "time", cluster = "id", outcome_type = "continuous",
+    random_slopes = character(0), contrasts = FALSE, verbose = FALSE)
+  expect_identical(intercept$random, "(1 | id)")
+})
+
+
+test_that("classical tests retain their statistics and manuscript results", {
+  skip_if_not_installed("car")
+  z <- qnorm((seq_len(20) - 0.5) / 20)
+  welch <- data.frame(g = factor(rep(c("A", "B"), each = 20)), y = c(z, 2 * z))
+  set.seed(71)
+  wilcox <- data.frame(g = factor(rep(c("A", "B"), each = 30)),
+    y = c(rnorm(30), rnorm(30, sd = 4)))
+  set.seed(7)
+  kruskal <- data.frame(g = factor(rep(c("A", "B", "C"), each = 20)))
+  kruskal$y <- rexp(60) * c(1, 2, 4)[as.integer(kruskal$g)]
+  fixtures <- list(welch, wilcox, kruskal)
+  functions <- c("stats::oneway.test", "stats::wilcox.test", "stats::kruskal.test")
+  for (i in seq_along(fixtures)) {
+    path <- tempfile(fileext = ".tex")
+    f <- fit_recommended(fixtures[[i]], "y", "g", outcome_type = "continuous",
+      contrasts = FALSE, sink_to = path, verbose = FALSE)
+    expect_identical(f$model_function, functions[[i]])
+    expect_equal(f$anova$p, f$model$p.value)
+    expect_equal(f$anova$statistic, unname(f$model$statistic))
+    expect_identical(f$anova$stat_name, c("F", "W", "chisq")[[i]])
+    expect_length(f$text, 1L)
+    expect_true(grepl("significant", f$text, fixed = TRUE))
+    expect_true(any(grepl(f$text, readLines(path), fixed = TRUE)))
+  }
+})
+
+
+test_that("failed single-engine convergence is reflected in the analysis", {
+  d <- data.frame(x = seq(-10, 10, length.out = 200))
+  d$y <- as.integer(d$x > 0)
+  warnings <- character(0)
+  f <- withCallingHandlers(
+    fit_recommended(d, "y", "x", outcome_type = "binary", contrasts = FALSE, verbose = FALSE),
+    warning = function(w) {
+      warnings <<- c(warnings, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_true(any(grepl("did not converge", warnings, fixed = TRUE)))
+  expect_false(f$model$converged)
+  expect_false(f$converged)
+  expect_match(f$methods, "did not converge cleanly", fixed = TRUE)
 })

@@ -65,7 +65,26 @@ run_models <- function(data) {
 }
 
 
-write_manuscript_tex <- function(results, data, dir = "paper/generated") {
+# Descriptives use the observations that the model actually analyzed. Response
+# categories are counted rather than coerced to numbers or averaged.
+describe_outcome <- function(fit, dv) {
+  data <- fit$data
+  categorical <- fit$recommendation$outcome_type %in% c("ordinal", "binary", "nominal")
+  if (!isTRUE(categorical) && is.numeric(data[[dv]])) {
+    return(suppressMessages(report_mean_sd(data, dv = dv, iv = PREDICTORS[[1]])))
+  }
+  counts <- table(droplevels(as.factor(data[[PREDICTORS[[1]]]])), data[[dv]])
+  vapply(seq_len(nrow(counts)), function(i) {
+    observed <- counts[i, ] > 0
+    responses <- paste0(latex_escape(colnames(counts)[observed]),
+                        " ($n = ", counts[i, observed], "$")
+    paste0(latex_escape(dv), " for ", latex_escape(PREDICTORS[[1]]), " ",
+           latex_escape(rownames(counts)[i]), ": ", paste0(responses, ")", collapse = ", "), ".")
+  }, character(1))
+}
+
+
+write_manuscript_tex <- function(results, dir = "paper/generated") {
   dir.create(dir, recursive = TRUE, showWarnings = FALSE)
   paths <- character(0)
 
@@ -81,7 +100,7 @@ write_manuscript_tex <- function(results, data, dir = "paper/generated") {
     unlist(lapply(names(results$fits), function(dv) {
       c(
         paste0("% ", dv),
-        suppressMessages(report_mean_sd(data, dv = dv, iv = PREDICTORS[[1]]))
+        describe_outcome(results$fits[[dv]], dv)
       )
     })),
     desc

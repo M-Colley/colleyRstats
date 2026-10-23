@@ -170,6 +170,23 @@
 .conv_pattern <- "converge|Hessian|non-positive-definite"
 
 
+# Internal: fitting engines do not share a convergence field. Prefer their
+# explicit status and also retain convergence warnings from the fitting call.
+.fit_converged <- function(model, warnings = character(0)) {
+  if (any(grepl(paste0(.conv_pattern, "|iteration limit reached|maximum.*iterations"),
+                warnings, ignore.case = TRUE))) return(FALSE)
+  if (!isS4(model) && is.list(model)) {
+    if (is.logical(model$converged) && length(model$converged) == 1L) {
+      return(isTRUE(model$converged))
+    }
+    code <- model$convergence
+    if (is.list(code)) code <- code$code
+    if (is.numeric(code) && length(code) == 1L) return(isTRUE(code == 0))
+  }
+  TRUE
+}
+
+
 # Internal: is a mixed model's random-effects structure singular (a variance
 # estimated at zero, or a correlation at +/-1)?
 .is_singular_fit <- function(m, tol = 1e-4) {
@@ -318,6 +335,45 @@
 }
 
 
+# Internal: preserve classical tests in the same table shape as model tests.
+.htest_rows <- function(model, predictors) {
+  stat <- names(model$statistic)[[1L]]
+  df <- as.numeric(model$parameter)
+  data.frame(
+    term = paste(predictors, collapse = ":"),
+    df1 = if (length(df)) df[[1L]] else NA_real_,
+    df2 = if (length(df) > 1L) df[[2L]] else NA_real_,
+    statistic = unname(model$statistic[[1L]]),
+    stat_name = if (grepl("chi", stat, ignore.case = TRUE)) "chisq" else stat,
+    p = model$p.value, method = model$method, stringsAsFactors = FALSE
+  )
+}
+
+
+.htest_sentence <- function(model, outcome, predictors) {
+  tab <- .htest_rows(model, predictors)
+  test <- if (identical(tab$stat_name, "F")) {
+    "Welch's test"
+  } else if (identical(tab$stat_name, "chisq")) {
+    "The Kruskal--Wallis test"
+  } else {
+    "The Wilcoxon rank-sum test"
+  }
+  stat <- if (identical(tab$stat_name, "F")) {
+    paste0("\\F{", .fmt_df(tab$df1), "}{", .fmt_df(tab$df2), "}{", .fmt_num(tab$statistic), "}")
+  } else if (identical(tab$stat_name, "chisq")) {
+    paste0("$\\chi^2(", .fmt_df(tab$df1), ") = ", .fmt_num(tab$statistic), "$")
+  } else {
+    paste0("$W = ", .fmt_num(tab$statistic), "$")
+  }
+  paste0(
+    test, " of ", latex_escape(outcome), " across ", latex_escape(predictors[[1L]]),
+    if (is.na(tab$p)) " could not be assessed" else if (tab$p < 0.05) " was significant" else " was not significant",
+    " (", stat, ", ", if (is.na(tab$p)) "$p$ = NA" else .fmt_p_macro(tab$p), ")."
+  )
+}
+
+
 # Internal: fit the model a recommendation names. Returns the fitted object
 # plus the engine that produced it, the function actually called, the call as
 # a string, and -- for mixed models -- the random-effects structure that was
@@ -338,13 +394,14 @@
 
   result <- function(model, engine, reporter, fun, call_str, report_object = NULL,
                      anova = NULL, random = NULL, dropped = NULL, singular = FALSE,
-                     converged = TRUE, warnings = character(0), messages = character(0),
+                     converged = NULL, warnings = character(0), messages = character(0),
                      name_map = NULL) {
     list(
       model = model, engine = engine, reporter = reporter, fun = fun,
       call_str = call_str, report_object = report_object, anova = anova,
       random = random, dropped = dropped, singular = singular,
-      converged = converged, warnings = warnings, messages = messages,
+      converged = if (is.null(converged)) .fit_converged(model, warnings) else converged,
+      warnings = warnings, messages = messages,
       name_map = name_map
     )
   }
@@ -365,6 +422,11 @@
     r <- do.call(.fit_eval, c(list(fun, formula, data), extra))
     result(r$model, engine, reporter, fun_chr, .call_string(fun_chr, formula, extra_str),
       warnings = r$warnings, messages = r$messages, ...
+    )
+  }
+  classical <- function(model, fun, extra = NULL) {
+    result(model, "htest", NA_character_, fun,
+      .call_string(fun, one_way, extra), anova = .htest_rows(model, predictors)
     )
   }
 
@@ -606,17 +668,15 @@
         warnings = r$warnings, messages = r$messages
       )
     },
-    "stats::oneway.test" = result(
-      stats::oneway.test(one_way, data = data, var.equal = FALSE), "htest", NA_character_,
-      "stats::oneway.test", .call_string("stats::oneway.test", one_way, "var.equal = FALSE")
+    "stats::oneway.test" = classical(
+      stats::oneway.test(one_way, data = data, var.equal = FALSE),
+      "stats::oneway.test", "var.equal = FALSE"
     ),
-    "stats::kruskal.test" = result(
-      stats::kruskal.test(one_way, data = data), "htest", NA_character_,
-      "stats::kruskal.test", .call_string("stats::kruskal.test", one_way)
+    "stats::kruskal.test" = classical(
+      stats::kruskal.test(one_way, data = data), "stats::kruskal.test"
     ),
-    "stats::wilcox.test" = result(
-      stats::wilcox.test(one_way, data = data), "htest", NA_character_,
-      "stats::wilcox.test", .call_string("stats::wilcox.test", one_way)
+    "stats::wilcox.test" = classical(
+      stats::wilcox.test(one_way, data = data), "stats::wilcox.test"
     ),
     "stats::lm" = single("stats::lm", quote(stats::lm), no_re, engine = "lm", reporter = "report_glmm"),
     "nnet::multinom" = {
@@ -990,7 +1050,8 @@
 #' @section Random effects:
 #' A repeated-measures model starts from the maximal random-effects structure
 #' the design supports (Barr et al., 2013): by-cluster random slopes for every
-#' within-cluster factor whose levels are replicated within a cluster, and the
+#' within-cluster factor whose levels are replicated within a cluster, numeric
+#' covariates with enough repeated observations to estimate a slope, and the
 #' interaction slope when there are several trials per cluster and cell. When
 #' that fit is singular or does not converge, the structure is simplified step
 #' by step down to random intercepts; what was dropped, and why, is announced
@@ -1034,12 +1095,17 @@
 #'   are categorical (condition codes); see [recommend_test()]. \code{NULL}
 #'   (default) decides from the data, and every resulting coercion is
 #'   announced.
+#' @param random_slopes Optional character vector of by-cluster random-slope
+#'   predictor names; \code{NULL} selects slopes from the design and
+#'   \code{character(0)} requests random intercepts only. See [recommend_test()].
 #'
 #' @return An object of class \code{"colley_fit"}: a list with
 #'   \code{recommendation} (the [recommend_test()] object, updated to record
 #'   the function, call and random effects actually used), \code{formula},
-#'   \code{model} (the fitted object), \code{engine}, \code{model_function}
-#'   (the function actually called, e.g. \code{"lmerTest::lmer"}),
+#'   \code{model} (the fitted object), \code{data} (the final analyzed data,
+#'   with model coercions and any incomplete-participant exclusions applied),
+#'   \code{engine}, \code{model_function} (the function actually called, e.g.
+#'   \code{"lmerTest::lmer"}),
 #'   \code{random} (the random-effects term kept), \code{singular} and
 #'   \code{converged} (flags), \code{anova} (the omnibus table: term, df1, df2,
 #'   statistic, stat_name, p), \code{emmeans} (a named list of the estimated
@@ -1052,8 +1118,9 @@
 #'   manuscript order -- what \code{sink_to} writes). A \code{print} method
 #'   summarises it.
 #' @export
-#' @seealso [recommend_test()] for the choice alone, [analyze_and_report()] for
-#'   the figure-plus-sentence path through \pkg{ggstatsplot}.
+#' @seealso [recommend_test()] for the choice alone, [plot_fit()] for a figure
+#'   using this model's tests, [analyze_and_report()] for the figure-plus-sentence
+#'   path through \pkg{ggstatsplot}.
 #' @references Barr, D. J., Levy, R., Scheepers, C., & Tily, H. J. (2013).
 #'   Random effects structure for confirmatory hypothesis testing: Keep it
 #'   maximal. \emph{Journal of Memory and Language, 68}(3), 255--278.
@@ -1084,7 +1151,7 @@ fit_recommended <- function(data, outcome, predictors = NULL, cluster = NULL,
                             ordinal_max_levels = 7L,
                             interaction = TRUE, contrasts = TRUE,
                             adjust = "holm", sink_to = NULL, verbose = TRUE,
-                            factors = NULL) {
+                            factors = NULL, random_slopes = NULL) {
   not_empty(data)
   not_empty(outcome)
   design <- match.arg(design)
@@ -1107,7 +1174,7 @@ fit_recommended <- function(data, outcome, predictors = NULL, cluster = NULL,
     data,
     outcome = outcome, predictors = predictors, cluster = cluster,
     design = design, outcome_type = outcome_type,
-    ordinal_max_levels = ordinal_max_levels, factors = factors
+    ordinal_max_levels = ordinal_max_levels, factors = factors, random_slopes = random_slopes
   )
 
   if (length(predictors) == 0 && !isTRUE(rec$clustered)) {
@@ -1136,6 +1203,27 @@ fit_recommended <- function(data, outcome, predictors = NULL, cluster = NULL,
     data[c(predictors, cluster)] <- lapply(data[c(predictors, cluster)], function(v) {
       if (is.factor(v)) droplevels(v) else v
     })
+  }
+
+  # nparLD needs complete participants rather than merely complete rows. Apply
+  # this exclusion before the final recommendation, so its assumptions and
+  # manuscript sample counts describe exactly the observations fitted below.
+  if (identical(rec$model_function, "nparLD::nparLD")) {
+    completed <- .complete_within(
+      data, cluster, predictors, outcome,
+      context = if (isTRUE(verbose)) paste0("nparLD analysis of '", outcome, "': ") else NULL
+    )$data
+    if (nrow(completed) != nrow(data)) {
+      data <- completed
+      data[c(predictors, cluster)] <- lapply(data[c(predictors, cluster)], function(v) {
+        if (is.factor(v)) droplevels(v) else v
+      })
+      rec <- recommend_test(
+        data, outcome = outcome, predictors = predictors, cluster = cluster,
+        design = design, outcome_type = rec$outcome_type,
+        ordinal_max_levels = ordinal_max_levels, factors = factors, random_slopes = random_slopes
+      )
+    }
   }
 
   data <- .fit_coerce(
@@ -1221,6 +1309,8 @@ fit_recommended <- function(data, outcome, predictors = NULL, cluster = NULL,
       },
       finally = options(op)
     )
+  } else if (identical(fit$engine, "htest")) {
+    text <- .htest_sentence(fit$model, outcome, predictors)
   } else if (fit$engine %in% c("aov", "afex", "anova3", "lm_hc3") && !is.null(omni)) {
     dv_tex <- latex_escape(outcome)
     intro <- switch(fit$engine,
@@ -1288,6 +1378,7 @@ fit_recommended <- function(data, outcome, predictors = NULL, cluster = NULL,
 
   out <- list(
     recommendation = rec,
+    data = data,
     formula = fitted_formula,
     model = fit$model,
     engine = fit$engine,

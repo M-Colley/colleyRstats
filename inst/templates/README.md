@@ -10,11 +10,16 @@ Questionnaires used: {{instruments}}.
 targets::tar_make()          # runs every stale stage, in order
 targets::tar_visnetwork()    # shows what is stale and why
 targets::tar_read(results)   # the fitted models and the summary table
+targets::tar_read(plots)     # plots annotated with those models' tests
 ```
 
 The pipeline ships with example data in `data-raw/`, so it runs end to end
 before any real data exists. Replace that file with your own export, adjust
 `R/read.R` if the format differs, and run `tar_make()` again.
+
+Figures reuse the fitted models' tests and analyzed samples. The pipeline builds
+each plot once, then reuses it for individual PDFs, the combined figure and the
+report; rendering the report does not fit another set of models.
 
 ## Layout
 

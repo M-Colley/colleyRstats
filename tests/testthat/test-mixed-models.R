@@ -317,6 +317,25 @@ test_that("repeated trials per participant and condition earn random slopes", {
   expect_identical(recommend_test(d, "score", "cond", cluster = "id")$random$term, "(1 | id)")
 })
 
+
+test_that("numeric within-cluster covariates earn slopes with an explicit override", {
+  set.seed(42)
+  d <- expand.grid(time = seq(-2, 2, length.out = 7), id = factor(1:12))
+  d$y <- rnorm(nrow(d))
+  d$age <- rep(seq(20, 42, length.out = 12), each = 7)
+  rec <- recommend_test(d, "y", c("time", "age"), cluster = "id", outcome_type = "continuous")
+  expect_true(rec$within[["time"]])
+  expect_false(rec$within[["age"]])
+  expect_identical(rec$random$term, "(1 + time | id)")
+  intercept <- recommend_test(d, "y", "time", cluster = "id",
+    outcome_type = "continuous", random_slopes = character(0))
+  expect_identical(intercept$random$term, "(1 | id)")
+  expect_error(recommend_test(d, "y", "time", cluster = "id", random_slopes = "missing"),
+    "predictor names")
+  expect_error(recommend_test(d, "y", c("time", "age"), cluster = "id", random_slopes = "age"),
+    "must vary within")
+})
+
 test_that("the LaTeX methods text escapes names and typesets them as code", {
   d <- make_mixed_df()
   d$tlx_mental <- d$score
@@ -542,6 +561,21 @@ test_that("reportCLMM rejects a non-ordinal model", {
   d <- make_mixed_df()
   m <- lme4::lmer(score ~ cond + (1 | id), data = d)
   expect_error(reportCLMM(m), "clmm")
+})
+
+
+test_that("the repeated-trials rationale respects an intercept-only override", {
+  set.seed(17)
+  d <- expand.grid(trial = 1:6, cond = factor(c("A", "B")), id = factor(1:20))
+  d$y <- rexp(nrow(d))
+  rec <- recommend_test(d, "y", "cond", cluster = "id",
+    outcome_type = "continuous", random_slopes = character(0))
+  expect_false(rec$assumptions$normal)
+  expect_identical(rec$model_function, "lme4::lmer")
+  expect_identical(rec$random$term, "(1 | id)")
+  expect_match(rec$rationale, "several observations per condition", fixed = TRUE)
+  expect_no_match(rec$rationale, "random slopes", fixed = TRUE)
+  expect_no_match(rec$methods_text, "random slopes", fixed = TRUE)
 })
 
 

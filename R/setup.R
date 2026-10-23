@@ -412,7 +412,7 @@ colley_theme <- function(base_size = 17, base_family = "") {
     ))
   }
 
-  plot
+  .resize_signif_labels(plot, base_size)
 }
 
 
@@ -437,6 +437,29 @@ colley_theme <- function(base_size = 17, base_family = "") {
 # that at the historical base of 17 pt this reproduces the 4 mm / 3.9 mm that
 # were previously hard-coded, while now following the theme when it changes.
 .SIGNIF_TEXT_RATIO <- 0.67
+
+# Only annotations created by our wrappers follow save_paper_figure()'s sizing.
+# A user's geom_signif() or text layer may have a deliberately chosen size.
+.tag_signif_layer <- function(layer, ratio = .SIGNIF_TEXT_RATIO) {
+  ggplot2::ggproto(NULL, layer, colley_signif_ratio = ratio)
+}
+
+.resize_signif_labels <- function(plot, base_size) {
+  plot$layers <- lapply(plot$layers, function(layer) {
+    ratio <- layer$colley_signif_ratio
+    if (is.null(ratio)) return(layer)
+    params <- layer$aes_params
+    params$textsize <- .pt_to_mm(base_size * ratio)
+    # Layers are environments shared by plot copies. Clone before changing the
+    # parameters so saving a small figure never changes the original plot.
+    ggplot2::ggproto(NULL, layer, aes_params = params)
+  })
+  if (inherits(plot, "patchwork")) {
+    plot$patches$plots <- lapply(plot$patches$plots, .resize_signif_labels,
+                                base_size = base_size)
+  }
+  plot
+}
 
 # Text size in millimetres for ggsignif annotation under the active theme.
 .signif_text_mm <- function(ratio = .SIGNIF_TEXT_RATIO) {

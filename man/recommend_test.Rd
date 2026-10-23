@@ -13,7 +13,8 @@ recommend_test(
   design = c("auto", "between", "within"),
   outcome_type = c("auto", "continuous", "ordinal", "binary", "count", "nominal"),
   ordinal_max_levels = 7L,
-  factors = NULL
+  factors = NULL,
+  random_slopes = NULL
 )
 
 recommend_analysis(
@@ -24,7 +25,8 @@ recommend_analysis(
   design = c("auto", "between", "within"),
   outcome_type = c("auto", "continuous", "ordinal", "binary", "count", "nominal"),
   ordinal_max_levels = 7L,
-  factors = NULL
+  factors = NULL,
+  random_slopes = NULL
 )
 }
 \arguments{
@@ -57,6 +59,14 @@ at most 10 consecutive whole numbers starting at 0 or 1, each observed at
 least twice (and for at least two clusters). Factor, character and logical
 predictors are always categorical; \code{factors = character(0)} keeps
 every numeric predictor numeric.}
+
+\item{random_slopes}{Optional character vector of predictors to include as
+by-cluster random slopes. \code{NULL} (default) includes replicated
+within-cluster factors and numeric covariates that vary within clusters
+with at least three observations in most clusters. Every named predictor
+must vary within \code{cluster}. \code{character(0)} requests random
+intercepts only. Unidentifiable or nonconverged structures may still be
+simplified by \code{\link[=fit_recommended]{fit_recommended()}}.}
 }
 \value{
 An object of class \code{"colley_recommendation"} (a list) with
@@ -65,7 +75,7 @@ components including \code{outcome_type}, \code{clustered}, \code{design}
 \code{"between (clustered)"} for between-cluster predictors with repeated
 rows per cluster), \code{n_obs} (complete rows),
 \code{categorical} (which predictors are categorical), \code{within}
-(which categorical predictors vary within clusters), \code{random} (the
+(which predictors vary within clusters), \code{random} (the
 random-effect structure), \code{family}, \code{assumptions} (normality and
 homogeneity results with their test statistics), \code{dispersion} (for
 counts), \code{recommendation} (human-readable label),
@@ -93,7 +103,8 @@ A \code{cluster} column in which some cluster contributes several rows
 makes the design clustered, whatever \code{design} says: the cluster then
 needs a random effect, i.e. a \emph{mixed} model. For a categorical predictor
 that varies within clusters and whose levels are replicated within a
-cluster, by-cluster random slopes are added (Barr et al., 2013);
+cluster, or a numeric covariate with enough repeated observations,
+by-cluster random slopes are added (Barr et al., 2013);
 \code{\link[=fit_recommended]{fit_recommended()}} simplifies the structure when the fit is singular.
 \item \strong{For a continuous outcome, do the parametric assumptions
 hold?} A Shapiro--Wilk test on the residuals of the model that would be

@@ -65,9 +65,11 @@ reference:
 
 - title: Plots
   desc: >
-    `ggstatsplot` wrappers that pick the parametric or non-parametric test for
-    you, effect plots, and multi-objective optimisation plots.
+    Figures that reuse fitted model tests, `ggstatsplot` wrappers that pick
+    the parametric or non-parametric test for you, effect plots, and
+    multi-objective optimisation plots.
   contents:
+  - plot_fit
   - plot_between_stats
   - plot_between_stats_asterisk
   - plot_within_stats

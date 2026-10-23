@@ -1613,7 +1613,20 @@ replace_values <- function(data, to_replace, replace_with) {
       if (any(is.na(coerced) & !is.na(replacement_chr))) {
         stop("Replacement values are incompatible with numeric columns.")
       }
-      column[hits] <- if (is.integer(column)) as.integer(coerced) else coerced
+      if (is.integer(column)) {
+        fits_integer <- is.na(coerced) | (
+          is.finite(coerced) & coerced == trunc(coerced) &
+            coerced >= -.Machine$integer.max & coerced <= .Machine$integer.max
+        )
+        if (all(fits_integer)) {
+          coerced <- as.integer(coerced)
+        } else {
+          # Preserve fractional or large replacements instead of truncating
+          # them (or turning an integer overflow into NA).
+          column <- as.numeric(column)
+        }
+      }
+      column[hits] <- coerced
       return(column)
     }
 
@@ -1845,8 +1858,9 @@ add_pareto_emoa_column <- function(data, objectives, maximise = FALSE) {
   not_empty(objectives)
   .check_columns(data, objectives)
 
-  # Select only the objective columns
-  objective_data <- data |> dplyr::select(dplyr::all_of(objectives))
+  # Compute one global front from only the requested objectives. select() on
+  # grouped data would re-add grouping columns as unintended objectives.
+  objective_data <- data |> dplyr::ungroup() |> dplyr::select(dplyr::all_of(objectives))
   non_numeric <- names(objective_data)[!vapply(objective_data, is.numeric, logical(1))]
   if (length(non_numeric) > 0) {
     stop(
@@ -1941,8 +1955,9 @@ add_pareto_moocore_column <- function(data, objectives, maximise = FALSE) {
   not_empty(objectives)
   .check_columns(data, objectives)
 
-  # Select only the objective columns
-  objective_data <- data |> dplyr::select(dplyr::all_of(objectives))
+  # Compute one global front from only the requested objectives, while keeping
+  # the caller's grouping on the returned data.
+  objective_data <- data |> dplyr::ungroup() |> dplyr::select(dplyr::all_of(objectives))
   non_numeric <- names(objective_data)[!vapply(objective_data, is.numeric, logical(1))]
   if (length(non_numeric) > 0) {
     stop(

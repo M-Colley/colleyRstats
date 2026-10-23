@@ -17,7 +17,8 @@ fit_recommended(
   adjust = "holm",
   sink_to = NULL,
   verbose = TRUE,
-  factors = NULL
+  factors = NULL,
+  random_slopes = NULL
 )
 }
 \arguments{
@@ -63,13 +64,19 @@ model being fitted, and every simplification of the random effects.}
 are categorical (condition codes); see \code{\link[=recommend_test]{recommend_test()}}. \code{NULL}
 (default) decides from the data, and every resulting coercion is
 announced.}
+
+\item{random_slopes}{Optional character vector of by-cluster random-slope
+predictor names; \code{NULL} selects slopes from the design and
+\code{character(0)} requests random intercepts only. See \code{\link[=recommend_test]{recommend_test()}}.}
 }
 \value{
 An object of class \code{"colley_fit"}: a list with
 \code{recommendation} (the \code{\link[=recommend_test]{recommend_test()}} object, updated to record
 the function, call and random effects actually used), \code{formula},
-\code{model} (the fitted object), \code{engine}, \code{model_function}
-(the function actually called, e.g. \code{"lmerTest::lmer"}),
+\code{model} (the fitted object), \code{data} (the final analyzed data,
+with model coercions and any incomplete-participant exclusions applied),
+\code{engine}, \code{model_function} (the function actually called, e.g.
+\code{"lmerTest::lmer"}),
 \code{random} (the random-effects term kept), \code{singular} and
 \code{converged} (flags), \code{anova} (the omnibus table: term, df1, df2,
 statistic, stat_name, p), \code{emmeans} (a named list of the estimated
@@ -114,7 +121,8 @@ not.
 
 A repeated-measures model starts from the maximal random-effects structure
 the design supports (Barr et al., 2013): by-cluster random slopes for every
-within-cluster factor whose levels are replicated within a cluster, and the
+within-cluster factor whose levels are replicated within a cluster, numeric
+covariates with enough repeated observations to estimate a slope, and the
 interaction slope when there are several trials per cluster and cell. When
 that fit is singular or does not converge, the structure is simplified step
 by step down to random intercepts; what was dropped, and why, is announced
@@ -155,6 +163,7 @@ Balancing Type I error and power in linear mixed models. \emph{Journal of
 Memory and Language, 94}, 305--315.
 }
 \seealso{
-\code{\link[=recommend_test]{recommend_test()}} for the choice alone, \code{\link[=analyze_and_report]{analyze_and_report()}} for
-the figure-plus-sentence path through \pkg{ggstatsplot}.
+\code{\link[=recommend_test]{recommend_test()}} for the choice alone, \code{\link[=plot_fit]{plot_fit()}} for a figure
+using this model's tests, \code{\link[=analyze_and_report]{analyze_and_report()}} for the figure-plus-sentence
+path through \pkg{ggstatsplot}.
 }

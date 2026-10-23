@@ -882,31 +882,54 @@ reportggstatsplot <- function(p, iv = "independent", dv = "Testdependentvariable
   }
 }
 
-# Internal: which two levels a pairwise-contrast label compares, as
-# c(first, second), or NULL when it matches no pair (or more than one).
+# Internal: index every spelling of a pairwise-contrast label to the two
+# compared levels, as c(first, second), or NULL for an ambiguous label.
 # FSA labels a comparison "A - B"; emmeans -- and so ARTool::art.con() --
 # wraps a level containing "-", "+", "*" or "/" in parentheses
 # ("Both - (Hand-only)") and prefixes all-numeric levels with the factor name
 # ("mode1 - mode2"). Splitting the label on " - " handled neither (and breaks
 # on any level that itself contains " - "), so every way of writing every
 # ordered pair of levels is generated and the label is matched exactly.
-.match_contrast_pair <- function(label, levels, prefix = NULL) {
+.contrast_pair_lookup <- function(levels, prefix = NULL) {
   norm <- function(s) gsub("\\s+", " ", trimws(s))
-  label <- norm(as.character(label))
   levels <- as.character(levels)
   spell <- function(l) {
     s <- c(l, if (!is.null(prefix)) paste0(prefix, l))
     norm(unique(c(s, paste0("(", s, ")"))))
   }
-  hits <- list()
-  for (a in levels) {
-    for (b in levels) {
+  spellings <- lapply(levels, spell)
+  lookup <- new.env(hash = TRUE, parent = emptyenv())
+  for (i in seq_along(levels)) {
+    a <- levels[i]
+    for (j in seq_along(levels)) {
+      b <- levels[j]
       if (identical(a, b)) next
-      cand <- as.vector(outer(spell(a), spell(b), paste, sep = " - "))
-      if (label %in% cand) hits[[length(hits) + 1L]] <- c(a, b)
+      pair <- c(a, b)
+      candidates <- unique(as.vector(outer(spellings[[i]], spellings[[j]], paste, sep = " - ")))
+      for (label in candidates) {
+        if (!exists(label, envir = lookup, inherits = FALSE)) {
+          assign(label, pair, envir = lookup)
+        } else if (!identical(get(label, envir = lookup, inherits = FALSE), pair)) {
+          # Different pairs can produce the same label (e.g. a level itself
+          # contains " - "). Keep that label ambiguous rather than guessing.
+          assign(label, NULL, envir = lookup)
+        }
+      }
     }
   }
-  if (length(hits) == 1L) hits[[1L]] else NULL
+  lookup
+}
+
+# Build the spelling index once per report, not once per comparison: enumerating
+# L^2 pairs for each of L^2 contrasts otherwise makes reporting scale as L^4.
+.match_contrast_pair <- function(label, levels = NULL, prefix = NULL, lookup = NULL) {
+  if (is.null(lookup)) lookup <- .contrast_pair_lookup(levels, prefix)
+  label <- gsub("\\s+", " ", trimws(as.character(label)))
+  if (exists(label, envir = lookup, inherits = FALSE)) {
+    get(label, envir = lookup, inherits = FALSE)
+  } else {
+    NULL
+  }
 }
 
 # Internal: a multiplicity-correction name for a sentence or caption, from the
@@ -1531,6 +1554,7 @@ reportDunnTest <- function(d, data, iv = "testiv", dv = "testdv", sink_to = NULL
   kind <- .resolve_descriptives(descriptives, "median")
   desc <- .describe_levels(values, groups, levs, kind)
   mean_ranks <- .direction_scores(values, groups, levs, "meanrank")
+  pair_lookup <- .contrast_pair_lookup(levs)
 
   # 1. Collect all significant findings into a data frame/list
   findings <- list()
@@ -1544,7 +1568,7 @@ reportDunnTest <- function(d, data, iv = "testiv", dv = "testdv", sink_to = NULL
       # FSA labels the comparison "A - B"; match it against the levels rather
       # than splitting on " - ", which a level name may itself contain.
       comparison <- as.character(d$res$Comparison[i])
-      pair <- .match_contrast_pair(comparison, levs)
+      pair <- .match_contrast_pair(comparison, levs, lookup = pair_lookup)
       if (is.null(pair)) {
         stop(
           "Comparison '", comparison, "' of the Dunn test does not match two ",
@@ -1777,10 +1801,11 @@ reportDunnTestTable <- function(d = NULL, data, iv = "testiv", dv = "testdv", or
   # The two levels are matched against the data rather than split out of the
   # label, which breaks on level names containing " - ".
   levs <- .iv_levels(data, iv)
+  pair_lookup <- .contrast_pair_lookup(levs)
   effectSizes <- numeric(nrow(table))
   for (i in seq_len(nrow(table))) {
     comparison <- as.character(table[i, "Comparison"])
-    pair <- .match_contrast_pair(comparison, levs)
+    pair <- .match_contrast_pair(comparison, levs, lookup = pair_lookup)
 
     tryCatch(
       {
@@ -1948,9 +1973,13 @@ reportDunnTestTable <- function(d = NULL, data, iv = "testiv", dv = "testdv", or
     }
   }
 
-  for (i in which(is.na(pairs[, 1]) | is.na(pairs[, 2]))) {
-    m <- .match_contrast_pair(tbl$contrast[i], levs, prefix = iv)
-    if (!is.null(m)) pairs[i, ] <- m
+  unresolved <- which(is.na(pairs[, 1]) | is.na(pairs[, 2]))
+  if (length(unresolved) > 0L) {
+    pair_lookup <- .contrast_pair_lookup(levs, prefix = iv)
+    for (i in unresolved) {
+      m <- .match_contrast_pair(tbl$contrast[i], levs, lookup = pair_lookup)
+      if (!is.null(m)) pairs[i, ] <- m
+    }
   }
 
   # Only levels that exist in `data` can be described or used for effect sizes.

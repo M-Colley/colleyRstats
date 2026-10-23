@@ -32,5 +32,5 @@ Invisibly, the path to the written `.sty` file.
 
 ``` r
 use_colleyrstats_sty(tempdir(), overwrite = TRUE)
-#> Wrote '/tmp/RtmpFWFgIt/colleyRstats.sty'. Add \usepackage{colleyRstats} to your document.
+#> Wrote '/tmp/RtmpwmiivO/colleyRstats.sty'. Add \usepackage{colleyRstats} to your document.
 ```

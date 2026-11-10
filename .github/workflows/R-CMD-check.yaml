@@ -79,3 +79,63 @@ jobs:
           # colleyRstats_setup() taking over library() are skip_on_cran(), and
           # they are the ones most worth running here.
           NOT_CRAN: true
+
+  # CRAN's noSuggests check (https://www.stats.ox.ac.uk/pub/bdr/noSuggests/)
+  # runs R CMD check with _R_CHECK_DEPENDS_ONLY_=true. Everything is installed
+  # here as in the job above; R CMD check itself then runs the examples, tests
+  # and vignettes against a library holding only Depends and Imports, their
+  # strong dependencies, the VignetteBuilder (knitr), testthat (tests only)
+  # and R's recommended packages. A Suggests package used without
+  # requireNamespace() or skip_if_not_installed() fails here, as on CRAN.
+  no-suggests:
+    runs-on: ubuntu-latest
+
+    name: ubuntu-latest (release, noSuggests)
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+      # CRAN does not set NOT_CRAN, so its skip_on_cran() tests skip there
+      # too. Set at job level: setup-r exports NOT_CRAN=true unless it is
+      # already set.
+      NOT_CRAN: false
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: r-lib/actions/setup-pandoc@v2
+        with:
+          pandoc-version: "latest"
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: |
+            any::rcmdcheck
+          needs: check
+          # Same packages as ubuntu-latest (release) above, so share its cache.
+          cache-version: ${{ runner.os }}-release-v2
+
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          upload-snapshots: true
+          upload-results: true
+          error-on: 'ifelse(getRversion() > "4.3", "note", "warning")'
+          artifact-name: no-suggests-results
+          snapshot-artifact-name: no-suggests-testthat-snapshots
+        env:
+          _R_CHECK_CRAN_INCOMING_REMOTE_: false
+          _R_CHECK_CRAN_INCOMING_: false
+          _R_CHECK_FORCE_SUGGESTS_: false
+          _R_CHECK_DEPENDS_ONLY_: true
+          _R_CHECK_STOP_ON_INVALID_NUMERIC_VERSION_INPUTS_: true
+          # The vignettes use knitr::rmarkdown, but rmarkdown is in Suggests,
+          # so R CMD check hides it while re-building them. On CRAN, knitr
+          # then writes a placeholder page instead of rendering. knitr takes
+          # CI=true to mean "not CRAN" and calls rmarkdown anyway, which
+          # fails, so turn CI off as it is on CRAN's machines.
+          CI: false

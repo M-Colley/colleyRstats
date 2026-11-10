@@ -574,6 +574,19 @@ test_that("reportDunnTest and reportDunnTestTable handle significant findings", 
   )
 })
 
+test_that("Dunn reporters reject an object that is not an FSA::dunnTest() result", {
+  # Read blindly, the missing `res$P.adj` was NULL and both reporters said "no
+  # significant differences" -- e.g. for dunn.test::dunn.test() output, or for
+  # an FSA release that renamed the column.
+  data <- data.frame(g = rep(c("A", "B"), each = 5), y = c(1:5, 11:15))
+  dunn_test_pkg <- list(Z = 2.5, P = 0.006, P.adjusted = 0.006, comparisons = "A - B")
+  expect_error(reportDunnTest(dunn_test_pkg, data, "g", "y"), "FSA::dunnTest")
+  expect_error(reportDunnTestTable(dunn_test_pkg, data, "g", "y"), "FSA::dunnTest")
+
+  renamed <- list(method = "Holm", res = data.frame(Comparison = "A - B", Z = 2.5, p.adj = 0.006))
+  expect_error(reportDunnTest(renamed, data, "g", "y"), "found: `Comparison`, `Z`, `p.adj`", fixed = TRUE)
+})
+
 test_that("reportDunnTestTable can compute the Dunn test internally", {
   skip_if_not_installed("FSA")
 

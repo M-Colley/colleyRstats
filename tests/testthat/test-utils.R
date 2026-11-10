@@ -302,6 +302,7 @@ test_that("debug_contr_error summarizes factor levels", {
 })
 
 test_that("checkAssumptionsForAnova reports parametric guidance", {
+  skip_if_not_installed("rstatix")
   # The previous data -- normal quantiles between the 10th and 90th
   # percentiles -- have light-tailed residuals (Shapiro-Wilk p = .007), and the
   # pattern "parametric ANOVA" also matched "non-parametric ANOVA", so this
@@ -1261,6 +1262,7 @@ test_that("reshape_data repeats the columns before the first marker", {
 
 
 test_that("every within-subjects entry point analyses the same participants", {
+  skip_if_not_installed("rstatix")
   # One shared rule (.complete_within) decides who is analysed; before 0.3.0
   # each entry point had its own copy, and checkAssumptionsForAnova() kept
   # participants the others dropped.
@@ -1294,6 +1296,7 @@ test_that(".fmt_p_number truncates when 8 digits still round onto a boundary", {
 })
 
 test_that("a two-level within factor is checked on the differences, not mirrored residuals", {
+  skip_if_not_installed("rstatix")
   # Each participant's two residuals of y ~ cond + id are +e and -e: a
   # symmetrised sample that hides the skew of the differences.
   set.seed(2)

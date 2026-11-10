@@ -394,6 +394,7 @@ test_that("numeric covariates are not silently turned into factors", {
 
 test_that("column names with spaces and hyphens can be fitted", {
   skip_if_not_installed("lme4")
+  skip_if_not_installed("emmeans")
   set.seed(4)
   sc <- data.frame(
     `Participant ID` = factor(rep(1:20, each = 3)),

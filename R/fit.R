@@ -973,7 +973,7 @@
   invisible(utils::capture.output(
     dt <- FSA::dunnTest(d[[rec$outcome]], droplevels(as.factor(d[[pred]])), method = method)
   ))
-  res <- dt$res
+  res <- .dunn_res(dt)
   tab <- data.frame(
     term = pred, by = NA_character_, contrast = as.character(res$Comparison),
     estimate = NA_real_, scale = "mean rank", SE = NA_real_, df = NA_real_,

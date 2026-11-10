@@ -9,6 +9,16 @@
   now, and a result table without a recognisable p-value column is an error
   instead of a "no significant effects" sentence. Re-run nparLD reports made
   with nparLD 2.3.4.
+- `reportDunnTest()` and `reportDunnTestTable()` reported "no significant
+  differences" for an object that is not an `FSA::dunnTest()` result, such as
+  the output of `dunn.test::dunn.test()` or `rstatix::dunn_test()`: its missing
+  `res$P.adj` column read as empty. Both now stop with an error that names the
+  structure they expect, as does the Dunn follow-up in `fit_recommended()`.
+- Examples and tests no longer fail when suggested packages are missing (as in
+  CRAN's `noSuggests` check): the examples of `add_pareto_emoa_column()`,
+  `add_pareto_moocore_column()` and `checkAssumptionsForAnova()` run only when
+  'emoa', 'moocore' and 'rstatix' are installed, and tests that need 'emmeans',
+  'av' or 'rstatix' are skipped without them.
 
 # colleyRstats 0.3.1
 

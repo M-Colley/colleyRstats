@@ -421,6 +421,7 @@ test_that("reportGLMM tests model terms with Type III omnibus tests and labels c
 test_that("reportGLMM exponentiates a binomial GLMM to odds ratios", {
   skip_if_not_installed("lme4")
   skip_if_not_installed("parameters")
+  skip_if_not_installed("emmeans")
   d <- make_mixed_df()
   m <- lme4::glmer(bin ~ cond + (1 | id), data = d, family = binomial)
   out <- suppressMessages(reportGLMM(m, dv = "accuracy"))

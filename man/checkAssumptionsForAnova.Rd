@@ -88,32 +88,34 @@ for removal, and existing scripts keep working unchanged.
 
 \examples{
 \donttest{
-set.seed(123)
+if (requireNamespace("rstatix", quietly = TRUE)) {
+  set.seed(123)
 
-main_df <- data.frame(
-  tlx_mental      = rnorm(40),
-  Video           = factor(rep(c("A", "B"), each = 20)),
-  DriverPosition  = factor(rep(c("Left", "Right"), times = 20))
-)
+  main_df <- data.frame(
+    tlx_mental      = rnorm(40),
+    Video           = factor(rep(c("A", "B"), each = 20)),
+    DriverPosition  = factor(rep(c("Left", "Right"), times = 20))
+  )
 
-checkAssumptionsForAnova(
-  data    = main_df,
-  y       = "tlx_mental",
-  factors = c("Video", "DriverPosition")
-)
+  checkAssumptionsForAnova(
+    data    = main_df,
+    y       = "tlx_mental",
+    factors = c("Video", "DriverPosition")
+  )
 
-# The same two factors measured within each of 10 participants
-within_df <- expand.grid(
-  id             = 1:10,
-  Video          = c("A", "B"),
-  DriverPosition = c("Left", "Right")
-)
-within_df$tlx_mental <- rnorm(10)[within_df$id] + rnorm(40)
-checkAssumptionsForAnova(
-  data    = within_df,
-  y       = "tlx_mental",
-  factors = c("Video", "DriverPosition"),
-  subject = "id"
-)
+  # The same two factors measured within each of 10 participants
+  within_df <- expand.grid(
+    id             = 1:10,
+    Video          = c("A", "B"),
+    DriverPosition = c("Left", "Right")
+  )
+  within_df$tlx_mental <- rnorm(10)[within_df$id] + rnorm(40)
+  checkAssumptionsForAnova(
+    data    = within_df,
+    y       = "tlx_mental",
+    factors = c("Video", "DriverPosition"),
+    subject = "id"
+  )
+}
 }
 }

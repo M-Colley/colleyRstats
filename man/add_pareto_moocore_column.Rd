@@ -32,31 +32,33 @@ and the front is computed from the complete rows.
 This function calculates the Pareto front using moocore for a given set of objectives in a data frame and adds a new column, \code{PARETO_MOOCORE}, which indicates whether each row in the data frame belongs to the Pareto front.
 }
 \examples{
-# Define objective columns
-objectives <- c("trust", "predictability", "perceivedSafety", "Comfort")
+if (requireNamespace("moocore", quietly = TRUE)) {
+  # Define objective columns
+  objectives <- c("trust", "predictability", "perceivedSafety", "Comfort")
 
-# Example data frame
-main_df <- data.frame(
-  trust = runif(10),
-  predictability = runif(10),
-  perceivedSafety = runif(10),
-  Comfort = runif(10)
-)
+  # Example data frame
+  main_df <- data.frame(
+    trust = runif(10),
+    predictability = runif(10),
+    perceivedSafety = runif(10),
+    Comfort = runif(10)
+  )
 
-# Add the Pareto front column (minimising, the default)
-main_df <- add_pareto_moocore_column(data = main_df, objectives)
-head(main_df)
+  # Add the Pareto front column (minimising, the default)
+  main_df <- add_pareto_moocore_column(data = main_df, objectives)
+  head(main_df)
 
-# All four objectives are ratings where higher is better
-main_df <- add_pareto_moocore_column(main_df, objectives, maximise = TRUE)
+  # All four objectives are ratings where higher is better
+  main_df <- add_pareto_moocore_column(main_df, objectives, maximise = TRUE)
 
-# Mixed: maximise the ratings, minimise a workload score
-main_df$workload <- runif(10)
-main_df <- add_pareto_moocore_column(
-  main_df,
-  c(objectives, "workload"),
-  maximise = c(TRUE, TRUE, TRUE, TRUE, FALSE)
-)
+  # Mixed: maximise the ratings, minimise a workload score
+  main_df$workload <- runif(10)
+  main_df <- add_pareto_moocore_column(
+    main_df,
+    c(objectives, "workload"),
+    maximise = c(TRUE, TRUE, TRUE, TRUE, FALSE)
+  )
+}
 }
 \seealso{
 \code{\link[=add_pareto_emoa_column]{add_pareto_emoa_column()}}, which answers the same question via

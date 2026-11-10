@@ -152,6 +152,34 @@ test_that("reportNparLD reads the ANOVA-type statistic from an nparLD 2.3.0 fit"
   )
 })
 
+test_that("reportNparLD reads the p.value column of an nparLD 2.3.4 fit", {
+  # nparLD 2.3.4 renamed the ATS column `p-value` to `p.value`. Reading only the
+  # old name reported every fit as "no significant effects", whatever its
+  # p-value (CRAN's r-devel Fedora checks, November 2026).
+  ats <- matrix(
+    c(37.78, 1.80, 1.1e-15),
+    nrow = 1,
+    dimnames = list("Time", c("Statistic", "df", "p.value"))
+  )
+  model <- structure(list(ATS = ats, WTS = ats), class = "nparld_fit")
+
+  expect_message(
+    result <- reportNparLD(model, dv = "TLX1"),
+    "nparLD analysis found a significant main effect of .*Time\\{\\} on TLX1"
+  )
+  expect_match(result, "\\F{1.8}{\\infty}{37.78}", fixed = TRUE)
+})
+
+test_that("reportNparLD stops rather than report no effects without a p-value column", {
+  ats <- matrix(
+    c(37.78, 1.80, 1.1e-15),
+    nrow = 1,
+    dimnames = list("Time", c("Statistic", "df", "prob"))
+  )
+  model <- structure(list(ATS = ats), class = "nparld_fit")
+  expect_error(reportNparLD(model, dv = "TLX1"), "no `p-value` column")
+})
+
 test_that("reportNparLD rejects an object carrying no nparLD result table", {
   expect_error(
     reportNparLD(list(something = 1), dv = "TLX1"),
@@ -544,6 +572,19 @@ test_that("reportDunnTest and reportDunnTestTable handle significant findings", 
     reportDunnTestTable(d, data = iris, iv = "Species", dv = "Sepal.Length"),
     NA
   )
+})
+
+test_that("Dunn reporters reject an object that is not an FSA::dunnTest() result", {
+  # Read blindly, the missing `res$P.adj` was NULL and both reporters said "no
+  # significant differences" -- e.g. for dunn.test::dunn.test() output, or for
+  # an FSA release that renamed the column.
+  data <- data.frame(g = rep(c("A", "B"), each = 5), y = c(1:5, 11:15))
+  dunn_test_pkg <- list(Z = 2.5, P = 0.006, P.adjusted = 0.006, comparisons = "A - B")
+  expect_error(reportDunnTest(dunn_test_pkg, data, "g", "y"), "FSA::dunnTest")
+  expect_error(reportDunnTestTable(dunn_test_pkg, data, "g", "y"), "FSA::dunnTest")
+
+  renamed <- list(method = "Holm", res = data.frame(Comparison = "A - B", Z = 2.5, p.adj = 0.006))
+  expect_error(reportDunnTest(renamed, data, "g", "y"), "found: `Comparison`, `Z`, `p.adj`", fixed = TRUE)
 })
 
 test_that("reportDunnTestTable can compute the Dunn test internally", {

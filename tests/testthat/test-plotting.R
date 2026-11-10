@@ -129,6 +129,7 @@ test_that("generateMoboPlot2 uses documented default grouping and labels", {
 })
 
 test_that("animate_mobo2 needs more than one iteration", {
+  skip_if_not_installed("av")
   df <- data.frame(
     Iteration = rep(1, 10),
     score = rnorm(10),
@@ -633,6 +634,7 @@ test_that("generateEffectPlot warns about the unused numberColors", {
 })
 
 test_that("generateEffectPlot gives Cousineau-Morey intervals with a subject", {
+  skip_if_not_installed("emmeans")
   set.seed(2)
   n <- 12
   d <- expand.grid(pid = factor(1:n), A = c("a1", "a2"), B = c("b1", "b2", "b3"))

@@ -334,9 +334,12 @@ reportART <- function(model, dv = "Testdependentvariable", write_to_clipboard = 
 
 # nparLD 2.3.0 rewrote the object its `nparLD()` returns: the ANOVA-type
 # statistic that older versions put in `$ANOVA.test` now sits in `$ATS` on an
-# object of class `nparld_fit`. Both are keyed by effect name and carry the same
-# `Statistic`, `df` and `p-value` columns, so either can be reported once it has
-# been located.
+# object of class `nparld_fit`. Both are keyed by effect name. nparLD 2.3.4 then
+# renamed the p-value column from `p-value` to `p.value`; reading only the old
+# name reported every fit as "no significant effects", however small its
+# p-value. The columns are therefore matched by name with case and punctuation
+# ignored and returned as `Statistic`, `df` and `p-value`, and a table lacking
+# one of them is an error rather than a silent "no effects" sentence.
 .nparld_anova_table <- function(model) {
   tbl <- NULL
   if (is.list(model)) {
@@ -355,7 +358,21 @@ reportART <- function(model, dv = "Testdependentvariable", write_to_clipboard = 
       call. = FALSE
     )
   }
-  as.data.frame(tbl)
+  tbl <- as.data.frame(tbl)
+  canonical <- c(statistic = "Statistic", df = "df", pvalue = "p-value")
+  hit <- match(names(canonical), gsub("[^a-z]", "", tolower(names(tbl))))
+  if (anyNA(hit)) {
+    stop(
+      "The nparLD result table has no ",
+      paste0("`", canonical[is.na(hit)], "`", collapse = " or "), " column (found: ",
+      paste0("`", names(tbl), "`", collapse = ", "), "). nparLD may have changed ",
+      "its result layout; please report this, with packageVersion(\"nparLD\"), at ",
+      "https://github.com/M-Colley/colleyRstats/issues.",
+      call. = FALSE
+    )
+  }
+  names(tbl)[hit] <- canonical
+  tbl
 }
 
 
@@ -1456,6 +1473,26 @@ reportggstatsplotPostHoc <- function(data, p, iv = "testiv", dv = "testdv", labe
 }
 
 
+# Internal: the comparison table of an FSA::dunnTest() result, checked. Read
+# blindly, a missing column is NULL and `any(NULL < 0.05)` is FALSE, so the
+# output of dunn.test::dunn.test() or rstatix::dunn_test(), or an FSA release
+# that renamed `P.adj`, was reported as "no significant differences" -- as
+# nparLD 2.3.4's renamed p-value column was.
+.dunn_res <- function(d) {
+  res <- if (is.list(d)) d[["res"]] else NULL
+  if (!is.data.frame(res) || !all(c("Comparison", "P.adj") %in% names(res))) {
+    stop(
+      "`d` must be the result of FSA::dunnTest(): a list whose `res` element is a ",
+      "data frame with the columns `Comparison` and `P.adj`",
+      if (is.data.frame(res)) paste0(" (found: ", paste0("`", names(res), "`", collapse = ", "), ")"),
+      ".",
+      call. = FALSE
+    )
+  }
+  res
+}
+
+
 #' Report dunnTest as text
 #'
 #' Reports the significant comparisons of an [FSA::dunnTest()] result as
@@ -1528,6 +1565,7 @@ reportDunnTest <- function(d, data, iv = "testiv", dv = "testdv", sink_to = NULL
   .check_columns(data, c(iv, dv))
   descriptives <- match.arg(descriptives)
   dv_tex <- latex_escape(dv)
+  res <- .dunn_res(d)
 
   # The correction FSA applied ("Holm", ..., "No Adjustment"). A hand-built
   # list without `method` says nothing either way and keeps the p_adj macros.
@@ -1536,8 +1574,8 @@ reportDunnTest <- function(d, data, iv = "testiv", dv = "testdv", sink_to = NULL
   phrase <- .posthoc_test_phrase("Dunn", adjust)
 
   # Check for significance globally first
-  # Note: d$res$P.adj can contain NAs, so we remove them for the check
-  if (!any(d$res$P.adj < 0.05, na.rm = TRUE)) {
+  # Note: res$P.adj can contain NAs, so we remove them for the check
+  if (!any(res$P.adj < 0.05, na.rm = TRUE)) {
     no_diff_msg <- paste0(phrase, " found no significant differences for ", dv_tex, ". ")
     message(no_diff_msg)
     if (!is.null(sink_to)) {
@@ -1559,15 +1597,15 @@ reportDunnTest <- function(d, data, iv = "testiv", dv = "testdv", sink_to = NULL
   # 1. Collect all significant findings into a data frame/list
   findings <- list()
 
-  for (i in seq_along(d$res$P.adj)) {
-    if (!is.na(d$res$P.adj[i]) && d$res$P.adj[i] < 0.05) {
+  for (i in seq_along(res$P.adj)) {
+    if (!is.na(res$P.adj[i]) && res$P.adj[i] < 0.05) {
       # --- P-Value Formatting ---
-      pValueStr <- .fmt_p_macro(d$res$P.adj[i], macro = p_macro[1], minor_macro = p_macro[2])
+      pValueStr <- .fmt_p_macro(res$P.adj[i], macro = p_macro[1], minor_macro = p_macro[2])
 
       # --- Identify the two levels ---
       # FSA labels the comparison "A - B"; match it against the levels rather
       # than splitting on " - ", which a level name may itself contain.
-      comparison <- as.character(d$res$Comparison[i])
+      comparison <- as.character(res$Comparison[i])
       pair <- .match_contrast_pair(comparison, levs, lookup = pair_lookup)
       if (is.null(pair)) {
         stop(
@@ -1583,7 +1621,7 @@ reportDunnTest <- function(d, data, iv = "testiv", dv = "testdv", sink_to = NULL
       # FSA's Z for "A - B" is the standardised difference of mean ranks, so
       # Z > 0 means A ranks higher. The raw means are no guide: a level with a
       # few large outliers can have the larger mean and the lower mean rank.
-      z <- if (!is.null(d$res$Z)) suppressWarnings(as.numeric(d$res$Z[i])) else NA_real_
+      z <- if (!is.null(res$Z)) suppressWarnings(as.numeric(res$Z[i])) else NA_real_
       mr_diff <- mean_ranks[[condA]] - mean_ranks[[condB]]
       if (is.na(z) || z == 0) {
         if (is.na(mr_diff) || mr_diff == 0) {
@@ -1766,6 +1804,8 @@ reportDunnTestTable <- function(d = NULL, data, iv = "testiv", dv = "testdv", or
     d <- FSA::dunnTest(stats::as.formula(paste(.bt(dv), "~", .bt(iv))), data = data, method = "holm")
   }
 
+  res <- .dunn_res(d)
+
   # The correction FSA applied. With method = "none" the column holds raw
   # p-values and must not be headed "p-adjusted".
   adjust <- .adjust_label(d$method)
@@ -1775,9 +1815,9 @@ reportDunnTestTable <- function(d = NULL, data, iv = "testiv", dv = "testdv", or
   # Use the dunn test result that was passed in
   # dunnTest returns a list with $res component
   table <- data.frame(
-    Comparison = d$res$Comparison,
-    Z = d$res$Z,
-    p = d$res$P.adj,
+    Comparison = res$Comparison,
+    Z = res$Z,
+    p = res$P.adj,
     check.names = FALSE
   )
 

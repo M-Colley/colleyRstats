@@ -1302,33 +1302,35 @@ debug_contr_error <- function(dat, subset_vec = NULL) {
 #'
 #' @examples
 #' \donttest{
-#' set.seed(123)
+#' if (requireNamespace("rstatix", quietly = TRUE)) {
+#'   set.seed(123)
 #'
-#' main_df <- data.frame(
-#'   tlx_mental      = rnorm(40),
-#'   Video           = factor(rep(c("A", "B"), each = 20)),
-#'   DriverPosition  = factor(rep(c("Left", "Right"), times = 20))
-#' )
+#'   main_df <- data.frame(
+#'     tlx_mental      = rnorm(40),
+#'     Video           = factor(rep(c("A", "B"), each = 20)),
+#'     DriverPosition  = factor(rep(c("Left", "Right"), times = 20))
+#'   )
 #'
-#' checkAssumptionsForAnova(
-#'   data    = main_df,
-#'   y       = "tlx_mental",
-#'   factors = c("Video", "DriverPosition")
-#' )
+#'   checkAssumptionsForAnova(
+#'     data    = main_df,
+#'     y       = "tlx_mental",
+#'     factors = c("Video", "DriverPosition")
+#'   )
 #'
-#' # The same two factors measured within each of 10 participants
-#' within_df <- expand.grid(
-#'   id             = 1:10,
-#'   Video          = c("A", "B"),
-#'   DriverPosition = c("Left", "Right")
-#' )
-#' within_df$tlx_mental <- rnorm(10)[within_df$id] + rnorm(40)
-#' checkAssumptionsForAnova(
-#'   data    = within_df,
-#'   y       = "tlx_mental",
-#'   factors = c("Video", "DriverPosition"),
-#'   subject = "id"
-#' )
+#'   # The same two factors measured within each of 10 participants
+#'   within_df <- expand.grid(
+#'     id             = 1:10,
+#'     Video          = c("A", "B"),
+#'     DriverPosition = c("Left", "Right")
+#'   )
+#'   within_df$tlx_mental <- rnorm(10)[within_df$id] + rnorm(40)
+#'   checkAssumptionsForAnova(
+#'     data    = within_df,
+#'     y       = "tlx_mental",
+#'     factors = c("Video", "DriverPosition"),
+#'     subject = "id"
+#'   )
+#' }
 #' }
 checkAssumptionsForAnova <- function(data, y, factors, subject = NULL) {
   # Ensure data and variables are not empty
@@ -1831,23 +1833,25 @@ reshape_data <- function(input_filepath, sheetName = "Results", marker = "videoi
 #'   \pkg{moocore} and accepts the same \code{maximise} argument.
 #'
 #' @examples
-#' # Define objective columns
-#' objectives <- c("trust", "predictability", "perceivedSafety", "Comfort")
+#' if (requireNamespace("emoa", quietly = TRUE)) {
+#'   # Define objective columns
+#'   objectives <- c("trust", "predictability", "perceivedSafety", "Comfort")
 #'
-#' # Example data frame
-#' main_df <- data.frame(
-#'   trust = runif(10),
-#'   predictability = runif(10),
-#'   perceivedSafety = runif(10),
-#'   Comfort = runif(10)
-#' )
+#'   # Example data frame
+#'   main_df <- data.frame(
+#'     trust = runif(10),
+#'     predictability = runif(10),
+#'     perceivedSafety = runif(10),
+#'     Comfort = runif(10)
+#'   )
 #'
-#' # Add the Pareto front column (minimising, the default)
-#' main_df <- add_pareto_emoa_column(data = main_df, objectives)
-#' head(main_df)
+#'   # Add the Pareto front column (minimising, the default)
+#'   main_df <- add_pareto_emoa_column(data = main_df, objectives)
+#'   head(main_df)
 #'
-#' # All four objectives are ratings where higher is better
-#' main_df <- add_pareto_emoa_column(main_df, objectives, maximise = TRUE)
+#'   # All four objectives are ratings where higher is better
+#'   main_df <- add_pareto_emoa_column(main_df, objectives, maximise = TRUE)
+#' }
 add_pareto_emoa_column <- function(data, objectives, maximise = FALSE) {
   if (!requireNamespace("emoa", quietly = TRUE)) {
     stop("Package 'emoa' is required for add_pareto_emoa_column(). Please install it.")
@@ -1920,31 +1924,33 @@ add_pareto_emoa_column <- function(data, objectives, maximise = FALSE) {
 #'   \pkg{emoa} and accepts the same \code{maximise} argument.
 #'
 #' @examples
-#' # Define objective columns
-#' objectives <- c("trust", "predictability", "perceivedSafety", "Comfort")
+#' if (requireNamespace("moocore", quietly = TRUE)) {
+#'   # Define objective columns
+#'   objectives <- c("trust", "predictability", "perceivedSafety", "Comfort")
 #'
-#' # Example data frame
-#' main_df <- data.frame(
-#'   trust = runif(10),
-#'   predictability = runif(10),
-#'   perceivedSafety = runif(10),
-#'   Comfort = runif(10)
-#' )
+#'   # Example data frame
+#'   main_df <- data.frame(
+#'     trust = runif(10),
+#'     predictability = runif(10),
+#'     perceivedSafety = runif(10),
+#'     Comfort = runif(10)
+#'   )
 #'
-#' # Add the Pareto front column (minimising, the default)
-#' main_df <- add_pareto_moocore_column(data = main_df, objectives)
-#' head(main_df)
+#'   # Add the Pareto front column (minimising, the default)
+#'   main_df <- add_pareto_moocore_column(data = main_df, objectives)
+#'   head(main_df)
 #'
-#' # All four objectives are ratings where higher is better
-#' main_df <- add_pareto_moocore_column(main_df, objectives, maximise = TRUE)
+#'   # All four objectives are ratings where higher is better
+#'   main_df <- add_pareto_moocore_column(main_df, objectives, maximise = TRUE)
 #'
-#' # Mixed: maximise the ratings, minimise a workload score
-#' main_df$workload <- runif(10)
-#' main_df <- add_pareto_moocore_column(
-#'   main_df,
-#'   c(objectives, "workload"),
-#'   maximise = c(TRUE, TRUE, TRUE, TRUE, FALSE)
-#' )
+#'   # Mixed: maximise the ratings, minimise a workload score
+#'   main_df$workload <- runif(10)
+#'   main_df <- add_pareto_moocore_column(
+#'     main_df,
+#'     c(objectives, "workload"),
+#'     maximise = c(TRUE, TRUE, TRUE, TRUE, FALSE)
+#'   )
+#' }
 add_pareto_moocore_column <- function(data, objectives, maximise = FALSE) {
   if (!requireNamespace("moocore", quietly = TRUE)) {
     stop("Package 'moocore' is required for add_pareto_moocore_column(). Please install it.")

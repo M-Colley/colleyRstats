@@ -1,6 +1,44 @@
 # Changelog
 
+## colleyRstats 0.3.2
+
+### BUG FIXES
+
+- [`reportNparLD()`](https://m-colley.github.io/colleyRstats/reference/reportNparLD.md),
+  and the sentences
+  [`fit_recommended()`](https://m-colley.github.io/colleyRstats/reference/fit_recommended.md)
+  writes for nparLD fits, reported every model fitted with nparLD 2.3.4
+  as having no significant effects, however small its p-values: nparLD
+  2.3.4 renamed the p-value column of its ANOVA-type statistic from
+  `p-value` to `p.value`. Both names are read now, and a result table
+  without a recognisable p-value column is an error instead of a “no
+  significant effects” sentence. Re-run nparLD reports made with nparLD
+  2.3.4.
+- [`reportDunnTest()`](https://m-colley.github.io/colleyRstats/reference/reportDunnTest.md)
+  and
+  [`reportDunnTestTable()`](https://m-colley.github.io/colleyRstats/reference/reportDunnTestTable.md)
+  reported “no significant differences” for an object that is not an
+  [`FSA::dunnTest()`](https://fishr-core-team.github.io/FSA/reference/dunnTest.html)
+  result, such as the output of
+  [`dunn.test::dunn.test()`](https://rdrr.io/pkg/dunn.test/man/dunn.test.html)
+  or
+  [`rstatix::dunn_test()`](https://rpkgs.datanovia.com/rstatix/reference/dunn_test.html):
+  its missing `res$P.adj` column read as empty. Both now stop with an
+  error that names the structure they expect, as does the Dunn follow-up
+  in
+  [`fit_recommended()`](https://m-colley.github.io/colleyRstats/reference/fit_recommended.md).
+- Examples and tests no longer fail when suggested packages are missing
+  (as in CRAN’s `noSuggests` check): the examples of
+  [`add_pareto_emoa_column()`](https://m-colley.github.io/colleyRstats/reference/add_pareto_emoa_column.md),
+  [`add_pareto_moocore_column()`](https://m-colley.github.io/colleyRstats/reference/add_pareto_moocore_column.md)
+  and
+  [`checkAssumptionsForAnova()`](https://m-colley.github.io/colleyRstats/reference/checkAssumptionsForAnova.md)
+  run only when ‘emoa’, ‘moocore’ and ‘rstatix’ are installed, and tests
+  that need ‘emmeans’, ‘av’ or ‘rstatix’ are skipped without them.
+
 ## colleyRstats 0.3.1
+
+CRAN release: 2026-11-05
 
 ### BUG FIXES
 

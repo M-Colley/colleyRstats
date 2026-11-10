@@ -139,8 +139,8 @@ if (requireNamespace("ARTool", quietly = TRUE) &&
   reportArtConTable(ac, data = df, iv = "mode", dv = "score", paired = TRUE, id = "UserID")
 }
 #> NOTE: Results may be misleading due to involvement in interactions
-#> % latex table generated in R 4.6.1 by xtable 1.8-8 package
-#> % Fri Oct 23 07:27:14 2026
+#> % latex table generated in R 4.6.2 by xtable 1.8-8 package
+#> % Tue Nov 10 23:47:12 2026
 #> \begin{table}[ht]
 #> \centering
 #> \caption{Post-hoc ART-C contrasts for independent variable \mode{} and dependent variable \score{}. Positive t-values mean that the first-named level is higher than the second-named on the aligned-rank scale; for negative t-values, the second-named level is. p-values are Holm-adjusted. Effect size reported as rank-biserial correlation (r).} 

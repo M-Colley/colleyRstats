@@ -54,28 +54,23 @@ which answers the same question via moocore and accepts the same
 ## Examples
 
 ``` r
-# Define objective columns
-objectives <- c("trust", "predictability", "perceivedSafety", "Comfort")
+if (requireNamespace("emoa", quietly = TRUE)) {
+  # Define objective columns
+  objectives <- c("trust", "predictability", "perceivedSafety", "Comfort")
 
-# Example data frame
-main_df <- data.frame(
-  trust = runif(10),
-  predictability = runif(10),
-  perceivedSafety = runif(10),
-  Comfort = runif(10)
-)
+  # Example data frame
+  main_df <- data.frame(
+    trust = runif(10),
+    predictability = runif(10),
+    perceivedSafety = runif(10),
+    Comfort = runif(10)
+  )
 
-# Add the Pareto front column (minimising, the default)
-main_df <- add_pareto_emoa_column(data = main_df, objectives)
-head(main_df)
-#>         trust predictability perceivedSafety    Comfort PARETO_EMOA
-#> 1 0.080750138     0.87460066       0.2898923 0.03123033        TRUE
-#> 2 0.834333037     0.17494063       0.6783804 0.22556253        TRUE
-#> 3 0.600760886     0.03424133       0.7353196 0.30083081        TRUE
-#> 4 0.157208442     0.32038573       0.1959567 0.63646561        TRUE
-#> 5 0.007399441     0.40232824       0.9805397 0.47902455        TRUE
-#> 6 0.466393497     0.19566983       0.7415215 0.43217126        TRUE
+  # Add the Pareto front column (minimising, the default)
+  main_df <- add_pareto_emoa_column(data = main_df, objectives)
+  head(main_df)
 
-# All four objectives are ratings where higher is better
-main_df <- add_pareto_emoa_column(main_df, objectives, maximise = TRUE)
+  # All four objectives are ratings where higher is better
+  main_df <- add_pareto_emoa_column(main_df, objectives, maximise = TRUE)
+}
 ```

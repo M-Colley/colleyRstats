@@ -116,34 +116,36 @@ scheduled for removal, and existing scripts keep working unchanged.
 
 ``` r
 # \donttest{
-set.seed(123)
+if (requireNamespace("rstatix", quietly = TRUE)) {
+  set.seed(123)
 
-main_df <- data.frame(
-  tlx_mental      = rnorm(40),
-  Video           = factor(rep(c("A", "B"), each = 20)),
-  DriverPosition  = factor(rep(c("Left", "Right"), times = 20))
-)
+  main_df <- data.frame(
+    tlx_mental      = rnorm(40),
+    Video           = factor(rep(c("A", "B"), each = 20)),
+    DriverPosition  = factor(rep(c("Left", "Right"), times = 20))
+  )
 
-checkAssumptionsForAnova(
-  data    = main_df,
-  y       = "tlx_mental",
-  factors = c("Video", "DriverPosition")
-)
+  checkAssumptionsForAnova(
+    data    = main_df,
+    y       = "tlx_mental",
+    factors = c("Video", "DriverPosition")
+  )
+
+  # The same two factors measured within each of 10 participants
+  within_df <- expand.grid(
+    id             = 1:10,
+    Video          = c("A", "B"),
+    DriverPosition = c("Left", "Right")
+  )
+  within_df$tlx_mental <- rnorm(10)[within_df$id] + rnorm(40)
+  checkAssumptionsForAnova(
+    data    = within_df,
+    y       = "tlx_mental",
+    factors = c("Video", "DriverPosition"),
+    subject = "id"
+  )
+}
 #> You may take parametric ANOVA (function anova_test). Checks: Shapiro-Wilk on the residuals of tlx_mental ~ Video * DriverPosition: W = 0.988, p = 0.949; Shapiro-Wilk test per cell (Holm-adjusted): no cell deviates; Brown-Forsythe test (median-centred Levene's test): F(3, 36) = 0.54, p = 0.661. See https://www.datanovia.com/learn/biostatistics/anova/anova-in-r#check-assumptions-1 for more information.
-
-# The same two factors measured within each of 10 participants
-within_df <- expand.grid(
-  id             = 1:10,
-  Video          = c("A", "B"),
-  DriverPosition = c("Left", "Right")
-)
-within_df$tlx_mental <- rnorm(10)[within_df$id] + rnorm(40)
-checkAssumptionsForAnova(
-  data    = within_df,
-  y       = "tlx_mental",
-  factors = c("Video", "DriverPosition"),
-  subject = "id"
-)
 #> You may take parametric ANOVA (function anova_test). Checks: Shapiro-Wilk on the residuals of tlx_mental ~ Video * DriverPosition + id: W = 0.988, p = 0.941; sphericity of the within-subject factor(s) Video, DriverPosition is tested (Mauchly) and corrected (Greenhouse-Geisser) by rstatix::anova_test(). See https://www.datanovia.com/learn/biostatistics/anova/anova-in-r#check-assumptions-1 for more information.
 # }
 ```

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">colleyRstats</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,7 +37,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Add <code>PARETO_MOOCORE</code> Column to a Data Frame</h1>
-      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/0.3.1/R/utils.R" class="external-link"><code>R/utils.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/M-Colley/colleyRstats/blob/main/R/utils.R" class="external-link"><code>R/utils.R</code></a></small>
       <div class="d-none name"><code>add_pareto_moocore_column.Rd</code></div>
     </div>
 
@@ -90,38 +90,33 @@ and the front is computed from the complete rows.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Define objective columns</span></span></span>
-<span class="r-in"><span><span class="va">objectives</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"trust"</span>, <span class="st">"predictability"</span>, <span class="st">"perceivedSafety"</span>, <span class="st">"Comfort"</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"moocore"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="co"># Define objective columns</span></span></span>
+<span class="r-in"><span>  <span class="va">objectives</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"trust"</span>, <span class="st">"predictability"</span>, <span class="st">"perceivedSafety"</span>, <span class="st">"Comfort"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Example data frame</span></span></span>
-<span class="r-in"><span><span class="va">main_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  trust <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  predictability <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  perceivedSafety <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  Comfort <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="co"># Example data frame</span></span></span>
+<span class="r-in"><span>  <span class="va">main_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    trust <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    predictability <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    perceivedSafety <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    Comfort <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Add the Pareto front column (minimising, the default)</span></span></span>
-<span class="r-in"><span><span class="va">main_df</span> <span class="op">&lt;-</span> <span class="fu">add_pareto_moocore_column</span><span class="op">(</span>data <span class="op">=</span> <span class="va">main_df</span>, <span class="va">objectives</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">main_df</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        trust predictability perceivedSafety    Comfort PARETO_MOOCORE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.68016292      0.4611865       0.8251994 0.44670247          FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 0.49884561      0.3152418       0.2738182 0.37151118           TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3 0.64167935      0.1746759       0.5700450 0.02806097           TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4 0.66028435      0.5315735       0.3357191 0.46598719          FALSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5 0.09602416      0.4936370       0.5962628 0.39003139           TRUE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6 0.76560016      0.7793086       0.1915180 0.02006522           TRUE</span>
+<span class="r-in"><span>  <span class="co"># Add the Pareto front column (minimising, the default)</span></span></span>
+<span class="r-in"><span>  <span class="va">main_df</span> <span class="op">&lt;-</span> <span class="fu">add_pareto_moocore_column</span><span class="op">(</span>data <span class="op">=</span> <span class="va">main_df</span>, <span class="va">objectives</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">main_df</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># All four objectives are ratings where higher is better</span></span></span>
-<span class="r-in"><span><span class="va">main_df</span> <span class="op">&lt;-</span> <span class="fu">add_pareto_moocore_column</span><span class="op">(</span><span class="va">main_df</span>, <span class="va">objectives</span>, maximise <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="co"># All four objectives are ratings where higher is better</span></span></span>
+<span class="r-in"><span>  <span class="va">main_df</span> <span class="op">&lt;-</span> <span class="fu">add_pareto_moocore_column</span><span class="op">(</span><span class="va">main_df</span>, <span class="va">objectives</span>, maximise <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Mixed: maximise the ratings, minimise a workload score</span></span></span>
-<span class="r-in"><span><span class="va">main_df</span><span class="op">$</span><span class="va">workload</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">main_df</span> <span class="op">&lt;-</span> <span class="fu">add_pareto_moocore_column</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="va">main_df</span>,</span></span>
-<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">objectives</span>, <span class="st">"workload"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  maximise <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">TRUE</span>, <span class="cn">TRUE</span>, <span class="cn">TRUE</span>, <span class="cn">TRUE</span>, <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="co"># Mixed: maximise the ratings, minimise a workload score</span></span></span>
+<span class="r-in"><span>  <span class="va">main_df</span><span class="op">$</span><span class="va">workload</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="va">main_df</span> <span class="op">&lt;-</span> <span class="fu">add_pareto_moocore_column</span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="va">main_df</span>,</span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">objectives</span>, <span class="st">"workload"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    maximise <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">TRUE</span>, <span class="cn">TRUE</span>, <span class="cn">TRUE</span>, <span class="cn">TRUE</span>, <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

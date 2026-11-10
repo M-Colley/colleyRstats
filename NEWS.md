@@ -1,3 +1,15 @@
+# colleyRstats 0.3.2
+
+## BUG FIXES
+
+- `reportNparLD()`, and the sentences `fit_recommended()` writes for nparLD
+  fits, reported every model fitted with nparLD 2.3.4 as having no significant
+  effects, however small its p-values: nparLD 2.3.4 renamed the p-value column
+  of its ANOVA-type statistic from `p-value` to `p.value`. Both names are read
+  now, and a result table without a recognisable p-value column is an error
+  instead of a "no significant effects" sentence. Re-run nparLD reports made
+  with nparLD 2.3.4.
+
 # colleyRstats 0.3.1
 
 ## BUG FIXES

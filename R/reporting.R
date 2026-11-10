@@ -334,9 +334,12 @@ reportART <- function(model, dv = "Testdependentvariable", write_to_clipboard = 
 
 # nparLD 2.3.0 rewrote the object its `nparLD()` returns: the ANOVA-type
 # statistic that older versions put in `$ANOVA.test` now sits in `$ATS` on an
-# object of class `nparld_fit`. Both are keyed by effect name and carry the same
-# `Statistic`, `df` and `p-value` columns, so either can be reported once it has
-# been located.
+# object of class `nparld_fit`. Both are keyed by effect name. nparLD 2.3.4 then
+# renamed the p-value column from `p-value` to `p.value`; reading only the old
+# name reported every fit as "no significant effects", however small its
+# p-value. The columns are therefore matched by name with case and punctuation
+# ignored and returned as `Statistic`, `df` and `p-value`, and a table lacking
+# one of them is an error rather than a silent "no effects" sentence.
 .nparld_anova_table <- function(model) {
   tbl <- NULL
   if (is.list(model)) {
@@ -355,7 +358,21 @@ reportART <- function(model, dv = "Testdependentvariable", write_to_clipboard = 
       call. = FALSE
     )
   }
-  as.data.frame(tbl)
+  tbl <- as.data.frame(tbl)
+  canonical <- c(statistic = "Statistic", df = "df", pvalue = "p-value")
+  hit <- match(names(canonical), gsub("[^a-z]", "", tolower(names(tbl))))
+  if (anyNA(hit)) {
+    stop(
+      "The nparLD result table has no ",
+      paste0("`", canonical[is.na(hit)], "`", collapse = " or "), " column (found: ",
+      paste0("`", names(tbl), "`", collapse = ", "), "). nparLD may have changed ",
+      "its result layout; please report this, with packageVersion(\"nparLD\"), at ",
+      "https://github.com/M-Colley/colleyRstats/issues.",
+      call. = FALSE
+    )
+  }
+  names(tbl)[hit] <- canonical
+  tbl
 }
 
 

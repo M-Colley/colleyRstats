@@ -142,7 +142,7 @@ if (requireNamespace("FSA", quietly = TRUE)) {
 #> FWER = 0.05
 #> Reject Ho if adjusted p ≤ FWER with stopping rule, where (unadjusted) p = Pr(|Z| ≥ |z|)
 #> % latex table generated in R 4.6.2 by xtable 1.8-8 package
-#> % Tue Nov 10 23:47:13 2026
+#> % Sun Nov 15 17:36:05 2026
 #> \begin{table}[ht]
 #> \centering
 #> \caption{Dunn post-hoc comparisons for independent variable \Species{} and dependent variable Sepal.Length. Positive Z-values mean that the first-named level has the higher mean rank; for negative Z-values, the second-named level does. p-values are Holm-adjusted. Effect size reported as rank-biserial correlation (r).} 

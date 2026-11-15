@@ -199,8 +199,8 @@ m_clmm <- ordinal::clmm(rating ~ cond + (1 | id), data = d)
 reportCLMM(m_clmm, dv = "rating")
 #> A cumulative link mixed model (logit link) was fitted for rating. Model terms were tested with Type III Wald $\chi^2$ tests. Coefficients are reported as odds ratios (OR) and are treatment contrasts against each factor's reference level.
 #> The main effect of \textit{cond} on rating was significant ($\chi^2(2) = 30.60$, \pminor{0.001}).
-#> The contrast \textit{B} vs.\ \textit{A} of \textit{cond} on rating was significant ($OR = 309.89$, 95\% CI $[26.21, 3664.08]$, $z = 4.55$, \pminor{0.001}).
-#> The contrast \textit{C} vs.\ \textit{A} of \textit{cond} on rating was significant ($OR = 10085.81$, 95\% CI $[384.36, 264656.77]$, $z = 5.53$, \pminor{0.001}).
+#> The contrast \textit{B} vs.\ \textit{A} of \textit{cond} on rating was significant ($OR = 309.89$, 95\% CI $[26.21, 3664.28]$, $z = 4.55$, \pminor{0.001}).
+#> The contrast \textit{C} vs.\ \textit{A} of \textit{cond} on rating was significant ($OR = 10085.81$, 95\% CI $[384.33, 264679.23]$, $z = 5.53$, \pminor{0.001}).
 ```
 
 For the **binary** recommendation, fit the binomial GLMM and report it
